@@ -4,8 +4,6 @@
 
 struct TreeNode;
 
-typedef std::unique_ptr<TreeNode> UPtrTreeNode;
-
 struct TreeNode
 {
 	vec3 startPos;
@@ -15,7 +13,9 @@ struct TreeNode
 	float diameter = 0.1f;
 
 	bool bud = true;
+	uint32 id = 0;
 	uint32 order = 0;
+	uint32 createdAt = 0;
 
 	//iteration parameters
 	float light = 0.0f;
@@ -25,12 +25,11 @@ struct TreeNode
 	//root if null
 	TreeNode* parent;
 
-	UPtrTreeNode mainChild;
+	TreeNode* mainChild = nullptr;
 
-	UPtrTreeNode lateralChild;
+	TreeNode* lateralChild = nullptr;
 
-
-	TreeNode(TreeNode* parent, vec3 startPos, vec3 direction) : startPos(startPos), direction(direction), parent(parent)
+	TreeNode(TreeNode* parent, uint32 id, vec3 startPos, vec3 direction) : startPos(startPos), id(id), direction(direction), parent(parent)
 	{
 		if (parent != nullptr)
 			order = parent->order + 1;

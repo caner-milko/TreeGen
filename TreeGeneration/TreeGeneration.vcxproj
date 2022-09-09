@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\folders\graphics\treegen\TreeGeneration\TreeGeneration\dependencies\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\folders\graphics\treegen\TreeGeneration\TreeGeneration\dependencies\include\imgui;C:\folders\graphics\treegen\TreeGeneration\TreeGeneration\dependencies\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\folders\graphics\treegen\TreeGeneration\TreeGeneration\dependencies\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -135,7 +135,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="dependencies\compile\glad.c" />
+    <ClCompile Include="dependencies\include\glad\glad.c" />
+    <ClCompile Include="dependencies\include\imgui\backends\imgui_impl_glfw.cpp" />
+    <ClCompile Include="dependencies\include\imgui\backends\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="dependencies\include\imgui\imgui.cpp" />
+    <ClCompile Include="dependencies\include\imgui\imgui_demo.cpp" />
+    <ClCompile Include="dependencies\include\imgui\imgui_draw.cpp" />
+    <ClCompile Include="dependencies\include\imgui\imgui_tables.cpp" />
+    <ClCompile Include="dependencies\include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\opengl\Camera.cpp" />
     <ClCompile Include="src\opengl\GLVertexArray.cpp" />
@@ -145,6 +152,8 @@
     <ClCompile Include="src\Tree.cpp" />
     <ClCompile Include="src\TreeGenerator.cpp" />
     <ClCompile Include="src\TreeWorld.cpp" />
+    <ClCompile Include="src\Util.cpp" />
+    <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="src\opengl\Camera.h" />
     <ClInclude Include="src\opengl\DrawView.h" />
     <ClInclude Include="src\opengl\GLVertexArray.h" />

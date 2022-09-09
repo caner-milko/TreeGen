@@ -120,7 +120,7 @@ void Shader::compile()
 	if (!success)
 	{
 		glGetShaderInfoLog(fragment, 512, NULL, infoLog);
-		std::cout << "Shader Compilation: Error at Vertex Shader Compilation in path: " << fragmentPath << "\n" << infoLog << std::endl;
+		std::cout << "Shader Compilation: Error at Fragment Shader Compilation in path: " << fragmentPath << "\n" << infoLog << std::endl;
 	}
 
 	handle = glCreateProgram();

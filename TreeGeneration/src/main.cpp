@@ -1,37 +1,46 @@
 #include <iostream>
 #include <glad/glad.h>
+
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+
+#include <stdio.h>
+
 #include <GLFW/glfw3.h>
 #include "./TreeGenerator.h"
 #include "./TreeWorld.h"
-#include <random>
 #include <time.h>
-
 #include "./opengl/Renderer.h"
 #include "./opengl/ResourceManager.h"
+
+
+
+int width = 800;
+int height = 800;
 
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float currentFrame = 0.0f;
 float lastFrame = 0.0f; // Time of last frame
 
 float yaw = -90.0f, pitch = 0.0f;
-float lastX = 400, lastY = 300;
+float lastX = width / 2, lastY = height / 2;
 bool firstMouse = true;
 float fov = 45.0f;
 
-bool fPressed = false;
+bool cursorDisabled = true;
 
-void processInput(GLFWwindow *window);
-void mouse_callback(GLFWwindow *window, double xpos, double ypos);
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+void processInput(GLFWwindow* window);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-Camera cam(1.0f);
+Camera cam(width / (float)height);
 
 std::unique_ptr<TreeWorld> world;
 std::unique_ptr<TreeGenerator> generator;
 Tree* tree;
 
 int main() {
-	srand(time(NULL));
 	cam.setCameraPosition({ -1.0f, 0.0f, 0.0f });
 	generator = std::make_unique<TreeGenerator>();
 
@@ -39,25 +48,13 @@ int main() {
 
 	tree = &generator->createTree(*world, vec3(0.0f));
 
-	/*std::cout << "---------------------------" << std::endl;
-	tree.printTreeRecursive(*tree.root, "");
-	std::cout << "---------------------------" << std::endl;
-	generator.growTree(tree);
-	std::cout << "---------------------------" << std::endl;
-	tree.printTreeRecursive(*tree.root, "");
-	std::cout << "---------------------------" << std::endl;
-	generator.growTree(tree);
-	std::cout << "---------------------------" << std::endl;
-	tree.printTreeRecursive(*tree.root, "");
-	std::cout << "---------------------------" << std::endl;*/
-
 	glfwInit();
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow((int)600, (int)600, "TreeGen", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(width, height, "TreeGen", NULL, NULL);
 
 	if (window == NULL)
 	{
@@ -66,6 +63,7 @@ int main() {
 		return 0;
 	}
 	glfwMakeContextCurrent(window);
+	glfwSwapInterval(1);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
@@ -76,56 +74,232 @@ int main() {
 		return 0;
 	}
 
+
+
+	const char* glsl_version = "#version 130";
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+	//io.ConfigViewportsNoAutoMerge = true;
+	//io.ConfigViewportsNoTaskBarIcon = true;
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsLight();
+
+	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+	ImGuiStyle& style = ImGui::GetStyle();
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		style.WindowRounding = 0.0f;
+		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+	}
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init(glsl_version);
+
+	// Our state
+	bool show_demo_window = true;
+	bool show_another_window = false;
+	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
 	Renderer renderer;
 	renderer.init();
 
-	Shader* shader = ResourceManager::getInstance().loadShader("line_shader", "./Assets/Shaders/line_vert.glsl", "./Assets/Shaders/line_frag.glsl");
+	Shader* treeLineShader = ResourceManager::getInstance().loadShader("line_shader", "./Assets/Shaders/line_vert.glsl", "./Assets/Shaders/line_frag.glsl");
+
+	Shader* shadowPointShader = ResourceManager::getInstance().loadShader("shadowPoint_shader", "./Assets/Shaders/shadowPoint_vert.glsl", "./Assets/Shaders/shadowPoint_frag.glsl");
+	float shadowCellVisibilityRadius = 10.0f;
+	bool showShadowGrid = false;
+	bool renderPreviewTree = false;
+	std::unique_ptr<Tree> previewTree;
+
 	while (!glfwWindowShouldClose(window)) {
-		
+		renderer.startFrame();
+		glfwPollEvents();
+
+		// Start the Dear ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+		/*
+		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+		if (show_demo_window)
+			ImGui::ShowDemoWindow(&show_demo_window);
+
+		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+		{
+			static int counter = 0;
+
+			ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+			ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+			ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+			ImGui::Checkbox("Another Window", &show_another_window);
+
+			ImGui::SliderFloat("Apical Control", &tree->growthData.apicalControl, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+			ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+			if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+				counter++;
+			ImGui::SameLine();
+			ImGui::Text("counter = %d", counter);
+
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::End();
+		}*/
+
+		bool treeSettingsEdited = false;
+		bool treePreviewChanged = false;
+		{
+
+			ImGui::Begin("Tree Generator");
+			if (ImGui::CollapsingHeader("Tree Growth Data")) {
+				TreeGrowthData& growthData = tree->growthData;
+
+				//shadows
+				float fullExposure = 3.0f;
+				int pyramidHeight = 5;
+				float a = 0.5f;
+				//b > 1
+				float b = 2.0f;
+
+				treeSettingsEdited = ImGui::SliderFloat("Apical Control", &growthData.apicalControl, 0.0f, 1.0f);
+				treeSettingsEdited |= ImGui::SliderFloat("Base Length", &growthData.baseLength, 0.1f, 3.0f);
+
+				treeSettingsEdited |= ImGui::SliderFloat("Perception Radius", &growthData.perceptionRadius, 0.5f, 10.0f);
+				treeSettingsEdited |= ImGui::SliderAngle("Perception Angle", &growthData.perceptionAngle, 15.0f, 90.0f);
+
+				treeSettingsEdited |= ImGui::SliderAngle("Lateral Angle", &growthData.lateralAngle, 15.0f, 90.0f);
+
+				treeSettingsEdited |= ImGui::SliderFloat3("Tropism Vector", (float*)&growthData.tropism, -1.0f, 1.0f);
+
+				bool changed = ImGui::SliderFloat("Original Direction Weight", &growthData.directionWeights.x, 0.0f, 1.0f);
+				changed = ImGui::SliderFloat("Optimal Direction Weight", &growthData.directionWeights.y, 0.0f, 1.0f) || changed;
+				changed = ImGui::SliderFloat("Tropism Weight", &growthData.directionWeights.z, 0.0f, 1.0f) || changed;
+				if (changed)
+					growthData.directionWeights = glm::normalize(growthData.directionWeights);
+
+				treeSettingsEdited |= changed;
+				treeSettingsEdited |= ImGui::SliderFloat("Full Exposure Light", &growthData.fullExposure, 0.5f, 5.0f);
+				treeSettingsEdited |= ImGui::SliderInt("Shadow Pyramid Height", &growthData.pyramidHeight, 1, 10);
+				treeSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Multiplier", &growthData.a, 0.1f, 3.0f);
+				treeSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Base", &growthData.b, 1.1f, 3.0f);
+
+
+			}
+
+			if (ImGui::CollapsingHeader("Render Options")) {
+
+				treeSettingsEdited |= treePreviewChanged = ImGui::Checkbox("Render Tree Preview", &renderPreviewTree);
+				ImGui::Checkbox("Show Shadow Grid", &showShadowGrid);
+				ImGui::SliderFloat("Shadow Cell Visibility Radius", &shadowCellVisibilityRadius, 0.5f, 20.0f);
+			}
+			ImGui::End();
+		}
+
+		if (treePreviewChanged && !renderPreviewTree) {
+			previewTree.reset();
+		}
+
+		if (renderPreviewTree) {
+			if (treeSettingsEdited || (previewTree != nullptr && previewTree->age != tree->age + 1)) {
+				previewTree = std::make_unique<Tree>(*tree);
+				generator->growTree(*previewTree);
+			}
+		}
+
+
 		currentFrame = (float)glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		processInput(window);
-		renderer.renderTree({ cam }, shader, tree->root.get());
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+
+		DrawView view{ cam };
+		if (!renderPreviewTree)
+			renderer.renderTree(view, treeLineShader, tree->root);
+		else
+			renderer.renderTree(view, treeLineShader, previewTree->root);
+		if (showShadowGrid) {
+			std::vector<std::tuple<vec3, float>> cells = world->renderShadowCells(cam.getCameraPosition(), cam.getCameraDirection(), cam.getFov(), shadowCellVisibilityRadius);
+
+			renderer.renderShadowPoints(view, shadowPointShader, cells);
+		}
+
+
 		lastFrame = currentFrame;
+
+
+		// Rendering
+		ImGui::Render();
+		int display_w, display_h;
+		glfwGetFramebufferSize(window, &display_w, &display_h);
+		glViewport(0, 0, display_w, display_h);
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		// Update and Render additional Platform Windows
+		// (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
+		//  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			GLFWwindow* backup_current_context = glfwGetCurrentContext();
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+			glfwMakeContextCurrent(backup_current_context);
+		}
+
+		glfwSwapBuffers(window);
+		renderer.endFrame();
 	}
 }
 
 
-void processInput(GLFWwindow *window)
+void processInput(GLFWwindow* window)
 {
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+	if (ImGui::IsKeyDown(ImGuiKey_Escape))
 		glfwSetWindowShouldClose(window, true);
 	vec3 camPos = cam.getCameraPosition();
 	const float cameraSpeed = 2.5f * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	if (ImGui::IsKeyDown(ImGuiKey_W))
 		camPos += cameraSpeed * cam.getCameraDirection();
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+	if (ImGui::IsKeyDown(ImGuiKey_S))
 		camPos -= cameraSpeed * cam.getCameraDirection();
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+	if (ImGui::IsKeyDown(ImGuiKey_A))
 		camPos -= cam.getCameraRight() * cameraSpeed;
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+	if (ImGui::IsKeyDown(ImGuiKey_D))
 		camPos += cam.getCameraRight() * cameraSpeed;
-	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+	if (ImGui::IsKeyDown(ImGuiKey_Space))
 		camPos += glm::vec3(0.0f, cameraSpeed, 0.0f);
-	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+	if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
 		camPos += glm::vec3(0.0f, -cameraSpeed, 0.0f);
-	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
-		if(!fPressed) {
-			generator->growTree(*tree);
-			fPressed = true;
+
+	if (ImGui::IsKeyPressed(ImGuiKey_F, false)) {
+		generator->growTree(*tree);
+	}
+
+	if (ImGui::IsKeyPressed(ImGuiKey_E, false)) {
+		if (cursorDisabled) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
+		else {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+		cursorDisabled = !cursorDisabled;
 	}
-	else {
-		fPressed = false;
-	}
+
+
 
 	cam.setCameraPosition(camPos);
 
 }
 
-void mouse_callback(GLFWwindow *window, double xpos, double ypos)
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	if (firstMouse) // initially set to true
 	{
@@ -142,11 +316,13 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 	xoffset *= sensitivity;
 	yoffset *= sensitivity;
 
+	if (!cursorDisabled)
+		return;
 	cam.setYaw(cam.getYaw() + xoffset);
 	cam.setPitch(cam.getPitch() + yoffset);
 }
 
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	cam.setFov(cam.getFov() - (float)yoffset);
 }

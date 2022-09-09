@@ -2,21 +2,43 @@
 #include "./TreeWorld.h"
 #include "./Util.hpp"
 #include <iostream>
-Tree::Tree(TreeWorld& world, vec3 position) : world(world),
-root(std::make_unique<
-	TreeNode>(nullptr, position, vec3(0.0f, 1.0f, 0.0f)))
+#include <queue>
+Tree::Tree(TreeWorld& world, vec3 position, uint32 seed) : world(world),
+root(new TreeNode(nullptr, 0, position, vec3(0.0f, 1.0f, 0.0f))), seed(seed)
 {
 	budToMetamer(*root);
 }
 
+Tree::Tree(const Tree& from) : world(from.world), growthData(from.growthData), age(from.age), seed(from.seed), metamerCount(from.metamerCount), budCount(from.budCount)
+{
+	root = new TreeNode(*from.root);
+	std::queue<TreeNode*> queue({ root });
+	while (!queue.empty()) {
+		TreeNode* selected = queue.front();
+		queue.pop();
+		if (selected->bud)
+			continue;
+
+		selected->mainChild = new TreeNode(*selected->mainChild);
+		selected->mainChild->parent = selected;
+
+		selected->lateralChild = new TreeNode(*selected->lateralChild);
+		selected->lateralChild->parent = selected;
+
+		queue.push(selected->lateralChild);
+		queue.push(selected->mainChild);
+	}
+}
+
 void Tree::budToMetamer(TreeNode& bud)
 {
-	bud.mainChild = std::make_unique<TreeNode>(&bud, bud.endPos(), bud.direction);
+	bud.mainChild = new TreeNode(&bud, bud.id * 2 + 1, bud.endPos(), bud.direction);
 
-	vec3 lateralDir = util::randomPerturbateVector(bud.direction, growthData.lateralAngle);
-	bud.lateralChild = std::make_unique<TreeNode>(&bud, bud.endPos(), lateralDir);
+	vec3 lateralDir = util::randomPerturbateVector(bud.direction, growthData.lateralAngle * 2.0f, world.seed + seed + age + bud.id * 2 + 2);
+	bud.lateralChild = new TreeNode(&bud, bud.id * 2 + 2, bud.endPos(), lateralDir);
+
 	bud.bud = false;
-
+	bud.createdAt = age;
 	metamerCount++;
 	budCount++;
 }
@@ -42,7 +64,7 @@ void Tree::addNewShoots()
 	addShootsRecursive(*root);
 }
 
-void Tree::printTreeRecursive(TreeNode & node, const std::string& prefix) const
+void Tree::printTreeRecursive(TreeNode& node, const std::string& prefix) const
 {
 	if (!node.bud) {
 		vec3 start = node.startPos;
@@ -56,6 +78,21 @@ void Tree::printTreeRecursive(TreeNode & node, const std::string& prefix) const
 void Tree::calculateShadows() const
 {
 	calculateShadowsRecursive(*root);
+}
+
+Tree::~Tree()
+{
+	std::queue<TreeNode*> queue({ root });
+	while (!queue.empty()) {
+		TreeNode* selected = queue.front();
+		queue.pop();
+		if (!selected->bud) {
+			queue.push(selected->lateralChild);
+			queue.push(selected->mainChild);
+		}
+		delete selected;
+	}
+
 }
 
 float Tree::accumulateLightRecursive(TreeNode& node)
@@ -96,8 +133,7 @@ void Tree::addShootsRecursive(TreeNode& node)
 	float vigor = node.vigor;
 	int vigorFloored = static_cast<int>(glm::floor(vigor));
 
-
-	float metamerLength = vigor / glm::floor(vigor);
+	float metamerLength = growthData.baseLength * vigor / glm::floor(vigor);
 
 	vec3 optimal = world.getOptimalDirection(node.startPos, node.direction, growthData.perceptionRadius, growthData.perceptionAngle);
 
@@ -113,11 +149,11 @@ void Tree::addShootsRecursive(TreeNode& node)
 		budToMetamer(*current);
 		//TODO create shadows here?-
 		direction = growthData.directionWeights.x * direction + growthData.directionWeights.y * optimal + growthData.directionWeights.z * growthData.tropism;
-		current = current->mainChild.get();
+		current = current->mainChild;
 	}
 }
 
-void Tree::calculateShadowsRecursive(TreeNode & node) const
+void Tree::calculateShadowsRecursive(TreeNode& node) const
 {
 	if (!node.bud) {
 		calculateShadowsRecursive(*node.mainChild);
