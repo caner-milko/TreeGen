@@ -10,7 +10,7 @@ struct TreeNode
 	vec3 direction;
 
 	float length = 1.0f;
-	float diameter = 0.1f;
+	float radius = 0.0f;
 
 	bool bud = true;
 	uint32 id = 0;

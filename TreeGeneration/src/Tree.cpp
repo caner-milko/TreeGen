@@ -6,7 +6,9 @@
 Tree::Tree(TreeWorld& world, vec3 position, uint32 seed) : world(world),
 root(new TreeNode(nullptr, 0, position, vec3(0.0f, 1.0f, 0.0f))), seed(seed)
 {
+	root->length = growthData.baseLength;
 	budToMetamer(*root);
+	calculateRadiuses();
 }
 
 Tree::Tree(const Tree& from) : world(from.world), growthData(from.growthData), age(from.age), seed(from.seed), metamerCount(from.metamerCount), budCount(from.budCount)
@@ -34,7 +36,7 @@ void Tree::budToMetamer(TreeNode& bud)
 {
 	bud.mainChild = new TreeNode(&bud, bud.id * 2 + 1, bud.endPos(), bud.direction);
 
-	vec3 lateralDir = util::randomPerturbateVector(bud.direction, growthData.lateralAngle * 2.0f, world.seed + seed + age + bud.id * 2 + 2);
+	vec3 lateralDir = util::randomPerturbateVector(glm::normalize(bud.direction), growthData.lateralAngle, world.seed + seed + age + bud.id * 2 + 2);
 	bud.lateralChild = new TreeNode(&bud, bud.id * 2 + 2, bud.endPos(), lateralDir);
 
 	bud.bud = false;
@@ -64,6 +66,11 @@ void Tree::addNewShoots()
 	addShootsRecursive(*root);
 }
 
+void Tree::calculateRadiuses()
+{
+	calculateRadiusRecursive(*root);
+}
+
 void Tree::printTreeRecursive(TreeNode& node, const std::string& prefix) const
 {
 	if (!node.bud) {
@@ -78,6 +85,29 @@ void Tree::printTreeRecursive(TreeNode& node, const std::string& prefix) const
 void Tree::calculateShadows() const
 {
 	calculateShadowsRecursive(*root);
+}
+
+std::vector<TreeNode> Tree::AsVector(bool includeBuds) const
+{
+	if (root->bud)
+		return {};
+	std::vector<TreeNode> nodes;
+	std::queue<const TreeNode*> queue({ root });
+	while (!queue.empty()) {
+		const TreeNode* selected = queue.front();
+		queue.pop();
+		if (!selected->bud) {
+			if (includeBuds || !selected->mainChild->bud) {
+				queue.push(selected->mainChild);
+			}
+			if (includeBuds || !selected->lateralChild->bud) {
+				queue.push(selected->lateralChild);
+			}
+		}
+		nodes.push_back(*selected);
+	}
+
+	return nodes;
 }
 
 Tree::~Tree()
@@ -142,7 +172,6 @@ void Tree::addShootsRecursive(TreeNode& node)
 	TreeNode* current = &node;
 
 
-
 	for (int i = 0; i < vigorFloored; i++) {
 		current->length = metamerLength;
 		current->direction = glm::normalize(direction);
@@ -151,6 +180,15 @@ void Tree::addShootsRecursive(TreeNode& node)
 		direction = growthData.directionWeights.x * direction + growthData.directionWeights.y * optimal + growthData.directionWeights.z * growthData.tropism;
 		current = current->mainChild;
 	}
+}
+
+float Tree::calculateRadiusRecursive(TreeNode& node)
+{
+	if (node.bud)
+		return growthData.baseRadius;
+	node.radius = glm::pow(glm::pow(calculateRadiusRecursive(*node.mainChild), growthData.radiusN) + glm::pow(calculateRadiusRecursive(*node.lateralChild), growthData.radiusN), 1.0f / growthData.radiusN);
+
+	return node.radius;
 }
 
 void Tree::calculateShadowsRecursive(TreeNode& node) const

@@ -9,7 +9,10 @@ struct TreeWorld;
 struct TreeGrowthData
 {
 	float apicalControl = 0.5f;
-	float baseLength = .5f;
+	float baseLength = .25f;
+
+	float baseRadius = 0.02f;
+	float radiusN = 2.5f;
 	//bud fate
 	float perceptionRadius = 5.0;
 	float perceptionAngle = glm::radians(45.0f);
@@ -52,9 +55,15 @@ public:
 
 	void addNewShoots();
 
+	void calculateRadiuses();
+
 	void printTreeRecursive(TreeNode& node, const std::string& prefix) const;
 
 	void calculateShadows() const;
+
+	std::vector<TreeNode> AsVector(bool includeBuds) const;
+
+
 
 	~Tree();
 
@@ -62,5 +71,6 @@ private:
 	float accumulateLightRecursive(TreeNode& node);
 	void distributeVigorRecursive(TreeNode& node);
 	void addShootsRecursive(TreeNode& node);
+	float calculateRadiusRecursive(TreeNode& node);
 	void calculateShadowsRecursive(TreeNode& node) const;
 };

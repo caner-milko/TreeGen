@@ -1,5 +1,6 @@
 #include "Util.hpp"
 namespace util {
+
 	uint32 util::hash(uint32 a) {
 		a = (a ^ 61) ^ (a >> 16);
 		a = a + (a << 3);
@@ -26,17 +27,23 @@ namespace util {
 		{
 			random = vec3(0.0f, 1.0f, 0.0f);
 		}
+
 		vec3 cross = normalize(glm::cross(original, random));
 
 		float s = IntNoise2D(seed) * 0.5f + 0.5f;
 		float r = IntNoise2D(seed, 1) * 0.5f + 0.5f;
 
 		float h = glm::cos(angle);
+
 		float phi = 2.0f * glm::pi<float>() * s;
+
 		float z = h + (1.0f - h) * r;
+
 		float sinT = glm::sqrt(1.0f - z * z);
+
 		float x = glm::cos(phi) * sinT;
 		float y = glm::sin(phi) * sinT;
+
 		return glm::normalize(random * x + cross * y + original * z);
 	}
 	static bool util::endsWith(const std::string& str, const std::string& suffix)

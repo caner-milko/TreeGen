@@ -44,9 +44,17 @@ int main() {
 	cam.setCameraPosition({ -1.0f, 0.0f, 0.0f });
 	generator = std::make_unique<TreeGenerator>();
 
-	world = std::make_unique<TreeWorld>(50, 100, 50, vec3(-12.5f, 0.0f, -12.5f), 0.5f);
+	float baseLen = .4f;
+
+	float worldSizeX = 25.0;
+	float worldSizeY = 50.0;
+	float worldSizeZ = 25.0;
+
+	world = std::make_unique<TreeWorld>(worldSizeX / baseLen * 2.0f, worldSizeY / baseLen * 2.0f, worldSizeZ / baseLen * 2.0f, vec3(-12.5f, 0.0f, -12.5f), baseLen / 2.0f);
 
 	tree = &generator->createTree(*world, vec3(0.0f));
+
+	tree->growthData.baseLength = baseLen;
 
 	glfwInit();
 
@@ -105,17 +113,14 @@ int main() {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
-	// Our state
-	bool show_demo_window = true;
-	bool show_another_window = false;
-	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
 	Renderer renderer;
 	renderer.init();
 
 	Shader* treeLineShader = ResourceManager::getInstance().loadShader("line_shader", "./Assets/Shaders/line_vert.glsl", "./Assets/Shaders/line_frag.glsl");
 
 	Shader* shadowPointShader = ResourceManager::getInstance().loadShader("shadowPoint_shader", "./Assets/Shaders/shadowPoint_vert.glsl", "./Assets/Shaders/shadowPoint_frag.glsl");
+
+	Shader* treeQuadShader = ResourceManager::getInstance().loadShader("treeQuad_shader", "./Assets/Shaders/treeQuad_vert.glsl", "./Assets/Shaders/treeQuad_frag.glsl");
 	float shadowCellVisibilityRadius = 10.0f;
 	bool showShadowGrid = false;
 	bool renderPreviewTree = false;
@@ -222,10 +227,17 @@ int main() {
 		processInput(window);
 
 		DrawView view{ cam };
-		if (!renderPreviewTree)
+
+		Tree* selTree = renderPreviewTree ? previewTree.get() : tree;
+
+		std::vector<TreeNode> nodes = selTree->AsVector(false);
+
+		renderer.renderTree2(view, treeQuadShader, nodes);
+
+		/*if (!renderPreviewTree)
 			renderer.renderTree(view, treeLineShader, tree->root);
 		else
-			renderer.renderTree(view, treeLineShader, previewTree->root);
+			renderer.renderTree(view, treeLineShader, previewTree->root);*/
 		if (showShadowGrid) {
 			std::vector<std::tuple<vec3, float>> cells = world->renderShadowCells(cam.getCameraPosition(), cam.getCameraDirection(), cam.getFov(), shadowCellVisibilityRadius);
 

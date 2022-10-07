@@ -15,4 +15,5 @@ void TreeGenerator::growTree(Tree& tree)
 	tree.distributeVigor();
 
 	tree.addNewShoots();
+	tree.calculateRadiuses();
 }
