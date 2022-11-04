@@ -23,11 +23,11 @@ struct TreeGrowthData
 	//default, optimal, tropism
 	vec3 directionWeights = glm::normalize(vec3(0.6f, 0.4f, 0.1f));
 	//shadows
-	float fullExposure = 3.0f;
+	float fullExposure = 4.0f;
 	int pyramidHeight = 5;
-	float a = 0.5f;
+	float a = 0.8f;
 	//b > 1
-	float b = 2.0f;
+	float b = 1.3f;
 };
 
 struct Tree
@@ -44,6 +44,8 @@ public:
 
 	Tree(TreeWorld& world, vec3 position, uint32 seed);
 	Tree(const Tree& from);
+
+	void init();
 
 	void budToMetamer(TreeNode& bud);
 

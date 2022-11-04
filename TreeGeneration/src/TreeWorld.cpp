@@ -19,13 +19,13 @@ void TreeWorld::calculateShadows()
 {
 	std::fill(shadowGrid.begin(), shadowGrid.end(), ShadowCell{ 0.0f });
 	for (auto& tree : trees) {
-		tree.calculateShadows();
+		tree->calculateShadows();
 	}
 }
 
-Tree& TreeWorld::createTree(vec3 position)
+Tree* TreeWorld::createTree(vec3 position)
 {
-	return trees.emplace_back(*this, position, util::hash(static_cast<uint32>(trees.size())));
+	return trees.emplace_back(std::make_unique<Tree>(*this, position, util::hash(static_cast<uint32>(trees.size())))).get();
 }
 
 float TreeWorld::getLightAt(const vec3& position, float a, float fullExposure)

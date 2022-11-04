@@ -39,7 +39,10 @@ Camera cam(width / (float)height);
 std::unique_ptr<TreeWorld> world;
 std::unique_ptr<TreeGenerator> generator;
 Tree* tree;
+Tree* tree2;
 
+bool growTree1 = true;
+bool growTree2 = true;
 int main() {
 	cam.setCameraPosition({ -1.0f, 0.0f, 0.0f });
 	generator = std::make_unique<TreeGenerator>();
@@ -52,9 +55,14 @@ int main() {
 
 	world = std::make_unique<TreeWorld>(worldSizeX / baseLen * 2.0f, worldSizeY / baseLen * 2.0f, worldSizeZ / baseLen * 2.0f, vec3(-12.5f, 0.0f, -12.5f), baseLen / 2.0f);
 
-	tree = &generator->createTree(*world, vec3(0.0f));
+	tree = generator->createTree(*world, vec3(0.0f));
+	tree2 = generator->createTree(*world, vec3(2.0f, 0.0f, 0.0f));
 
 	tree->growthData.baseLength = baseLen;
+	tree2->growthData.baseLength = baseLen;
+
+	tree->init();
+	tree2->init();
 
 	glfwInit();
 
@@ -121,6 +129,8 @@ int main() {
 	Shader* shadowPointShader = ResourceManager::getInstance().loadShader("shadowPoint_shader", "./Assets/Shaders/shadowPoint_vert.glsl", "./Assets/Shaders/shadowPoint_frag.glsl");
 
 	Shader* treeQuadShader = ResourceManager::getInstance().loadShader("treeQuad_shader", "./Assets/Shaders/treeQuad_vert.glsl", "./Assets/Shaders/treeQuad_frag.glsl");
+	Shader* treeQuadMarchShader = ResourceManager::getInstance().loadShader("treeQuadMarch_shader", "./Assets/Shaders/treeQuad_vert.glsl", "./Assets/Shaders/treeQuadMarch_frag.glsl");
+
 	float shadowCellVisibilityRadius = 10.0f;
 	bool showShadowGrid = false;
 	bool renderPreviewTree = false;
@@ -197,7 +207,7 @@ int main() {
 				treeSettingsEdited |= ImGui::SliderInt("Shadow Pyramid Height", &growthData.pyramidHeight, 1, 10);
 				treeSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Multiplier", &growthData.a, 0.1f, 3.0f);
 				treeSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Base", &growthData.b, 1.1f, 3.0f);
-
+				tree2->growthData = growthData;
 
 			}
 
@@ -207,6 +217,8 @@ int main() {
 				ImGui::Checkbox("Show Shadow Grid", &showShadowGrid);
 				ImGui::SliderFloat("Shadow Cell Visibility Radius", &shadowCellVisibilityRadius, 0.5f, 20.0f);
 			}
+			ImGui::Checkbox("Grow Tree 1", &growTree1);
+			ImGui::Checkbox("Grow Tree 2", &growTree2);
 			ImGui::End();
 		}
 
@@ -234,14 +246,18 @@ int main() {
 
 		renderer.renderTree2(view, treeQuadShader, nodes);
 
-		/*if (!renderPreviewTree)
-			renderer.renderTree(view, treeLineShader, tree->root);
-		else
-			renderer.renderTree(view, treeLineShader, previewTree->root);*/
-		if (showShadowGrid) {
-			std::vector<std::tuple<vec3, float>> cells = world->renderShadowCells(cam.getCameraPosition(), cam.getCameraDirection(), cam.getFov(), shadowCellVisibilityRadius);
+		nodes = tree2->AsVector(false);
+		renderer.renderTree2(view, treeQuadMarchShader, nodes);
 
-			renderer.renderShadowPoints(view, shadowPointShader, cells);
+		if (showShadowGrid) {
+			world->calculateShadows();
+			//std::vector<std::tuple<vec3, float>> cells = world->renderShadowCells(cam.getCameraPosition(), cam.getCameraDirection(), cam.getFov(), shadowCellVisibilityRadius);
+
+			//renderer.renderShadowPoints(view, shadowPointShader, cells);
+			std::vector<TreeNode> buds = selTree->AsVector(true);
+			renderer.renderShadowsOnBuds(view, shadowPointShader, *world, buds);
+			buds = tree2->AsVector(true);
+			renderer.renderShadowsOnBuds(view, shadowPointShader, *world, buds);
 		}
 
 
@@ -292,7 +308,10 @@ void processInput(GLFWwindow* window)
 		camPos += glm::vec3(0.0f, -cameraSpeed, 0.0f);
 
 	if (ImGui::IsKeyPressed(ImGuiKey_F, false)) {
-		generator->growTree(*tree);
+		if (growTree1)
+			generator->growTree(*tree);
+		if (growTree2)
+			generator->growTree(*tree2);
 	}
 
 	if (ImGui::IsKeyPressed(ImGuiKey_E, false)) {

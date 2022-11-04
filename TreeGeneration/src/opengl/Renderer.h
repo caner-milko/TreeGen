@@ -6,6 +6,7 @@
 #include "./Shader.h"
 #include "./GLVertexArray.h"
 #include "../TreeNode.h"
+#include "../TreeWorld.h"
 #include <glad/glad.h>
 class Renderer {
 
@@ -18,6 +19,9 @@ public:
 	void renderTree2(DrawView view, Shader* shader, const std::vector<TreeNode>& nodes);
 
 	void renderShadowPoints(DrawView view, Shader* shader, const std::vector<std::tuple<vec3, float>>& points);
+
+	void renderShadowsOnBuds(DrawView view, Shader* shader, const TreeWorld& world, const std::vector<TreeNode>& buds);
+
 
 private:
 	Shader* lastShader = nullptr;

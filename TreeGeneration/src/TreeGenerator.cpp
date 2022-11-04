@@ -1,6 +1,6 @@
 #include "TreeGenerator.h"
 
-Tree& TreeGenerator::createTree(TreeWorld& world, vec3 position)
+Tree* TreeGenerator::createTree(TreeWorld& world, vec3 position)
 {
 	return world.createTree(position);
 }

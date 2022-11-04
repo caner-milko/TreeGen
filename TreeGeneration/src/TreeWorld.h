@@ -9,7 +9,7 @@ struct ShadowCell {
 struct TreeWorld
 {
 	uint32 seed = 0;
-	std::vector<Tree> trees;
+	std::vector<std::unique_ptr<Tree>> trees;
 	std::vector<ShadowCell> shadowGrid;
 	int xSize, ySize, zSize;
 	float cellSize;
@@ -19,7 +19,7 @@ struct TreeWorld
 	void resizeShadowGrid(int xSize, int ySize, int zSize, vec3 leftBottomCorner, float cellSize);
 
 	void calculateShadows();
-	Tree& createTree(vec3 position);
+	Tree* createTree(vec3 position);
 	//xyz = optimal direction, w = totalLight
 	float getLightAt(const vec3& position, float a, float fullExposure);
 	vec3 getOptimalDirection(const vec3& position, const vec3& direction, float perceptionRadius, float perceptionAngle);

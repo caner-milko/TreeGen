@@ -1,8 +1,10 @@
 #version 330 core
 out vec4 FragColor;
-
+out float gl_FragDepth;
 in vec3 fragPos;
 in vec2 uv;
+
+#define MAX_DIST 40.0
 
 struct Branch {
 	vec3 start;
@@ -14,7 +16,7 @@ struct Branch {
 };
 uniform vec3 camPos;
 
-uniform Branch branch;
+uniform Branch branchMain;
 
 uniform vec3 treeColor;
 
@@ -30,6 +32,12 @@ struct AngleCone
     vec3 axis;		// axis
 };
 
+struct Sphere 
+{
+    vec3 pos;
+    float radius;
+};
+
 struct Hit
 {
     float t;
@@ -37,6 +45,18 @@ struct Hit
 };
 
 const Hit noHit = Hit(-1.0, vec3(1.0, 0.0, 0.0));
+
+Hit intersectRaySphere(vec3 rayOrigin, vec3 rayDir, Sphere sphere) {
+    vec3 oc = rayOrigin - sphere.pos;
+    float b = dot( oc, rayDir );
+    float c = dot( oc, oc ) - sphere.radius*sphere.radius;
+    float h = b*b - c;
+    if( h<0.0 ) return noHit; // no intersection
+    h = sqrt(h);
+    float t = min(-b-h, -b+h);
+    vec3 point = rayOrigin + t * rayDir;
+    return Hit(t, normalize(point - sphere.pos));
+}
 
 // https://lousodrome.net/blog/light/2017/01/03/intersection-of-a-ray-and-a-cone/
 Hit intersectRayCone(vec3 rayOrigin, vec3 rayDir, AngleCone aCone) {
@@ -62,7 +82,7 @@ Hit intersectRayCone(vec3 rayOrigin, vec3 rayDir, AngleCone aCone) {
     float h = dot(cp, aCone.axis);
     if (h < 0. || h > aCone.height) return noHit;
 
-    float lineLen = length(branch.end - branch.start);
+    float lineLen = length(branchMain.end - branchMain.start);
 
     float d = aCone.height - lineLen;
 
@@ -74,27 +94,27 @@ Hit intersectRayCone(vec3 rayOrigin, vec3 rayDir, AngleCone aCone) {
 }
 
 AngleCone truncatedToAngleCone() {
-    float lineLen = length(branch.end - branch.start);
+    float lineLen = length(branchMain.end - branchMain.start);
     
     AngleCone aCone;
-    vec3 lineDir = normalize(branch.end - branch.start);
+    vec3 lineDir = normalize(branchMain.end - branchMain.start);
 
-    if(branch.highRadius == 0.0f) {
+    if(branchMain.highRadius == 0.0f) {
         aCone.height = lineLen;
-        aCone.cosa = lineLen / sqrt(branch.lowRadius*branch.lowRadius + lineLen * lineLen);
-        aCone.tip = branch.end;
+        aCone.cosa = lineLen / sqrt(branchMain.lowRadius*branchMain.lowRadius + lineLen * lineLen);
+        aCone.tip = branchMain.end;
         aCone.axis = -lineDir;
         return aCone;
     }
-    float d = branch.highRadius * lineLen / (branch.lowRadius - branch.highRadius);
+    float d = branchMain.highRadius * lineLen / (branchMain.lowRadius - branchMain.highRadius);
     
 
 
 
-    aCone.cosa = d/sqrt(d*d + branch.highRadius * branch.highRadius);
+    aCone.cosa = d/sqrt(d*d + branchMain.highRadius * branchMain.highRadius);
     aCone.height = d + lineLen;
 
-    aCone.tip = branch.start + lineDir * aCone.height;
+    aCone.tip = branchMain.start + lineDir * aCone.height;
 
     aCone.axis = -lineDir;
     return aCone;
@@ -103,22 +123,29 @@ AngleCone truncatedToAngleCone() {
 void main()
 {
     vec3 rayDir = normalize(fragPos - camPos);
-    vec3 mid = (branch.end + branch.start)/2.0;
-    float rad = max(branch.lowRadius, branch.highRadius);
+    vec3 mid = (branchMain.end + branchMain.start)/2.0;
+    float rad = max(branchMain.lowRadius, branchMain.highRadius);
 
     AngleCone aCone = truncatedToAngleCone();
 
-    Hit intersection = intersectRayCone(camPos, rayDir, aCone);
+    Sphere sphere = Sphere(branchMain.end, branchMain.highRadius);
 
+    Hit intersection = intersectRayCone(camPos, rayDir, aCone);
+    Hit sphereIntersection = intersectRaySphere(camPos, rayDir, sphere);
+    if(intersection.t == -1.0 || (sphereIntersection.t < intersection.t && sphereIntersection.t >= 0.0))
+        intersection = sphereIntersection;
+    
     if(intersection.t == -1.0) {
         //FragColor = vec4(0.0, 0.0, 0.0, 1.0);
         //return;
         discard;
     }
 
+    
+
     vec3 pos = camPos + rayDir * intersection.t;
 
     vec3 col = treeColor * (dot(intersection.normal, lightDir) * lightColor + ambientColor);
-
+    gl_FragDepth = intersection.t / MAX_DIST;
     FragColor = vec4(col, 1.0);
 } 

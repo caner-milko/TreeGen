@@ -18,7 +18,7 @@ struct Branch {
 	vec3 camCross;
 };
 
-uniform Branch branch;
+uniform Branch branchMain;
 
 void main()
 {
@@ -34,10 +34,15 @@ void main()
 	
 	float front = 2.0 * (0.5 - back);
 
-	float maxRadius = max(branch.lowRadius, branch.highRadius);
+	float maxRadius = max(branchMain.lowRadius, branchMain.highRadius);
 		float mid = 0.0;
 
-	vec3 pos = front * maxRadius * branch.camProjected + bottom * branch.start + (1.0 - bottom) * branch.end + maxRadius * rightSide * branch.camCross;
+	vec3 pos = front * maxRadius * branchMain.camProjected + bottom * branchMain.start + (1.0 - bottom) * branchMain.end + maxRadius * rightSide * branchMain.camCross;
+
+	vec3 center = (branchMain.end + branchMain.start) / 2.0;
+
+	vec3 dif = pos-center;
+	pos = dif * (1. + branchMain.lowRadius *2.0) + center;
 
 	fragPos = pos;
 

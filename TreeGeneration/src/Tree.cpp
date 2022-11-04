@@ -6,9 +6,7 @@
 Tree::Tree(TreeWorld& world, vec3 position, uint32 seed) : world(world),
 root(new TreeNode(nullptr, 0, position, vec3(0.0f, 1.0f, 0.0f))), seed(seed)
 {
-	root->length = growthData.baseLength;
-	budToMetamer(*root);
-	calculateRadiuses();
+
 }
 
 Tree::Tree(const Tree& from) : world(from.world), growthData(from.growthData), age(from.age), seed(from.seed), metamerCount(from.metamerCount), budCount(from.budCount)
@@ -30,6 +28,13 @@ Tree::Tree(const Tree& from) : world(from.world), growthData(from.growthData), a
 		queue.push(selected->lateralChild);
 		queue.push(selected->mainChild);
 	}
+}
+
+void Tree::init()
+{
+	root->length = growthData.baseLength;
+	budToMetamer(*root);
+	calculateRadiuses();
 }
 
 void Tree::budToMetamer(TreeNode& bud)
