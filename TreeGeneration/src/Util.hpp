@@ -11,15 +11,7 @@ namespace util {
 
 	//https://stackoverflow.com/questions/2659257/perturb-vector-by-some-angle
 	vec3 randomPerturbateVector(vec3 original, float angle, int seed);
-	static bool endsWith(const std::string& str, const std::string& suffix);
+	bool endsWith(std::string_view str, std::string_view suffix);
 
-	static bool startsWith(const std::string& str, const std::string& prefix);
-
-	static bool endsWith(const std::string& str, const char* suffix, uint32_t suffixLen);
-
-	static bool endsWith(const std::string& str, const char* suffix);
-
-	static bool startsWith(const std::string& str, const char* prefix, uint32_t prefixLen);
-
-	static bool startsWith(const std::string& str, const char* prefix);
+	bool startsWith(std::string_view str, std::string_view prefix);
 }

@@ -12,13 +12,18 @@ uniform vec3 viewDir;
 struct Branch {
 	vec3 start;
 	vec3 end;
+    vec3 mid;
 	float lowRadius;
 	float highRadius;
 	vec3 camProjected;
 	vec3 camCross;
+    vec3 color;
+    float branchLength;
+    float startLength;
+    float uvOffset;
 };
 
-uniform Branch branchMain;
+uniform Branch branch;
 
 void main()
 {
@@ -34,15 +39,15 @@ void main()
 	
 	float front = 2.0 * (0.5 - back);
 
-	float maxRadius = max(branchMain.lowRadius, branchMain.highRadius);
+	float maxRadius = max(branch.lowRadius, branch.highRadius);
 		float mid = 0.0;
 
-	vec3 pos = front * maxRadius * branchMain.camProjected + bottom * branchMain.start + (1.0 - bottom) * branchMain.end + maxRadius * rightSide * branchMain.camCross;
+	vec3 pos = front * maxRadius * branch.camProjected + bottom * branch.start + (1.0 - bottom) * branch.end + maxRadius * rightSide * branch.camCross;
 
-	vec3 center = (branchMain.end + branchMain.start) / 2.0;
+	vec3 center = (branch.end + branch.start) / 2.0;
 
 	vec3 dif = pos-center;
-	pos = dif * (1. + branchMain.lowRadius *2.0) + center;
+	pos = dif * (2. + branch.lowRadius) + center;
 
 	fragPos = pos;
 

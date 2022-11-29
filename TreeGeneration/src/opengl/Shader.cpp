@@ -3,32 +3,8 @@
 #include "./ResourceManager.h"
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
-Shader::Shader(std::string_view vertexPath, std::string_view fragmentPath) : vertexPath(vertexPath), fragmentPath(fragmentPath)
-{
-	compile();
-}
 
-void Shader::bind() const
-{
-	glUseProgram(handle);
-}
-
-void Shader::destroy()
-{
-	glDeleteProgram(handle);
-}
-
-int32 Shader::getUniformLocation(const std::string& name)
-{
-	auto found = uniformLocations.find(name);
-	if (found != uniformLocations.end())
-		return found->second;
-	int32_t loc = glGetUniformLocation(handle, name.c_str());
-	if (loc == -1)
-		std::cout << "Warning: uniform '" << name << "' doesn't exist!" << std::endl;
-	uniformLocations[name] = loc;
-	return loc;
-}
+#include <algorithm>
 
 
 template<>
@@ -37,8 +13,9 @@ Shader& Shader::setUniform(const uint32 location, const bool& value)
 	bind();
 	glUniform1i(location, (int)value);
 	return *this;
-}template<>
-Shader& Shader::setUniform(const uint32 location, const int& value)
+}
+template<>
+Shader& Shader::setUniform(const uint32 location, const int32& value)
 {
 	bind();
 	glUniform1i(location, value);
@@ -86,6 +63,46 @@ Shader& Shader::setUniform(const uint32 location, const mat4& val)
 	glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(val));
 	return *this;
 }
+
+
+Shader::Shader(std::string_view vertexPath, std::string_view fragmentPath) : vertexPath(vertexPath), fragmentPath(fragmentPath)
+{
+	compile();
+}
+
+void Shader::bind() const
+{
+	glUseProgram(handle);
+}
+
+void Shader::destroy()
+{
+	glDeleteProgram(handle);
+}
+
+int32 Shader::getUniformLocation(const std::string& name)
+{
+	auto found = uniformLocations.find(name);
+	if (found != uniformLocations.end())
+		return found->second;
+	int32_t loc = glGetUniformLocation(handle, name.c_str());
+	if (loc == -1)
+		std::cout << "Warning: uniform '" << name << "' doesn't exist!" << std::endl;
+	uniformLocations[name] = loc;
+	return loc;
+}
+
+int8 Shader::getTextureIndex(const uint32 location)
+{
+	auto found = textureIndices.find(location);
+	if (found != textureIndices.end())
+		return found->second;
+	uint8 index = textureIndices.insert({ location, textureIndices.size() }).first->second;
+	bind();
+	setUniform<int32>(location, index);
+	return index;
+}
+
 
 void Shader::compile()
 {

@@ -9,14 +9,20 @@ in vec2 uv;
 struct Branch {
 	vec3 start;
 	vec3 end;
+    vec3 mid;
 	float lowRadius;
 	float highRadius;
 	vec3 camProjected;
 	vec3 camCross;
+    vec3 color;
+    float branchLength;
+    float startLength;
+    float uvOffset;
 };
+
 uniform vec3 camPos;
 
-uniform Branch branchMain;
+uniform Branch branch;
 
 uniform vec3 treeColor;
 
@@ -82,7 +88,7 @@ Hit intersectRayCone(vec3 rayOrigin, vec3 rayDir, AngleCone aCone) {
     float h = dot(cp, aCone.axis);
     if (h < 0. || h > aCone.height) return noHit;
 
-    float lineLen = length(branchMain.end - branchMain.start);
+    float lineLen = length(branch.end - branch.start);
 
     float d = aCone.height - lineLen;
 
@@ -94,27 +100,27 @@ Hit intersectRayCone(vec3 rayOrigin, vec3 rayDir, AngleCone aCone) {
 }
 
 AngleCone truncatedToAngleCone() {
-    float lineLen = length(branchMain.end - branchMain.start);
+    float lineLen = length(branch.end - branch.start);
     
     AngleCone aCone;
-    vec3 lineDir = normalize(branchMain.end - branchMain.start);
+    vec3 lineDir = normalize(branch.end - branch.start);
 
-    if(branchMain.highRadius == 0.0f) {
+    if(branch.highRadius == 0.0f) {
         aCone.height = lineLen;
-        aCone.cosa = lineLen / sqrt(branchMain.lowRadius*branchMain.lowRadius + lineLen * lineLen);
-        aCone.tip = branchMain.end;
+        aCone.cosa = lineLen / sqrt(branch.lowRadius*branch.lowRadius + lineLen * lineLen);
+        aCone.tip = branch.end;
         aCone.axis = -lineDir;
         return aCone;
     }
-    float d = branchMain.highRadius * lineLen / (branchMain.lowRadius - branchMain.highRadius);
+    float d = branch.highRadius * lineLen / (branch.lowRadius - branch.highRadius);
     
 
 
 
-    aCone.cosa = d/sqrt(d*d + branchMain.highRadius * branchMain.highRadius);
+    aCone.cosa = d/sqrt(d*d + branch.highRadius * branch.highRadius);
     aCone.height = d + lineLen;
 
-    aCone.tip = branchMain.start + lineDir * aCone.height;
+    aCone.tip = branch.start + lineDir * aCone.height;
 
     aCone.axis = -lineDir;
     return aCone;
@@ -123,21 +129,19 @@ AngleCone truncatedToAngleCone() {
 void main()
 {
     vec3 rayDir = normalize(fragPos - camPos);
-    vec3 mid = (branchMain.end + branchMain.start)/2.0;
-    float rad = max(branchMain.lowRadius, branchMain.highRadius);
+    vec3 mid = (branch.end + branch.start)/2.0;
+    float rad = max(branch.lowRadius, branch.highRadius);
 
     AngleCone aCone = truncatedToAngleCone();
 
-    Sphere sphere = Sphere(branchMain.end, branchMain.highRadius);
+    Sphere sphere = Sphere(branch.end, branch.highRadius);
 
     Hit intersection = intersectRayCone(camPos, rayDir, aCone);
     Hit sphereIntersection = intersectRaySphere(camPos, rayDir, sphere);
-    if(intersection.t == -1.0 || (sphereIntersection.t < intersection.t && sphereIntersection.t >= 0.0))
+    if(intersection.t == -1.0)
         intersection = sphereIntersection;
     
     if(intersection.t == -1.0) {
-        //FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-        //return;
         discard;
     }
 

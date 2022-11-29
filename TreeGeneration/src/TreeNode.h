@@ -39,4 +39,30 @@ struct TreeNode
 	{
 		return startPos + length * direction;
 	}
+
+	TreeNode* dominantChild() const {
+		if (mainChild->bud) {
+			if (lateralChild->bud)
+				return nullptr;
+			return lateralChild;
+		}
+		if (lateralChild->bud)
+			return mainChild;
+		if (mainChild->radius >= lateralChild->radius)
+			return mainChild;
+		return lateralChild;
+	}
+
+	TreeNode* weakerChild() const {
+		if (mainChild->bud || lateralChild->bud) {
+			return nullptr;
+		}
+		if (mainChild->radius >= lateralChild->radius)
+			return lateralChild;
+		return mainChild;
+	}
+
+	bool isDominantChild() const {
+		return order == 0 || parent->dominantChild()->id == id;
+	}
 };

@@ -3,6 +3,7 @@
 #include "./Util.hpp"
 #include <iostream>
 #include <queue>
+#include <stack>
 Tree::Tree(TreeWorld& world, vec3 position, uint32 seed) : world(world),
 root(new TreeNode(nullptr, 0, position, vec3(0.0f, 1.0f, 0.0f))), seed(seed)
 {
@@ -92,7 +93,7 @@ void Tree::calculateShadows() const
 	calculateShadowsRecursive(*root);
 }
 
-std::vector<TreeNode> Tree::AsVector(bool includeBuds) const
+std::vector<TreeNode> Tree::AsNodeVector(bool includeBuds) const
 {
 	if (root->bud)
 		return {};
@@ -113,6 +114,50 @@ std::vector<TreeNode> Tree::AsVector(bool includeBuds) const
 	}
 
 	return nodes;
+}
+
+std::vector<Branch> Tree::AsBranchVector() const
+{
+	if (root->bud)
+		return {};
+	std::vector<Branch> branches;
+	std::stack<const TreeNode*> stack({ root });
+	float lastOffset = 0.0f;
+	vec3 lastPlaneNormal(1.0f, 0.0f, 0.0f);
+	float length = 0.0f;
+	while (!stack.empty()) {
+		const TreeNode* selected = stack.top();
+		stack.pop();
+
+		bool branchEnd = true;
+
+		const TreeNode* weakChild = selected->weakerChild();
+		if (weakChild != nullptr) {
+			stack.push(weakChild);
+		}
+		const TreeNode* domChild = selected->dominantChild();
+		if (domChild != nullptr) {
+			stack.push(domChild);
+			branchEnd = false;
+		}
+
+		Branch branch(*selected, length, lastPlaneNormal, lastOffset);
+
+		if (branchEnd) {
+			lastOffset = 0.0f;
+			lastPlaneNormal = vec3(1.0f, 0.0f, 0.0f);
+			length = 0.0f;
+		}
+		else {
+			lastOffset = branch.offset;
+			lastPlaneNormal = branch.bezierPlaneNormal;
+			length += branch.length;
+		}
+
+		branches.push_back(branch);
+	}
+
+	return branches;
 }
 
 Tree::~Tree()

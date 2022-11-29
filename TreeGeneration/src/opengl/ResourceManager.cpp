@@ -4,6 +4,12 @@
 
 #include "ResourceManager.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+#include "../Util.hpp"
+#include <optional>
+
+
 std::string ResourceManager::readTextFile(std::string_view path) const
 {
 	try
@@ -18,6 +24,66 @@ std::string ResourceManager::readTextFile(std::string_view path) const
 	}
 	return "";
 }
+
+
+ImageDataPtr loadJPG(std::string_view imgPath)
+{
+	stbi_set_flip_vertically_on_load(false);
+	int width, height, nrChannels;
+	uint8_t* data = stbi_load(imgPath.data(), &width, &height, &nrChannels, 0);
+
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "Error while loading texture." << std::endl;
+		return nullptr;
+	}
+
+	return std::make_unique<ImageData>(data, width, height, nrChannels);
+}
+
+ImageDataPtr loadPNG(std::string_view imgPath)
+{
+	stbi_set_flip_vertically_on_load(true);
+	int width, height, nrChannels;
+	uint8_t* data = stbi_load(imgPath.data(), &width, &height, &nrChannels, 0);
+
+	if (!data)
+	{
+		std::cout << "Error while loading texture." << std::endl;
+		return nullptr;
+	}
+
+	return std::make_unique<ImageData>(data, width, height, nrChannels);
+}
+
+ImageDataPtr ResourceManager::readImageFile(std::string_view path) const
+{
+	if (util::endsWith(path, ".jpg") || util::endsWith(path, ".jpeg"))
+	{
+		return loadJPG(path);
+	}
+	else if (util::endsWith(path, ".png"))
+	{
+		return loadPNG(path);
+	}
+	else
+	{
+		std::cout << "Image format not supported." << std::endl;
+		return nullptr;
+	}
+}
+Texture* ResourceManager::loadTexture(const std::string& name, std::string_view path)
+{
+	auto found = m_Textures.find(name);
+	if (found != m_Textures.end())
+		return &found->second;
+	return &m_Textures.insert({ name, Texture(path) }).first->second;
+}
 Shader* ResourceManager::loadShader(const std::string& name, std::string_view vertex_path, std::string_view fragment_path)
 {
 	auto found = m_Shaders.find(name);
@@ -29,4 +95,17 @@ Shader* ResourceManager::loadShader(const std::string& name, std::string_view ve
 void ResourceManager::ClearResources()
 {
 	m_Shaders.clear();
+}
+
+ImageData::ImageData(uint8_t* data, int32 width, int32 height, int32 nrChannels) : data(data), width(width), height(height), nrChannels(nrChannels)
+{
+}
+
+bool ImageData::isEmpty() {
+	return !data;
+}
+
+ImageData::~ImageData()
+{
+	stbi_image_free(data);
 }

@@ -143,23 +143,28 @@
     <ClCompile Include="dependencies\include\imgui\imgui_draw.cpp" />
     <ClCompile Include="dependencies\include\imgui\imgui_tables.cpp" />
     <ClCompile Include="dependencies\include\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\Branch.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\opengl\Camera.cpp" />
     <ClCompile Include="src\opengl\GLVertexArray.cpp" />
     <ClCompile Include="src\opengl\Renderer.cpp" />
     <ClCompile Include="src\opengl\ResourceManager.cpp" />
     <ClCompile Include="src\opengl\Shader.cpp" />
+    <ClCompile Include="src\opengl\Texture.cpp" />
     <ClCompile Include="src\Tree.cpp" />
     <ClCompile Include="src\TreeGenerator.cpp" />
     <ClCompile Include="src\TreeWorld.cpp" />
     <ClCompile Include="src\Util.cpp" />
     <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="src\Branch.h" />
     <ClInclude Include="src\opengl\Camera.h" />
     <ClInclude Include="src\opengl\DrawView.h" />
     <ClInclude Include="src\opengl\GLVertexArray.h" />
     <ClInclude Include="src\opengl\Renderer.h" />
     <ClInclude Include="src\opengl\ResourceManager.h" />
     <ClInclude Include="src\opengl\Shader.h" />
+    <ClInclude Include="src\opengl\Texture.h" />
+    <ClInclude Include="src\TreeApplication.h" />
     <ClInclude Include="src\Util.hpp" />
   </ItemGroup>
   <ItemGroup>

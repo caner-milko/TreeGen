@@ -1,5 +1,6 @@
 #pragma once
 #include "TreeNode.h"
+#include "Branch.h"
 #include <unordered_map>
 #include <glm/gtc/constants.hpp>
 
@@ -63,8 +64,9 @@ public:
 
 	void calculateShadows() const;
 
-	std::vector<TreeNode> AsVector(bool includeBuds) const;
+	std::vector<TreeNode> AsNodeVector(bool includeBuds) const;
 
+	std::vector<Branch> AsBranchVector() const;
 
 
 	~Tree();

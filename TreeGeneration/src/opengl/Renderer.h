@@ -16,7 +16,7 @@ public:
 	void endFrame();
 	//void render(DrawView view, DrawCall* drawCalls, uint32 count);
 	void renderTree(DrawView view, Shader* shader, const TreeNode* root);
-	void renderTree2(DrawView view, Shader* shader, const std::vector<TreeNode>& nodes);
+	void renderTree2(DrawView view, Shader* shader, const std::vector<Branch>& branches);
 
 	void renderShadowPoints(DrawView view, Shader* shader, const std::vector<std::tuple<vec3, float>>& points);
 

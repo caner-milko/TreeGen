@@ -14,10 +14,10 @@
 #include "./opengl/Renderer.h"
 #include "./opengl/ResourceManager.h"
 
+#include "./Branch.h"
 
-
-int width = 800;
-int height = 800;
+int width = 1920;
+int height = 1080;
 
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float currentFrame = 0.0f;
@@ -56,7 +56,7 @@ int main() {
 	world = std::make_unique<TreeWorld>(worldSizeX / baseLen * 2.0f, worldSizeY / baseLen * 2.0f, worldSizeZ / baseLen * 2.0f, vec3(-12.5f, 0.0f, -12.5f), baseLen / 2.0f);
 
 	tree = generator->createTree(*world, vec3(0.0f));
-	tree2 = generator->createTree(*world, vec3(2.0f, 0.0f, 0.0f));
+	tree2 = generator->createTree(*world, vec3(2.0f, 0.0f, 1.0f));
 
 	tree->growthData.baseLength = baseLen;
 	tree2->growthData.baseLength = baseLen;
@@ -131,6 +131,8 @@ int main() {
 	Shader* treeQuadShader = ResourceManager::getInstance().loadShader("treeQuad_shader", "./Assets/Shaders/treeQuad_vert.glsl", "./Assets/Shaders/treeQuad_frag.glsl");
 	Shader* treeQuadMarchShader = ResourceManager::getInstance().loadShader("treeQuadMarch_shader", "./Assets/Shaders/treeQuad_vert.glsl", "./Assets/Shaders/treeQuadMarch_frag.glsl");
 
+	Texture* tex = ResourceManager::getInstance().loadTexture("test", "./Assets/Textures/bark.jpg");
+
 	float shadowCellVisibilityRadius = 10.0f;
 	bool showShadowGrid = false;
 	bool renderPreviewTree = false;
@@ -176,6 +178,7 @@ int main() {
 		{
 
 			ImGui::Begin("Tree Generator");
+
 			if (ImGui::CollapsingHeader("Tree Growth Data")) {
 				TreeGrowthData& growthData = tree->growthData;
 
@@ -208,6 +211,8 @@ int main() {
 				treeSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Multiplier", &growthData.a, 0.1f, 3.0f);
 				treeSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Base", &growthData.b, 1.1f, 3.0f);
 				tree2->growthData = growthData;
+
+
 
 			}
 
@@ -242,11 +247,11 @@ int main() {
 
 		Tree* selTree = renderPreviewTree ? previewTree.get() : tree;
 
-		std::vector<TreeNode> nodes = selTree->AsVector(false);
+		auto nodes = selTree->AsBranchVector();
 
-		renderer.renderTree2(view, treeQuadShader, nodes);
+		renderer.renderTree2(view, treeQuadMarchShader, nodes);
 
-		nodes = tree2->AsVector(false);
+		nodes = tree2->AsBranchVector();
 		renderer.renderTree2(view, treeQuadMarchShader, nodes);
 
 		if (showShadowGrid) {
@@ -254,9 +259,9 @@ int main() {
 			//std::vector<std::tuple<vec3, float>> cells = world->renderShadowCells(cam.getCameraPosition(), cam.getCameraDirection(), cam.getFov(), shadowCellVisibilityRadius);
 
 			//renderer.renderShadowPoints(view, shadowPointShader, cells);
-			std::vector<TreeNode> buds = selTree->AsVector(true);
+			std::vector<TreeNode> buds = selTree->AsNodeVector(true);
 			renderer.renderShadowsOnBuds(view, shadowPointShader, *world, buds);
-			buds = tree2->AsVector(true);
+			buds = tree2->AsNodeVector(true);
 			renderer.renderShadowsOnBuds(view, shadowPointShader, *world, buds);
 		}
 
