@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp> 
+#include <glm/gtx/quaternion.hpp>
 typedef uint8_t uint8;
 typedef int8_t int8;
 typedef uint16_t uint16;
@@ -18,3 +20,5 @@ typedef glm::ivec2 ivec2;
 typedef glm::mat4 mat4;
 typedef glm::mat3 mat3;
 typedef vec3 Color;
+typedef glm::quat quat;
+const float PI = glm::pi<float>();

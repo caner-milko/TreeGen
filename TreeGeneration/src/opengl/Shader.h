@@ -20,6 +20,7 @@ public:
 	template<typename T>
 	Shader& setUniform(const uint32 location, const T& value);
 	int32 getUniformLocation(const std::string& name);
+	int8 getTextureIndex(const std::string& name);
 	int8 getTextureIndex(const uint32 location);
 private:
 	ShaderHandle handle;

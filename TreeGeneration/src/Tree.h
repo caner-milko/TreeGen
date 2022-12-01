@@ -1,6 +1,7 @@
 #pragma once
 #include "TreeNode.h"
 #include "Branch.h"
+#include "Leaf.h"
 #include <unordered_map>
 #include <glm/gtc/constants.hpp>
 
@@ -29,6 +30,11 @@ struct TreeGrowthData
 	float a = 0.8f;
 	//b > 1
 	float b = 1.3f;
+
+	//leaf params
+	float leafMaxWidth = 0.2f;
+	float leafDensity = 1.0f;
+
 };
 
 struct Tree
@@ -50,6 +56,8 @@ public:
 
 	void budToMetamer(TreeNode& bud);
 
+	void startGrow();
+
 	float accumulateLight();
 
 	void distributeVigor();
@@ -60,18 +68,27 @@ public:
 
 	void calculateRadiuses();
 
+	void endGrow();
+
 	void printTreeRecursive(TreeNode& node, const std::string& prefix) const;
 
 	void calculateShadows() const;
 
 	std::vector<TreeNode> AsNodeVector(bool includeBuds) const;
 
-	std::vector<Branch> AsBranchVector() const;
 
+
+	const std::vector<Branch>& getBranchs();
+
+	const std::vector<Branch>& recalculateBranchs();
+
+	void generateLeaves();
 
 	~Tree();
 
 private:
+
+	std::vector<Branch> branchs;
 	float accumulateLightRecursive(TreeNode& node);
 	void distributeVigorRecursive(TreeNode& node);
 	void addShootsRecursive(TreeNode& node);

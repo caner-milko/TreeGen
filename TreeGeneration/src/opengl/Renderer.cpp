@@ -7,25 +7,71 @@ void Renderer::init()
 {
 	glEnable(GL_DEPTH_TEST);
 
-	quadVAO.init();
-	quadVAO.bind();
-	const uint32 indices[] = {
-			0, 1, 2,
-			1, 3, 2,
+	float skyboxVertices[] = {
+		// positions          
+		-1.0f,  1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
 
-			3, 4, 2,
-			3, 5, 4,
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
 
-			1, 0, 6,
-			1, 6, 7
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		-1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f
 	};
-	quadVAO.attachBuffer(GLVertexArray::BufferType::ELEMENT, sizeof(indices), GLVertexArray::DrawMode::STATIC, indices);
 
-	lineVAO.init();
-	lineVAO.bind();
-	const float lineData[] = { 0.0f, 1.0f };
-	lineVAO.attachBuffer(GLVertexArray::BufferType::ARRAY, sizeof(lineData), GLVertexArray::DrawMode::STATIC, lineData);
-	lineVAO.enableAttribute(0, 2, sizeof(float), nullptr);
+	cubeVAO.init();
+	cubeVAO.bind();
+	cubeVAO.attachBuffer(GLVertexArray::BufferType::ARRAY, sizeof(skyboxVertices), GLVertexArray::DrawMode::STATIC, skyboxVertices);
+	cubeVAO.enableAttribute(0, 3, 3 * sizeof(float), nullptr);
+
+	float quadVertices[] = {
+		// positions
+		 -0.5f,  1.0f,
+		 -0.5f,  0.0f,
+		 0.5f,  0.0f,
+
+		 0.5f,  0.0f,
+		 0.5f,  1.0f,
+		-0.5f,  1.0f,
+	};
+	leafQuadVAO.init();
+	leafQuadVAO.bind();
+	leafQuadVAO.attachBuffer(GLVertexArray::BufferType::ARRAY, sizeof(quadVertices), GLVertexArray::DrawMode::STATIC, quadVertices);
+
+	leafQuadVAO.enableAttribute(0, 2, 2 * sizeof(float), nullptr);
 
 	pointVAO.init();
 	pointVAO.bind();
@@ -41,13 +87,31 @@ void Renderer::startFrame()
 {
 	glClearColor(0.0f, 0.3f, 0.2f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glDepthFunc(GL_LESS);
+	glEnable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
 }
 
 void Renderer::endFrame()
 {
+	lastShader = nullptr;
 }
 
-void Renderer::renderTree(DrawView view, Shader* shader, const TreeNode* root)
+void Renderer::renderPlane(DrawView view, Shader* shader, mat4 model)
+{
+	glDisable(GL_CULL_FACE);
+	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
+	leafQuadVAO.bind();
+	shader->bind();
+	shader->setUniform("VP", vp);
+	shader->setUniform("model", model);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glEnable(GL_CULL_FACE);
+}
+
+
+/*void Renderer::renderTree(DrawView view, Shader* shader, const TreeNode* root)
 {
 	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
 
@@ -69,69 +133,28 @@ void Renderer::renderTree(DrawView view, Shader* shader, const TreeNode* root)
 			glDrawArrays(GL_LINES, 0, 2);
 		}
 	}
-}
-
-/*void Renderer::renderTree2(DrawView view, Shader* shader, const std::vector<TreeNode>& nodes)
-{
-	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
-
-	shader->bind();
-	quadVAO.bind();
-
-	shader->setUniform("VP", vp);
-	vec3 camPos = view.camera.getCameraPosition();
-	vec3 camDir = view.camera.getCameraDirection();
-	shader->setUniform("camPos", camPos);
-	shader->setUniform("viewDir", camDir);
-	shader->setUniform("ambientColor", vec3(0.3f, 0.3f, 0.3f));
-	shader->setUniform("lightColor", vec3(1.0f, 1.0f, 1.0f));
-	shader->setUniform("lightDir", glm::normalize(vec3(0.3, 0.6, 0.2)));
-	shader->setUniform("treeColor", vec3(166.0f / 255.0f, 123.0f / 255.0f, 81.0f / 255.0f));
-
-	std::vector<Branch> branches(nodes.size());
-
-	for (auto& node : nodes) {
-		Branch mainBranch(node, camPos);
-	}
-
-	for (auto& node : nodes) {
-		vec3 dif = camPos - node.startPos;
-		vec3 dirToCam = glm::normalize(dif);
-		vec3 dir = node.direction;
-		float dot = glm::dot(dir, dirToCam);
-
-		vec3 camProjected = glm::normalize(dirToCam - dot * dir);
-		vec3 camCross = glm::normalize(glm::cross(dir, camProjected));
-
-
-		Branch mainBranch(node, camPos);
-
-		shader->setUniform("branch.start", mainBranch.A);
-		shader->setUniform("branch.mid", mainBranch.B);
-		shader->setUniform("branch.end", mainBranch.C);
-
-		shader->setUniform("branch.camProjected", camProjected);
-		shader->setUniform("branch.camCross", camCross);
-
-		shader->setUniform("branch.lowRadius", mainBranch.lowRadius);
-		shader->setUniform("branch.highRadius", mainBranch.highRadius);
-
-
-		uint32 colorSelected = node.order;
-		shader->setUniform("branch.color", vec3(util::IntNoise2D(colorSelected), util::IntNoise2D(colorSelected, 1), util::IntNoise2D(colorSelected, 2)) * 0.5f + 0.5f);
-
-		glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
-	}
 }*/
 
-void Renderer::renderTree2(DrawView view, Shader* shader, const std::vector<Branch>& branches)
+void Renderer::renderTree2(DrawView view, Texture* barkTex, Shader* shader, const std::vector<Branch>& branches)
 {
 	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
 
+	glEnable(GL_CULL_FACE);
+
+	glCullFace(GL_BACK);
+
+	glFrontFace(GL_CCW);
+
+	glDepthFunc(GL_LEQUAL);
+
 	shader->bind();
-	quadVAO.bind();
+	cubeVAO.bind();
 
 	shader->setUniform("VP", vp);
+
+	glActiveTexture(GL_TEXTURE0 + shader->getTextureIndex("barkTexture"));
+	barkTex->bind();
+
 	vec3 camPos = view.camera.getCameraPosition();
 	vec3 camDir = view.camera.getCameraDirection();
 	shader->setUniform("camPos", camPos);
@@ -140,21 +163,19 @@ void Renderer::renderTree2(DrawView view, Shader* shader, const std::vector<Bran
 	shader->setUniform("lightColor", vec3(1.0f, 1.0f, 1.0f));
 	shader->setUniform("lightDir", glm::normalize(vec3(-0.3, 0.6, -0.2)));
 	shader->setUniform("treeColor", vec3(166.0f / 255.0f, 123.0f / 255.0f, 81.0f / 255.0f));
+	shader->setUniform("farPlane", view.camera.getFarPlane());
+	shader->setUniform("nearPlane", view.camera.getNearPlane());
 	for (auto& branch : branches) {
 		vec3 dif = camPos - branch.A;
 		vec3 dirToCam = glm::normalize(dif);
 		vec3 dir = glm::normalize(branch.C - branch.A);
 		float dot = glm::dot(dir, dirToCam);
 
-		vec3 camProjected = glm::normalize(dirToCam - dot * dir);
-		vec3 camCross = glm::normalize(glm::cross(dir, camProjected));
-
 		shader->setUniform("branch.start", branch.A);
 		shader->setUniform("branch.mid", branch.B);
 		shader->setUniform("branch.end", branch.C);
 
-		shader->setUniform("branch.camProjected", camProjected);
-		shader->setUniform("branch.camCross", camCross);
+		shader->setUniform("model", branch.boundingBox.asModel());
 
 		shader->setUniform("branch.lowRadius", branch.lowRadius);
 		shader->setUniform("branch.highRadius", branch.highRadius);
@@ -167,8 +188,34 @@ void Renderer::renderTree2(DrawView view, Shader* shader, const std::vector<Bran
 		uint32 colorSelected = branch.from.order;
 		shader->setUniform("branch.color", vec3(util::IntNoise2D(colorSelected), util::IntNoise2D(colorSelected, 1), util::IntNoise2D(colorSelected, 2)) * 0.5f + 0.5f);
 
-		glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
+
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
+}
+
+void Renderer::renderLeaves(DrawView view, Texture* leafTex, Shader* shader, const std::vector<Branch>& branches)
+{
+	glDisable(GL_CULL_FACE);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
+
+
+
+	leafQuadVAO.bind();
+	shader->bind();
+
+	shader->setUniform("VP", vp);
+	glActiveTexture(GL_TEXTURE0 + shader->getTextureIndex("leafTex"));
+	leafTex->bind();
+	for (auto& branch : branches) {
+		for (auto& leaf : branch.leaves) {
+			shader->setUniform("model", leaf.model);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
+	}
+	glDisable(GL_BLEND);
+	glEnable(GL_CULL_FACE);
 }
 
 
@@ -202,6 +249,33 @@ void Renderer::renderShadowsOnBuds(DrawView view, Shader* shader, const TreeWorl
 			ShadowCell cell = world.getCellAt(world.coordinateToCell(node.startPos));
 			RenderShadowPoint(shader, node.startPos, cell.shadow);
 		}
+	}
+}
+
+void Renderer::setupSkybox(CubemapTexture* skyboxTexture, Shader* skyboxShader)
+{
+	this->skyboxShader = skyboxShader;
+	this->skyboxTexture = skyboxTexture;
+}
+
+void Renderer::renderSkybox(DrawView view)
+{
+	glEnable(GL_CULL_FACE);
+
+	glCullFace(GL_BACK);
+
+	glFrontFace(GL_CCW);
+
+	glDepthFunc(GL_LEQUAL);
+
+	if (skyboxTexture && skyboxShader) {
+		mat4 vp = view.camera.getProjectionMatrix() * glm::mat4(glm::mat3(view.camera.getViewMatrix()));
+		skyboxShader->bind();
+		cubeVAO.bind();
+		glActiveTexture(GL_TEXTURE0 + skyboxShader->getTextureIndex("skybox"));
+		skyboxTexture->bind();
+		skyboxShader->setUniform("skybox_vp", vp);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 }
 

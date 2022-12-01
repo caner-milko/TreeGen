@@ -8,6 +8,7 @@ Tree* TreeGenerator::createTree(TreeWorld& world, vec3 position)
 void TreeGenerator::growTree(Tree& tree)
 {
 	tree.age++;
+	tree.startGrow();
 	tree.world.calculateShadows();
 
 	tree.accumulateLight();
@@ -16,4 +17,5 @@ void TreeGenerator::growTree(Tree& tree)
 
 	tree.addNewShoots();
 	tree.calculateRadiuses();
+	tree.endGrow();
 }

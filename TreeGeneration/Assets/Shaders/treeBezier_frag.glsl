@@ -2,26 +2,30 @@
 out vec4 FragColor;
 out float gl_FragDepth;
 in vec3 fragPos;
-in vec2 uv;
+
+#define SHOW_BBOX 0
+
 
 #define MAX_STEPS 150.0
 #define MAX_DIST 40.0
 #define MIN_DIST 0.0001
 #define PI 3.14159265359
+
+
 struct Branch {
 	vec3 start;
 	vec3 end;
     vec3 mid;
 	float lowRadius;
 	float highRadius;
-	vec3 camProjected;
-	vec3 camCross;
     vec3 color;
     float branchLength;
     float startLength;
     float uvOffset;
 };
 uniform vec3 camPos;
+uniform float farPlane, nearPlane;
+
 
 uniform Branch branch;
 
@@ -179,9 +183,18 @@ void main()
 	Hit hit = intersect(camPos, rayDir);
     
 	if(hit.normal.x < -1.5) {
+        #if SHOW_BBOX
+        FragColor = vec4(vec3(1.0), 1.0);
+        gl_FragDepth = 0.999;
+        #else
 		discard;
-	}
-    gl_FragDepth = hit.t / MAX_DIST;
+        return;
+	    #endif
+    }
+
+    float dist = (1.0/hit.t - 1.0/nearPlane)/(1.0/farPlane - 1.0/nearPlane);
+
+    gl_FragDepth = dist;
 
     vec3 light = dot(hit.normal, lightDir) * lightColor + ambientColor;
 

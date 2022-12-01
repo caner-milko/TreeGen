@@ -11,12 +11,12 @@ struct TreeWorld
 	uint32 seed = 0;
 	std::vector<std::unique_ptr<Tree>> trees;
 	std::vector<ShadowCell> shadowGrid;
-	int xSize, ySize, zSize;
+	ivec3 worldSize;
 	float cellSize;
 	vec3 leftBottomCorner;
-	TreeWorld(int xSize, int ySize, int zSize, vec3 leftBottomCorner, float cellSize, uint32 seed = 0);
+	TreeWorld(ivec3 worldSize, vec3 leftBottomCorner, float cellSize, uint32 seed = 0);
 
-	void resizeShadowGrid(int xSize, int ySize, int zSize, vec3 leftBottomCorner, float cellSize);
+	void resizeShadowGrid(ivec3 worldSize, vec3 leftBottomCorner, float cellSize);
 
 	void calculateShadows();
 	Tree* createTree(vec3 position);

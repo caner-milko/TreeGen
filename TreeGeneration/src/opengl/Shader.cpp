@@ -85,11 +85,19 @@ int32 Shader::getUniformLocation(const std::string& name)
 	auto found = uniformLocations.find(name);
 	if (found != uniformLocations.end())
 		return found->second;
-	int32_t loc = glGetUniformLocation(handle, name.c_str());
+	int32 loc = glGetUniformLocation(handle, name.c_str());
 	if (loc == -1)
 		std::cout << "Warning: uniform '" << name << "' doesn't exist!" << std::endl;
 	uniformLocations[name] = loc;
 	return loc;
+}
+
+int8 Shader::getTextureIndex(const std::string& name)
+{
+	int32 uniformLoc = getUniformLocation(name);
+	if (uniformLoc == -1)
+		return -1;
+	return getTextureIndex(uniformLoc);
 }
 
 int8 Shader::getTextureIndex(const uint32 location)

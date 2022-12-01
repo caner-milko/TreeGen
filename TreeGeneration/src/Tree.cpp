@@ -51,6 +51,11 @@ void Tree::budToMetamer(TreeNode& bud)
 	budCount++;
 }
 
+void Tree::startGrow()
+{
+	branchs.clear();
+}
+
 float Tree::accumulateLight()
 {
 	accumulateLightRecursive(*root);
@@ -75,6 +80,10 @@ void Tree::addNewShoots()
 void Tree::calculateRadiuses()
 {
 	calculateRadiusRecursive(*root);
+}
+
+void Tree::endGrow()
+{
 }
 
 void Tree::printTreeRecursive(TreeNode& node, const std::string& prefix) const
@@ -116,11 +125,17 @@ std::vector<TreeNode> Tree::AsNodeVector(bool includeBuds) const
 	return nodes;
 }
 
-std::vector<Branch> Tree::AsBranchVector() const
+const std::vector<Branch>& Tree::getBranchs()
 {
+	if (!branchs.empty())
+		return branchs;
+	return recalculateBranchs();
+}
+
+const std::vector<Branch>& Tree::recalculateBranchs() {
+	branchs.clear();
 	if (root->bud)
-		return {};
-	std::vector<Branch> branches;
+		return branchs;
 	std::stack<const TreeNode*> stack({ root });
 	float lastOffset = 0.0f;
 	vec3 lastPlaneNormal(1.0f, 0.0f, 0.0f);
@@ -153,11 +168,17 @@ std::vector<Branch> Tree::AsBranchVector() const
 			lastPlaneNormal = branch.bezierPlaneNormal;
 			length += branch.length;
 		}
-
-		branches.push_back(branch);
+		branchs.push_back(branch);
 	}
+	generateLeaves();
+	return branchs;
+}
 
-	return branches;
+void Tree::generateLeaves()
+{
+	for (auto& branch : branchs) {
+		branch.generateLeaves(growthData.leafMaxWidth, growthData.leafDensity);
+	}
 }
 
 Tree::~Tree()

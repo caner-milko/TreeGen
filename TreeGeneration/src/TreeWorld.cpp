@@ -1,18 +1,16 @@
 #include "TreeWorld.h"
 #include "./Util.hpp"
-TreeWorld::TreeWorld(int xSize, int ySize, int zSize, vec3 leftBottomCorner, float cellSize, uint32 seed) : seed(seed)
+TreeWorld::TreeWorld(ivec3 worldSize, vec3 leftBottomCorner, float cellSize, uint32 seed) : seed(seed)
 {
-	resizeShadowGrid(xSize, ySize, zSize, leftBottomCorner, cellSize);
+	resizeShadowGrid(worldSize, leftBottomCorner, cellSize);
 }
 
-void TreeWorld::resizeShadowGrid(int xSize, int ySize, int zSize, vec3 leftBottomCorner, float cellSize)
+void TreeWorld::resizeShadowGrid(ivec3 worldSize, vec3 leftBottomCorner, float cellSize)
 {
-	this->xSize = xSize;
-	this->ySize = ySize;
-	this->zSize = zSize;
+	this->worldSize = worldSize;
 	this->leftBottomCorner = leftBottomCorner;
 	this->cellSize = cellSize;
-	this->shadowGrid = std::vector(xSize * ySize * zSize, ShadowCell());
+	this->shadowGrid = std::vector(worldSize.x * worldSize.y * worldSize.z, ShadowCell());
 }
 
 void TreeWorld::calculateShadows()
@@ -31,7 +29,7 @@ Tree* TreeWorld::createTree(vec3 position)
 float TreeWorld::getLightAt(const vec3& position, float a, float fullExposure)
 {
 	ivec3 relScaledPos = coordinateToCell(position);
-	if (relScaledPos.x < 0 || relScaledPos.x >= xSize || relScaledPos.y < 0 || relScaledPos.y >= ySize || relScaledPos.z < 0 || relScaledPos.z >= zSize)
+	if (relScaledPos.x < 0 || relScaledPos.x >= worldSize.x || relScaledPos.y < 0 || relScaledPos.y >= worldSize.y || relScaledPos.z < 0 || relScaledPos.z >= worldSize.z)
 		return 0.0f;
 	return glm::max(fullExposure - getCellAt(relScaledPos).shadow + a, 0.0f);
 }
@@ -46,9 +44,9 @@ vec3 TreeWorld::getOptimalDirection(const vec3& position, const vec3& direction,
 	float scaledPerception = perceptionRadius / cellSize;
 	int perceptionFloor = static_cast<int>(glm::floor(scaledPerception));
 	int perceptionCeil = static_cast<int>(glm::ceil(scaledPerception));
-	for (int i = glm::max(relScaledPos.x - perceptionFloor, 0); i <= glm::min(relScaledPos.x + perceptionCeil, xSize - 1); i++) {
-		for (int j = glm::max(relScaledPos.y - perceptionFloor, 0); j <= glm::min(relScaledPos.y + perceptionCeil, ySize - 1); j++) {
-			for (int k = glm::max(relScaledPos.z - perceptionFloor, 0); k <= glm::min(relScaledPos.z + perceptionCeil, zSize - 1); k++) {
+	for (int i = glm::max(relScaledPos.x - perceptionFloor, 0); i <= glm::min(relScaledPos.x + perceptionCeil, worldSize.x - 1); i++) {
+		for (int j = glm::max(relScaledPos.y - perceptionFloor, 0); j <= glm::min(relScaledPos.y + perceptionCeil, worldSize.y - 1); j++) {
+			for (int k = glm::max(relScaledPos.z - perceptionFloor, 0); k <= glm::min(relScaledPos.z + perceptionCeil, worldSize.z - 1); k++) {
 
 				ivec3 cellPos = ivec3(i, j, k);
 				vec3 cellCoord = cellToCoordinate(cellPos);
@@ -84,10 +82,10 @@ void TreeWorld::castShadows(const vec3& pos, int pyramidHeight, float a, float b
 		int j = relScaledPos.y - q;
 		if (j < 0)
 			break;
-		if (j >= ySize)
+		if (j >= worldSize.y)
 			continue;
-		for (int i = glm::max(relScaledPos.x - q, 0); i <= glm::min(relScaledPos.x + q, xSize - 1); i++) {
-			for (int k = glm::max(relScaledPos.z - q, 0); k <= glm::min(relScaledPos.z + q, zSize - 1); k++) {
+		for (int i = glm::max(relScaledPos.x - q, 0); i <= glm::min(relScaledPos.x + q, worldSize.x - 1); i++) {
+			for (int k = glm::max(relScaledPos.z - q, 0); k <= glm::min(relScaledPos.z + q, worldSize.z - 1); k++) {
 				float s = a * glm::pow(b, -q);
 				addShadowTo(ivec3(i, j, k), s);
 			}
@@ -111,7 +109,7 @@ vec3 TreeWorld::cellToCoordinate(const ivec3& cell) const
 
 int TreeWorld::cellToIndex(const ivec3& cell) const
 {
-	return xSize * ySize * cell.z + xSize * cell.y + cell.x;
+	return worldSize.x * worldSize.y * cell.z + worldSize.x * cell.y + cell.x;
 }
 
 std::vector<std::tuple<vec3, float>> TreeWorld::renderShadowCells(const vec3& camPos, const vec3& viewDir, float fov, float visibilityRadius) const
@@ -125,9 +123,9 @@ std::vector<std::tuple<vec3, float>> TreeWorld::renderShadowCells(const vec3& ca
 
 	float fovCos = glm::cos(fov);
 	std::vector<std::tuple<vec3, float>> cells;
-	for (int i = glm::max(camToCell.x - visibilityScaledFloored, 0); i <= glm::min(camToCell.x + visibilityScaledCeiled, xSize - 1); i++) {
-		for (int j = glm::max(camToCell.y - visibilityScaledFloored, 0); j <= glm::min(camToCell.y + visibilityScaledCeiled, ySize - 1); j++) {
-			for (int k = glm::max(camToCell.z - visibilityScaledFloored, 0); k <= glm::min(camToCell.z + visibilityScaledCeiled, zSize - 1); k++) {
+	for (int i = glm::max(camToCell.x - visibilityScaledFloored, 0); i <= glm::min(camToCell.x + visibilityScaledCeiled, worldSize.x - 1); i++) {
+		for (int j = glm::max(camToCell.y - visibilityScaledFloored, 0); j <= glm::min(camToCell.y + visibilityScaledCeiled, worldSize.y - 1); j++) {
+			for (int k = glm::max(camToCell.z - visibilityScaledFloored, 0); k <= glm::min(camToCell.z + visibilityScaledCeiled, worldSize.z - 1); k++) {
 
 				ivec3 cellPos = ivec3(i, j, k);
 				vec3 cellCoord = cellToCoordinate(cellPos);

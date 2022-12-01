@@ -21,3 +21,13 @@ Texture::Texture(std::string_view path, TextureWrapping wrapping, TextureFilteri
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 }
+
+void Texture::bind()
+{
+	glBindTexture(GL_TEXTURE_2D, handle);
+}
+
+void Texture::destroy()
+{
+	glDeleteTextures(1, &handle);
+}
