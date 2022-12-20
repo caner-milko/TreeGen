@@ -1,8 +1,8 @@
 #include "TreeGenerator.h"
 
-Tree* TreeGenerator::createTree(TreeWorld& world, vec3 position)
+Tree* TreeGenerator::createTree(TreeWorld& world, vec3 position, TreeGrowthData growthData)
 {
-	return world.createTree(position);
+	return world.createTree(position, growthData);
 }
 
 void TreeGenerator::growTree(Tree& tree)
@@ -12,10 +12,17 @@ void TreeGenerator::growTree(Tree& tree)
 	tree.world.calculateShadows();
 
 	tree.accumulateLight();
-	tree.root->vigor = tree.root->light;
 	tree.distributeVigor();
 
+
 	tree.addNewShoots();
-	tree.calculateRadiuses();
+	if (tree.growthData.shouldShed) {
+		tree.shedBranchs();
+	}
+
+	tree.calculateChildCount();
+
 	tree.endGrow();
+
+
 }

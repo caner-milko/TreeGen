@@ -5,6 +5,6 @@
 class TreeGenerator
 {
 public:
-	Tree* createTree(TreeWorld& world, vec3 position);
+	Tree* createTree(TreeWorld& world, vec3 position, TreeGrowthData growthData = {});
 	void growTree(Tree& tree);
 };

@@ -1,5 +1,4 @@
-#version 330 core
-layout (location = 0) in float empty;
+#version 460 core
 
 uniform mat4 VP;
 

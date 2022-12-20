@@ -10,30 +10,37 @@ struct TreeWorld;
 
 struct TreeGrowthData
 {
-	float apicalControl = 0.5f;
-	float baseLength = .25f;
+	float apicalControl = 0.50f;
+	float vigorMultiplier = 2.0f;
+	float baseLength = .02f;
 
-	float baseRadius = 0.02f;
+	float baseRadius = 0.0005f;
 	float radiusN = 2.5f;
-	//bud fate
-	float perceptionRadius = 5.0;
-	float perceptionAngle = glm::radians(45.0f);
+	float branchCurviness = 0.5f;
 	//lateral
 	float lateralAngle = glm::radians(45.0f);
 	//
-	vec3 tropism = vec3(0.0f, -1.0f, 0.0f);
+	vec3 tropism = vec3(0.0f, 1.0f, 0.0f);
 	//default, optimal, tropism
-	vec3 directionWeights = glm::normalize(vec3(0.6f, 0.4f, 0.1f));
+	vec2 directionWeights = vec2(0.1f, 0.1f);
 	//shadows
-	float fullExposure = 4.0f;
-	int pyramidHeight = 5;
+	float fullExposure = 2.5f;
+
+	int32 pyramidHeight = 6;
 	float a = 0.8f;
 	//b > 1
-	float b = 1.3f;
+	float b = 1.5f;
+
+	//shedding
+	bool shouldShed = true;
+	float shedMultiplier = 0.3f;
+	float shedExp = 1.5f;
 
 	//leaf params
-	float leafMaxWidth = 0.2f;
-	float leafDensity = 1.0f;
+	int32 leafMaxChildCount = 5;
+	int32 leafMinOrder = 4;
+	float leafDensity = 20.0f;
+	float leafSizeMultiplier = 0.2f;
 
 };
 
@@ -43,16 +50,17 @@ public:
 	TreeWorld& world;
 	TreeGrowthData growthData{};
 	uint32 age = 0;
+	uint32 id;
 	uint32 seed = 0;
+	uint32 maxOrder = 0;
+	uint32 lastNodeId = 1;
 	TreeNode* root;
 
-	int metamerCount = 0;
-	int budCount = 0;
+	uint32 metamerCount = 0;
+	uint32 budCount = 0;
 
-	Tree(TreeWorld& world, vec3 position, uint32 seed);
+	Tree(TreeWorld& world, uint32 id, vec3 position, TreeGrowthData growthData, uint32 seed);
 	Tree(const Tree& from);
-
-	void init();
 
 	void budToMetamer(TreeNode& bud);
 
@@ -66,7 +74,9 @@ public:
 
 	void addNewShoots();
 
-	void calculateRadiuses();
+	void shedBranchs();
+
+	void calculateChildCount();
 
 	void endGrow();
 
@@ -86,12 +96,15 @@ public:
 
 	~Tree();
 
+	bool operator==(const Tree& other) const;
+
 private:
 
 	std::vector<Branch> branchs;
 	float accumulateLightRecursive(TreeNode& node);
 	void distributeVigorRecursive(TreeNode& node);
 	void addShootsRecursive(TreeNode& node);
-	float calculateRadiusRecursive(TreeNode& node);
+	void shedBranchsRecursive(TreeNode& node);
+	float calculateChildCountRecursive(TreeNode& node);
 	void calculateShadowsRecursive(TreeNode& node) const;
 };

@@ -1,85 +1,96 @@
-#include "./Renderer.h"
+﻿#include "./Renderer.h"
 #include <queue>
 #include <iostream>
 #include "../Util.hpp"
 #include "../Branch.h"
+#include "GLBuffer.hpp"
 void Renderer::init()
 {
 	glEnable(GL_DEPTH_TEST);
 
-	float skyboxVertices[] = {
-		// positions          
-		-1.0f,  1.0f, -1.0f,
-		-1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-
-		-1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
-
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-
-		-1.0f, -1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
-
-		-1.0f,  1.0f, -1.0f,
-		 1.0f,  1.0f, -1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f, -1.0f,
-
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		 1.0f, -1.0f,  1.0f
+	float cubeVertices[] = {
+		// Back face
+		-0.5f, -0.5f, -0.5f, // Bottom-left
+		 0.5f,  0.5f, -0.5f, // top-right
+		 0.5f, -0.5f, -0.5f, // bottom-right         
+		 0.5f,  0.5f, -0.5f, // top-right
+		-0.5f, -0.5f, -0.5f, // bottom-left
+		-0.5f,  0.5f, -0.5f, // top-left
+		// Front face
+		-0.5f, -0.5f,  0.5f, // bottom-left
+		 0.5f, -0.5f,  0.5f, // bottom-right
+		 0.5f,  0.5f,  0.5f, // top-right
+		 0.5f,  0.5f,  0.5f, // top-right
+		-0.5f,  0.5f,  0.5f, // top-left
+		-0.5f, -0.5f,  0.5f, // bottom-left
+		// Left face
+		-0.5f,  0.5f,  0.5f, // top-right
+		-0.5f,  0.5f, -0.5f, // top-left
+		-0.5f, -0.5f, -0.5f, // bottom-left
+		-0.5f, -0.5f, -0.5f, // bottom-left
+		-0.5f, -0.5f,  0.5f, // bottom-right
+		-0.5f,  0.5f,  0.5f, // top-right
+		// Right face
+		 0.5f,  0.5f,  0.5f, // top-left
+		 0.5f, -0.5f, -0.5f, // bottom-right
+		 0.5f,  0.5f, -0.5f, // top-right         
+		 0.5f, -0.5f, -0.5f, // bottom-right
+		 0.5f,  0.5f,  0.5f, // top-left
+		 0.5f, -0.5f,  0.5f, // bottom-left     
+		// Bottom face
+		-0.5f, -0.5f, -0.5f, // top-right
+		 0.5f, -0.5f, -0.5f, // top-left
+		 0.5f, -0.5f,  0.5f, // bottom-left
+		 0.5f, -0.5f,  0.5f, // bottom-left
+		-0.5f, -0.5f,  0.5f, // bottom-right
+		-0.5f, -0.5f, -0.5f, // top-right
+		// Top face
+		-0.5f,  0.5f, -0.5f, // top-left
+		 0.5f,  0.5f,  0.5f, // bottom-right
+		 0.5f,  0.5f, -0.5f, // top-right     
+		 0.5f,  0.5f,  0.5f, // bottom-right
+		-0.5f,  0.5f, -0.5f, // top-left
+		-0.5f,  0.5f,  0.5f, // bottom-left        
 	};
 
 	cubeVAO.init();
 	cubeVAO.bind();
-	cubeVAO.attachBuffer(GLVertexArray::BufferType::ARRAY, sizeof(skyboxVertices), GLVertexArray::DrawMode::STATIC, skyboxVertices);
+	cubeVAO.attachBuffer(GLVertexArray::BufferType::ARRAY, sizeof(cubeVertices), GLVertexArray::DrawMode::STATIC, cubeVertices);
 	cubeVAO.enableAttribute(0, 3, 3 * sizeof(float), nullptr);
 
 	float quadVertices[] = {
 		// positions
-		 -0.5f,  1.0f,
-		 -0.5f,  0.0f,
-		 0.5f,  0.0f,
+		 -0.5f,  1.0f, 0.0f,
+		 -0.5f,  0.0f, 0.0f,
+		 0.5f,  0.0f, 0.0f,
 
-		 0.5f,  0.0f,
-		 0.5f,  1.0f,
-		-0.5f,  1.0f,
+		 0.5f,  0.0f, 0.0f,
+		 0.5f,  1.0f, 0.0f,
+		-0.5f,  1.0f, 0.0f,
+
+		0.0f, 1.0f, -0.5f,
+		0.0f, 0.0f, -0.5f,
+		0.0f, 0.0f, 0.5f,
+
+		0.0f, 0.0f, 0.5f,
+		0.0f, 1.0f, 0.5f,
+		0.0f, 1.0f, -0.5f
 	};
-	leafQuadVAO.init();
-	leafQuadVAO.bind();
-	leafQuadVAO.attachBuffer(GLVertexArray::BufferType::ARRAY, sizeof(quadVertices), GLVertexArray::DrawMode::STATIC, quadVertices);
+	quadVAO.init();
+	quadVAO.bind();
+	quadVAO.attachBuffer(GLVertexArray::BufferType::ARRAY, sizeof(quadVertices), GLVertexArray::DrawMode::STATIC, quadVertices);
 
-	leafQuadVAO.enableAttribute(0, 2, 2 * sizeof(float), nullptr);
+	quadVAO.enableAttribute(0, 3, 3 * sizeof(float), nullptr);
 
 	pointVAO.init();
 	pointVAO.bind();
-	const float pointData[] = { 0.0f };
-	pointVAO.attachBuffer(GLVertexArray::BufferType::ARRAY, sizeof(pointData), GLVertexArray::DrawMode::STATIC, pointData);
-	pointVAO.enableAttribute(0, 1, sizeof(float), nullptr);
+	const int32 pointData[] = { 0 };
+	pointVAO.attachBuffer(GLVertexArray::BufferType::ELEMENT, sizeof(pointData), GLVertexArray::DrawMode::STATIC, pointData);
 
-	glLineWidth(3.0f);
+	lineVAO.init();
+	lineVAO.bind();
+	const int32 lineData[] = { 0, 1 };
+	lineVAO.attachBuffer(GLVertexArray::BufferType::ELEMENT, sizeof(lineData), GLVertexArray::DrawMode::STATIC, lineData);
 
 }
 
@@ -102,7 +113,7 @@ void Renderer::renderPlane(DrawView view, Shader* shader, mat4 model)
 {
 	glDisable(GL_CULL_FACE);
 	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
-	leafQuadVAO.bind();
+	quadVAO.bind();
 	shader->bind();
 	shader->setUniform("VP", vp);
 	shader->setUniform("model", model);
@@ -135,121 +146,146 @@ void Renderer::renderPlane(DrawView view, Shader* shader, mat4 model)
 	}
 }*/
 
-void Renderer::renderTree2(DrawView view, Texture* barkTex, Shader* shader, const std::vector<Branch>& branches)
-{
-	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
-
-	glEnable(GL_CULL_FACE);
-
-	glCullFace(GL_BACK);
-
-	glFrontFace(GL_CCW);
-
-	glDepthFunc(GL_LEQUAL);
-
-	shader->bind();
-	cubeVAO.bind();
-
-	shader->setUniform("VP", vp);
-
-	glActiveTexture(GL_TEXTURE0 + shader->getTextureIndex("barkTexture"));
-	barkTex->bind();
-
-	vec3 camPos = view.camera.getCameraPosition();
-	vec3 camDir = view.camera.getCameraDirection();
-	shader->setUniform("camPos", camPos);
-	shader->setUniform("viewDir", camDir);
-	shader->setUniform("ambientColor", vec3(0.3f, 0.3f, 0.3f));
-	shader->setUniform("lightColor", vec3(1.0f, 1.0f, 1.0f));
-	shader->setUniform("lightDir", glm::normalize(vec3(-0.3, 0.6, -0.2)));
-	shader->setUniform("treeColor", vec3(166.0f / 255.0f, 123.0f / 255.0f, 81.0f / 255.0f));
-	shader->setUniform("farPlane", view.camera.getFarPlane());
-	shader->setUniform("nearPlane", view.camera.getNearPlane());
-	for (auto& branch : branches) {
-		vec3 dif = camPos - branch.A;
-		vec3 dirToCam = glm::normalize(dif);
-		vec3 dir = glm::normalize(branch.C - branch.A);
-		float dot = glm::dot(dir, dirToCam);
-
-		shader->setUniform("branch.start", branch.A);
-		shader->setUniform("branch.mid", branch.B);
-		shader->setUniform("branch.end", branch.C);
-
-		shader->setUniform("model", branch.boundingBox.asModel());
-
-		shader->setUniform("branch.lowRadius", branch.lowRadius);
-		shader->setUniform("branch.highRadius", branch.highRadius);
-
-		shader->setUniform("branch.branchLength", branch.length);
-		shader->setUniform("branch.startLength", branch.startLength);
-
-		shader->setUniform("branch.uvOffset", branch.offset);
-
-		uint32 colorSelected = branch.from.order;
-		shader->setUniform("branch.color", vec3(util::IntNoise2D(colorSelected), util::IntNoise2D(colorSelected, 1), util::IntNoise2D(colorSelected, 2)) * 0.5f + 0.5f);
-
-
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-	}
-}
-
-void Renderer::renderLeaves(DrawView view, Texture* leafTex, Shader* shader, const std::vector<Branch>& branches)
-{
-	glDisable(GL_CULL_FACE);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_BLEND);
-	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
-
-
-
-	leafQuadVAO.bind();
-	shader->bind();
-
-	shader->setUniform("VP", vp);
-	glActiveTexture(GL_TEXTURE0 + shader->getTextureIndex("leafTex"));
-	leafTex->bind();
-	for (auto& branch : branches) {
-		for (auto& leaf : branch.leaves) {
-			shader->setUniform("model", leaf.model);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-		}
-	}
-	glDisable(GL_BLEND);
-	glEnable(GL_CULL_FACE);
-}
-
-
 void RenderShadowPoint(Shader* shader, const vec3& pos, float shadow) {
 	shader->setUniform("pos", pos);
 	glPointSize(shadow * 2.0f);
 	shader->setUniform("shadow", shadow);
 	glDrawArrays(GL_POINTS, 0, 1);
 }
-void Renderer::renderShadowPoints(DrawView view, Shader* shader, const std::vector<std::tuple<vec3, float>>& points)
+void Renderer::renderShadowPoints(DrawView view, Shader* shader, const std::vector<vec4>& points)
 {
+	glEnable(GL_PROGRAM_POINT_SIZE);
 	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
 	shader->bind();
 	pointVAO.bind();
 	shader->setUniform("VP", vp);
 
-	for (auto& [pos, shadow] : points) {
-		RenderShadowPoint(shader, pos, shadow);
-	}
+	uint32 ssbo;
+	glCreateBuffers(1, &ssbo);
+	glNamedBufferStorage(ssbo, sizeof(vec4) * points.size(), points.data(), GL_MAP_READ_BIT);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
+
+	glDrawArraysInstanced(GL_POINTS, 0, 1, points.size());
+
+	glDeleteBuffers(1, &ssbo);
+
+	glDisable(GL_PROGRAM_POINT_SIZE);
 }
 
 void Renderer::renderShadowsOnBuds(DrawView view, Shader* shader, const TreeWorld& world, const std::vector<TreeNode>& nodes)
 {
+	glEnable(GL_PROGRAM_POINT_SIZE);
 	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
 	shader->bind();
 	pointVAO.bind();
 	shader->setUniform("VP", vp);
+	std::vector<vec4> points;
 	for (auto& node : nodes) {
-		if (node.bud) {
-
-			ShadowCell cell = world.getCellAt(world.coordinateToCell(node.startPos));
-			RenderShadowPoint(shader, node.startPos, cell.shadow);
+		if (node.nodeStatus == BUD) {
+			ivec3 cell = world.coordinateToCell(node.startPos);
+			for (int i = 0; i < 10; i++) {
+				if (cell.y + i >= world.worldSize.y)
+					break;
+				ShadowCell shadowCell = world.getCellAt(cell + ivec3(0, i, 0));
+				points.emplace_back(vec4(node.startPos + vec3(0, world.cellSize * float(i), 0), shadowCell.shadow));
+			}
 		}
 	}
+
+	uint32 ssbo;
+	glCreateBuffers(1, &ssbo);
+	glNamedBufferStorage(ssbo, sizeof(vec4) * points.size(), points.data(), GL_MAP_READ_BIT);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
+
+	glDrawArraysInstanced(GL_POINTS, 0, 1, points.size());
+
+	glDeleteBuffers(1, &ssbo);
+	glDisable(GL_PROGRAM_POINT_SIZE);
+}
+
+void Renderer::renderBBoxLines(DrawView view, Shader* shader, const BBox& bbox, const vec3& color)
+{
+	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
+	shader->bind();
+	lineVAO.bind();
+	shader->setUniform("VP", vp);
+	shader->setUniform("color", color);
+
+	auto const drawLine = [&](const vec3& first, const vec3& second) {
+		shader->setUniform("pos1", first);
+		shader->setUniform("pos2", second);
+		glDrawArrays(GL_LINES, 0, 2);
+	};
+
+	vec3 first = bbox.min;
+	vec3 second = bbox.min;
+
+	second.x = bbox.max.x;
+	second.z = bbox.min.z;
+
+	drawLine(first, second);
+
+	second.x = bbox.min.x;
+	second.z = bbox.max.z;
+
+	drawLine(first, second);
+
+	first.x = bbox.max.x;
+	first.z = bbox.max.z;
+
+	second.x = bbox.min.x;
+	second.z = bbox.max.z;
+
+	drawLine(first, second);
+
+	second.x = bbox.max.x;
+	second.z = bbox.min.z;
+
+	drawLine(first, second);
+	first = bbox.min;
+	first.y = bbox.max.y;
+	second.y = bbox.max.y;
+
+	second.x = bbox.max.x;
+	second.z = bbox.min.z;
+
+	drawLine(first, second);
+
+	second.x = bbox.min.x;
+	second.z = bbox.max.z;
+
+	drawLine(first, second);
+
+	first.x = bbox.max.x;
+	first.z = bbox.max.z;
+
+	second.x = bbox.min.x;
+	second.z = bbox.max.z;
+
+	drawLine(first, second);
+
+	second.x = bbox.max.x;
+	second.z = bbox.min.z;
+
+	drawLine(first, second);
+
+	first = bbox.min;
+	second = bbox.min;
+	second.y = bbox.max.y;
+
+	drawLine(first, second);
+
+	first.x = bbox.max.x;
+	second.x = bbox.max.x;
+	drawLine(first, second);
+
+	first.z = bbox.max.z;
+	second.z = bbox.max.z;
+	drawLine(first, second);
+
+	first.x = bbox.min.x;
+	second.x = bbox.min.x;
+	drawLine(first, second);
 }
 
 void Renderer::setupSkybox(CubemapTexture* skyboxTexture, Shader* skyboxShader)
@@ -260,11 +296,7 @@ void Renderer::setupSkybox(CubemapTexture* skyboxTexture, Shader* skyboxShader)
 
 void Renderer::renderSkybox(DrawView view)
 {
-	glEnable(GL_CULL_FACE);
-
-	glCullFace(GL_BACK);
-
-	glFrontFace(GL_CCW);
+	glDisable(GL_CULL_FACE);
 
 	glDepthFunc(GL_LEQUAL);
 
@@ -277,6 +309,27 @@ void Renderer::renderSkybox(DrawView view)
 		skyboxShader->setUniform("skybox_vp", vp);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
+	glEnable(GL_CULL_FACE);
+}
+
+GLVertexArray& Renderer::getCubeVAO()
+{
+	return cubeVAO;
+}
+
+GLVertexArray& Renderer::getQuadVAO()
+{
+	return quadVAO;
+}
+
+GLVertexArray& Renderer::getLineVAO()
+{
+	return lineVAO;
+}
+
+GLVertexArray& Renderer::getPointVAO()
+{
+	return pointVAO;
 }
 
 

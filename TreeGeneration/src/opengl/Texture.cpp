@@ -27,6 +27,11 @@ void Texture::bind()
 	glBindTexture(GL_TEXTURE_2D, handle);
 }
 
+TextureHandle Texture::getHandle() const
+{
+	return handle;
+}
+
 void Texture::destroy()
 {
 	glDeleteTextures(1, &handle);

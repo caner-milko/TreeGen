@@ -16,6 +16,7 @@ public:
 	Texture(std::string_view path, TextureWrapping wrapping = TextureWrapping::REPEAT,
 		TextureFiltering minFiltering = TextureFiltering::LINEAR_MIPMAP_LINEAR, TextureFiltering maxFiltering = TextureFiltering::LINEAR);
 	void bind();
+	TextureHandle getHandle() const;
 	void destroy();
 private:
 	const std::string path;

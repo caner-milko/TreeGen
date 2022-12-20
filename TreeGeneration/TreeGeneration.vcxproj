@@ -71,8 +71,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\folders\graphics\treegen\TreeGeneration\TreeGeneration\dependencies\include\imgui;C:\folders\graphics\treegen\TreeGeneration\TreeGeneration\dependencies\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\folders\graphics\treegen\TreeGeneration\TreeGeneration\dependencies\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)\dependencies\include;$(ProjectDir)\dependencies\include\imgui;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)\dependencies\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(ProjectDir)\dependencies\include;$(ProjectDir)\dependencies\include\imgui;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)\dependencies\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -108,7 +112,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <SupportJustMyCode>true</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -124,7 +129,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,6 +158,7 @@
     <ClCompile Include="src\opengl\ResourceManager.cpp" />
     <ClCompile Include="src\opengl\Shader.cpp" />
     <ClCompile Include="src\opengl\Texture.cpp" />
+    <ClCompile Include="src\opengl\TreeRenderer.cpp" />
     <ClCompile Include="src\Tree.cpp" />
     <ClCompile Include="src\TreeApplication.cpp" />
     <ClCompile Include="src\TreeGenerator.cpp" />
@@ -166,11 +172,13 @@
     <ClInclude Include="src\opengl\Camera.h" />
     <ClInclude Include="src\opengl\CubemapTexture.h" />
     <ClInclude Include="src\opengl\DrawView.h" />
+    <ClInclude Include="src\opengl\GLBuffer.hpp" />
     <ClInclude Include="src\opengl\GLVertexArray.h" />
     <ClInclude Include="src\opengl\Renderer.h" />
     <ClInclude Include="src\opengl\ResourceManager.h" />
     <ClInclude Include="src\opengl\Shader.h" />
     <ClInclude Include="src\opengl\Texture.h" />
+    <ClInclude Include="src\opengl\TreeRenderer.h" />
     <ClInclude Include="src\TreeApplication.h" />
     <ClInclude Include="src\Util.hpp" />
   </ItemGroup>

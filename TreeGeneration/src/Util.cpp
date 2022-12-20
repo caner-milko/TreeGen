@@ -22,13 +22,12 @@ namespace util {
 	vec3 util::randomPerturbateVector(vec3 original, float angle, int seed)
 	{
 		auto ox = vec3(1.0f, 0.0f, 0.0f);
-		vec3 random = ox;
-		if (glm::abs(dot(original, random)) > .999f)
+		if (glm::abs(dot(original, ox)) > .999f)
 		{
-			random = vec3(0.0f, 1.0f, 0.0f);
+			ox = vec3(0.0f, 0.0f, 1.0f);
 		}
 
-		vec3 cross = normalize(glm::cross(original, random));
+		vec3 cross = normalize(glm::cross(original, ox));
 
 		float s = IntNoise2D(seed) * 0.5f + 0.5f;
 		float r = IntNoise2D(seed, 1) * 0.5f + 0.5f;
@@ -44,7 +43,7 @@ namespace util {
 		float x = glm::cos(phi) * sinT;
 		float y = glm::sin(phi) * sinT;
 
-		return glm::normalize(random * x + cross * y + original * z);
+		return glm::normalize(ox * x + cross * y + original * z);
 	}
 	bool util::endsWith(std::string_view str, std::string_view suffix)
 	{

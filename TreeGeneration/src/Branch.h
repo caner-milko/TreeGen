@@ -4,7 +4,22 @@
 #include "BBox.h"
 #include "Leaf.h"
 #include <vector>
+
+struct BranchShaderData {
+	mat4 model;
+	vec4 A;
+	vec4 B;
+	vec4 C;
+	vec4 color;
+	float lowRadius;
+	float highRadius;
+	float startLength;
+	float length;
+	vec4 offset;
+};
+
 struct Branch {
+	mat4 model;
 	vec3 A, B, C;
 	float lowRadius;
 	float highRadius;
@@ -12,14 +27,17 @@ struct Branch {
 	float startLength;
 	float length;
 	float offset;
-	const TreeNode& from;
+
 	BBox boundingBox;
 	std::vector<Leaf> leaves;
+	const TreeNode& from;
 
 public:
-	Branch(const TreeNode& node, float startLength, const vec3& lastPlaneNormal, float lastOffset);
+	Branch(const TreeNode& node, float baseRadius, float radiusPow, float curviness, float startLength, const vec3& lastPlaneNormal, float lastOffset);
 
-	void generateLeaves(float maxWidth, float leafDensity);
+	void generateLeaves(uint32 maxChildCount, uint32 minOrder, float leafDensity, float sizeMultiplier);
+
+	BranchShaderData asShaderData(const vec3& color) const;
 
 	vec3 evaluatePos(float t) inline const;
 	vec3 evaluateDir(float t) inline const;

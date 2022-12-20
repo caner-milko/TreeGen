@@ -8,11 +8,11 @@
 #include "./opengl/Renderer.h"
 #include "./opengl/Texture.h"
 #include "./opengl/Shader.h"
-
+#include "./opengl/TreeRenderer.h"
 struct TreeApplicationData {
 	uint32 width = 1600, height = 900;
 	float mouseSensitivity = 0.1f;
-	float cameraSpeed = 2.5f;
+	float cameraSpeed = 0.5f;
 
 	vec3 camPos = vec3(-1.0f, 0.0f, 0.0f);
 	float yaw = 0.0f, pitch = 0.0f;
@@ -20,11 +20,13 @@ struct TreeApplicationData {
 
 	bool renderPreviewTree = true;
 	bool showShadowGrid = false;
+	bool shadowOnOnlyBuds = false;
 	float shadowCellVisibilityRadius = 10.0f;
 
-	float baseTreeLength = 0.4f;
+	bool showVigor = false;
+	bool showOptimalDirs = false;
 
-	vec3 worldSize = vec3(25.0f, 50.0f, 25.0f);
+	BBox worldBbox = BBox(vec3(-2.0f, -0.1f, -2.0f), vec3(2.0f, 4.0f, 2.0f));
 
 };
 
@@ -55,14 +57,19 @@ private:
 	std::unique_ptr<TreeWorld> world;
 	std::unique_ptr<TreeGenerator> generator;
 	Tree* tree;
-	Tree* tree2;
+	//Tree* tree2;
+	std::unique_ptr<TreeRenderer> treeRenderer1;
+	//std::unique_ptr<TreeRenderer> treeRenderer2;
 
 	std::unique_ptr<Tree> previewTree;
+
+	TreeGrowthData growthData{ .baseLength = 0.02 };
 
 	Renderer renderer;
 
 	bool treeSettingsEdited = false;
 	bool treePreviewChanged = false;
+	bool radiusSettingsEdited = false;
 	bool leafSettingsEdited = false;
 
 	bool growTree1 = true;
@@ -70,16 +77,19 @@ private:
 
 
 
-	Shader* treeBezierShader;
-	Shader* leafShader;
-	Shader* shadowPointShader;
-	Shader* skyboxShader;
-	Shader* planeShader;
+	Shader* treeBezierShader{};
+	Shader* leafShader{};
+	Shader* shadowPointShader{};
+	Shader* skyboxShader{};
+	Shader* planeShader{};
+	Shader* lineShader{};
+	Shader* budPointShader{};
+	Shader* coloredLineShader{};
 
-	Texture* barkTex;
-	Texture* leafTex;
+	Texture* barkTex{};
+	Texture* leafTex{};
 
-	CubemapTexture* skyboxTex;
+	CubemapTexture* skyboxTex{};
 
 	void startFrame();
 

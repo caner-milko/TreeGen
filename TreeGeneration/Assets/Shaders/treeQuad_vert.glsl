@@ -1,5 +1,4 @@
-#version 330 core
-//layout (location = 0) in float id;
+#version 460 core
 
 out vec3 fragPos;
 out vec2 uv;

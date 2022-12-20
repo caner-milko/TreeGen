@@ -1,9 +1,10 @@
-#version 330 core
+#version 460 core
 out vec4 FragColor;
 
-uniform float shadow;
+in float shadow;
 
 void main()
 {
-    FragColor = vec4(vec3(1.0 - sqrt(shadow/3.0)), 1.0);
+    FragColor = vec4(vec3(1.0 - sqrt(shadow * 2.0/3.0)), 1.0);
+   
 } 

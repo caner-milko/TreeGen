@@ -9,35 +9,15 @@
 
 #include "Input.h"
 #include "opengl/ResourceManager.h"
+#include "Leaf.h"
 TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appData.width / (float)appData.height)
 {
-	cam.setCameraPosition(appData.camPos);
-	cam.setFov(appData.fov);
-	cam.setYaw(appData.yaw);
-	cam.setPitch(appData.pitch);
-
-	generator = std::make_unique<TreeGenerator>();
-
-	vec3 leftCenter = appData.worldSize / -2.0f;
-	leftCenter.y = 0.0f;
-
-	world = std::make_unique<TreeWorld>(appData.worldSize / appData.baseTreeLength * 2.0f, leftCenter, appData.baseTreeLength / 2.0f);
-
-	tree = generator->createTree(*world, vec3(0.0f));
-	tree2 = generator->createTree(*world, vec3(2.0f, 0.0f, 0.0f));
-
-	tree->growthData.baseLength = appData.baseTreeLength;
-	tree2->growthData.baseLength = appData.baseTreeLength;
-
-	tree->init();
-	tree2->init();
-
 #pragma region Setup_GLFW
 
 	glfwInit();
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	window = glfwCreateWindow(appData.width, appData.height, "TreeGen", NULL, NULL);
@@ -63,9 +43,8 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return;
 	}
-	const char* glsl_version = "#version 130";
+	const char* glsl_version = "#version 460";
 #pragma endregion Setup_GLFW
-
 
 #pragma region ImGui_Setup
 	// Setup Dear ImGui context
@@ -103,16 +82,23 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 	shadowPointShader = ResourceManager::getInstance().loadShader("shadowPoint_shader",
 		"./Assets/Shaders/shadowPoint_vert.glsl", "./Assets/Shaders/shadowPoint_frag.glsl");
 	treeBezierShader = ResourceManager::getInstance().loadShader("treeQuadMarch_shader",
-		"./Assets/Shaders/bbox_vert.glsl", "./Assets/Shaders/treeBezier_frag.glsl");
+		"./Assets/Shaders/treeBezier_vert.glsl", "./Assets/Shaders/treeBezier_frag.glsl");
 	skyboxShader = ResourceManager::getInstance().loadShader("skybox_shader",
 		"./Assets/Shaders/skybox_vert.glsl", "./Assets/Shaders/skybox_frag.glsl");
 	leafShader = ResourceManager::getInstance().loadShader("leaf_shader",
 		"./Assets/Shaders/leaf_vert.glsl", "./Assets/Shaders/leaf_frag.glsl");
+	budPointShader = ResourceManager::getInstance().loadShader("bud_point_shader",
+		"./Assets/Shaders/budPoint_vert.glsl", "./Assets/Shaders/budPoint_frag.glsl");
 	planeShader = ResourceManager::getInstance().loadShader("plane_shader",
-		"./Assets/Shaders/bbox_vert.glsl", "./Assets/Shaders/test_frag.glsl");
+		"./Assets/Shaders/basic_vert.glsl", "./Assets/Shaders/basic_frag.glsl");
+	lineShader = ResourceManager::getInstance().loadShader("line_shader",
+		"./Assets/Shaders/line_vert.glsl", "./Assets/Shaders/line_frag.glsl");
+	coloredLineShader = ResourceManager::getInstance().loadShader("colored_line_shader",
+		"./Assets/Shaders/coloredLineShader_vert.glsl", "./Assets/Shaders/coloredLineShader_frag.glsl");
+
 
 	barkTex = ResourceManager::getInstance().loadTexture("bark_texture", "./Assets/Textures/bark.jpg");
-	leafTex = ResourceManager::getInstance().loadTexture("leaf_texture", "./Assets/Textures/leaf.png", TextureWrapping::CLAMP_TO_EDGE);
+	leafTex = ResourceManager::getInstance().loadTexture("leaf_texture", "./Assets/Textures/leaf3.png", TextureWrapping::CLAMP_TO_EDGE);
 
 	skyboxTex = ResourceManager::getInstance().loadCubemapTexture("skybox", "./Assets/Textures/skybox/posx.jpg", "./Assets/Textures/skybox/negx.jpg",
 		"./Assets/Textures/skybox/posy.jpg", "./Assets/Textures/skybox/negy.jpg",
@@ -122,6 +108,32 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 	renderer.setupSkybox(skyboxTex, skyboxShader);
 
 #pragma endregion Load_Resources
+
+#pragma region Setup_TreeGen
+	cam.setCameraPosition(appData.camPos);
+	cam.setFov(appData.fov);
+	cam.setYaw(appData.yaw);
+	cam.setPitch(appData.pitch);
+
+	generator = std::make_unique<TreeGenerator>();
+
+
+	world = std::make_unique<TreeWorld>(appData.worldBbox, growthData.baseLength);
+
+	tree = generator->createTree(*world, vec3(0.0f), growthData);
+	//tree2 = generator->createTree(*world, vec3(0.5f, 0.0f, 0.0f));
+	//tree2->growthData.baseLength = appData.baseTreeLength;
+
+
+	TreeRendererResources resources{ .quadVAO = &renderer.getQuadVAO(), .cubeVAO = &renderer.getCubeVAO(), .pointVAO = &renderer.getPointVAO(), .lineVAO = &renderer.getLineVAO(),
+		.branchShader = treeBezierShader, .leafShader = leafShader, .budPointShader = budPointShader, .coloredLineShader = coloredLineShader,
+		.leafTexture = leafTex, .barkTexture = barkTex, };
+
+	treeRenderer1 = std::make_unique<TreeRenderer>(*tree, resources);
+	//treeRenderer2 = std::make_unique<TreeRenderer>(*tree2, resources);
+	treeRenderer1->updateRenderer();
+	//treeRenderer2->updateRenderer();
+#pragma endregion Setup_TreeGen
 }
 
 void TreeApplication::execute()
@@ -140,6 +152,11 @@ void TreeApplication::execute()
 void TreeApplication::startFrame()
 {
 	renderer.startFrame();
+
+	treeSettingsEdited = false;
+	treePreviewChanged = false;
+	radiusSettingsEdited = false;
+	leafSettingsEdited = false;
 	glfwPollEvents();
 
 	// Start the Dear ImGui frame
@@ -156,8 +173,6 @@ void TreeApplication::drawGUI()
 	ImGui::Begin("Tree Generator");
 
 	if (ImGui::CollapsingHeader("Tree Growth Data")) {
-		TreeGrowthData& growthData = tree->growthData;
-
 		//shadows
 		float fullExposure = 3.0f;
 		int pyramidHeight = 5;
@@ -166,44 +181,59 @@ void TreeApplication::drawGUI()
 		float b = 2.0f;
 
 		treeSettingsEdited |= ImGui::SliderFloat("Apical Control", &growthData.apicalControl, 0.0f, 1.0f);
-		treeSettingsEdited |= ImGui::SliderFloat("Base Length", &growthData.baseLength, 0.1f, 3.0f);
+		treeSettingsEdited |= ImGui::SliderFloat("Vigor Multiplier", &growthData.vigorMultiplier, 0.25f, 4.0f);
+		treeSettingsEdited |= ImGui::SliderFloat("Base Length", &growthData.baseLength, 0.01f, 1.0f);
 
-		treeSettingsEdited |= ImGui::SliderFloat("Perception Radius", &growthData.perceptionRadius, 0.5f, 10.0f);
-		treeSettingsEdited |= ImGui::SliderAngle("Perception Angle", &growthData.perceptionAngle, 15.0f, 90.0f);
 
 		treeSettingsEdited |= ImGui::SliderAngle("Lateral Angle", &growthData.lateralAngle, 15.0f, 90.0f);
 
 		treeSettingsEdited |= ImGui::SliderFloat3("Tropism Vector", (float*)&growthData.tropism, -1.0f, 1.0f);
 
-		bool changed = ImGui::SliderFloat("Original Direction Weight", &growthData.directionWeights.x, 0.0f, 1.0f);
-		changed = ImGui::SliderFloat("Optimal Direction Weight", &growthData.directionWeights.y, 0.0f, 1.0f) || changed;
-		changed = ImGui::SliderFloat("Tropism Weight", &growthData.directionWeights.z, 0.0f, 1.0f) || changed;
-		if (changed)
-			growthData.directionWeights = glm::normalize(growthData.directionWeights);
+		treeSettingsEdited |= ImGui::SliderFloat("Optimal Direction Weight", &growthData.directionWeights.x, 0.0f, 1.0f);
+		treeSettingsEdited |= ImGui::SliderFloat("Tropism Weight", &growthData.directionWeights.y, 0.0f, 1.0f);
 
-		treeSettingsEdited |= changed;
 		treeSettingsEdited |= ImGui::SliderFloat("Full Exposure Light", &growthData.fullExposure, 0.5f, 5.0f);
-		treeSettingsEdited |= ImGui::SliderInt("Shadow Pyramid Height", &growthData.pyramidHeight, 1, 10);
+		treeSettingsEdited |= ImGui::SliderInt("Shadow Pyramid Height", &growthData.pyramidHeight, 1, 20);
 		treeSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Multiplier", &growthData.a, 0.1f, 3.0f);
 		treeSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Base", &growthData.b, 1.1f, 3.0f);
 
-		leafSettingsEdited |= ImGui::SliderFloat("Leaf Max Width", &growthData.leafMaxWidth, 0.01f, 2.0f);
-		leafSettingsEdited |= ImGui::SliderFloat("Leaf Density", &growthData.leafDensity, 0.5f, 20.0f);
+		treeSettingsEdited |= ImGui::Checkbox("Shedding", &growthData.shouldShed);
+		treeSettingsEdited |= ImGui::SliderFloat("Shed Multiplier", &growthData.shedMultiplier, 0.0f, 3.0f);
+		treeSettingsEdited |= ImGui::SliderFloat("Shed Exp", &growthData.shedExp, 0.5f, 5.0f);
 
-		tree2->growthData = growthData;
+		radiusSettingsEdited |= ImGui::SliderFloat("Branch Radius Min", &growthData.baseRadius, 0.00001f, 0.005f, "%.5f", ImGuiSliderFlags_Logarithmic);
+		radiusSettingsEdited |= ImGui::SliderFloat("Branch Radius Power", &growthData.radiusN, 1.0f, 4.0f);
+		radiusSettingsEdited |= ImGui::SliderFloat("Branch Curviness", &growthData.branchCurviness, 0.0f, 1.0f);
+
+		leafSettingsEdited |= ImGui::SliderInt("Leaf Max Child Count", &growthData.leafMaxChildCount, 0, 30);
+		leafSettingsEdited |= ImGui::SliderInt("Leaf Min Order", &growthData.leafMinOrder, 0, 20);
+		leafSettingsEdited |= ImGui::SliderFloat("Leaf Density", &growthData.leafDensity, 0.5f, 30.0f);
+		leafSettingsEdited |= ImGui::SliderFloat("Leaf Size Multiplier", &growthData.leafSizeMultiplier, 0.05f, 3.0f);
+		leafSettingsEdited |= ImGui::SliderAngle("Leaf Angle", &Leaf::pertubateAngle);
 
 
-
+		tree->growthData = growthData;
+		//tree2->growthData = growthData;
 	}
 
 	if (ImGui::CollapsingHeader("Render Options")) {
 
 		treeSettingsEdited |= treePreviewChanged = ImGui::Checkbox("Render Tree Preview", &appData.renderPreviewTree);
 		ImGui::Checkbox("Show Shadow Grid", &appData.showShadowGrid);
+		ImGui::Checkbox("Show Shadow On Only Buds", &appData.shadowOnOnlyBuds);
+		ImGui::Checkbox("Show Vigor", &appData.showVigor);
+		ImGui::Checkbox("Show Optimal Dirs", &appData.showOptimalDirs);
 		ImGui::SliderFloat("Shadow Cell Visibility Radius", &appData.shadowCellVisibilityRadius, 0.5f, 20.0f);
 	}
+	ImGui::Text("Frame time: %.3f", ImGui::GetIO().Framerate);
+	ImGui::Text("Tree1 Branch Count: %u, Bud Count: %u, Leaf Count: %u, Max Order: %u", treeRenderer1->getBranchCount(), treeRenderer1->getBudCount(), treeRenderer1->getLeafCount(), tree->maxOrder);
 	ImGui::Checkbox("Grow Tree 1", &growTree1);
 	ImGui::Checkbox("Grow Tree 2", &growTree2);
+	if (ImGui::Button("Reset Trees")) {
+		world->removeTree(*tree);
+		tree = generator->createTree(*world, vec3(0.0f, 0.0f, 0.0f), growthData);
+		previewTree = nullptr;
+	}
 	ImGui::End();
 }
 
@@ -216,49 +246,72 @@ void TreeApplication::drawScene()
 
 	if (treePreviewChanged && !appData.renderPreviewTree) {
 		previewTree.reset();
+		treeRenderer1 = std::make_unique<TreeRenderer>(*tree, treeRenderer1->resources);
+		treeRenderer1->updateRenderer();
 	}
 
 	if (appData.renderPreviewTree) {
-		if (previewTree == nullptr || treeSettingsEdited || (previewTree != nullptr && previewTree->age != tree->age + 1)) {
+		if (previewTree == nullptr || treeSettingsEdited) {
 			previewTree = std::make_unique<Tree>(*tree);
 			generator->growTree(*previewTree);
+			treeRenderer1 = std::make_unique<TreeRenderer>(*previewTree, treeRenderer1->resources);
+			treeRenderer1->updateRenderer();
 		}
+		previewTree->growthData = tree->growthData;
 	}
+
 
 	Tree* selTree = appData.renderPreviewTree ? previewTree.get() : tree;
 
-	renderer.renderTree2(view, barkTex, treeBezierShader, selTree->getBranchs());
-
-	renderer.renderTree2(view, barkTex, treeBezierShader, tree2->getBranchs());
-
-	if (leafSettingsEdited) {
-		selTree->generateLeaves();
-		tree2->generateLeaves();
+	if (radiusSettingsEdited) {
+		selTree->recalculateBranchs();
+		//tree2->recalculateBranchs();
+		treeRenderer1->updateRenderer();
+		//treeRenderer2->updateRenderer();
+	}
+	else {
+		if (leafSettingsEdited) {
+			selTree->generateLeaves();
+			//tree2->generateLeaves();
+			treeRenderer1->updateRenderer();
+			//treeRenderer2->updateRenderer();
+		}
 	}
 
-	renderer.renderLeaves(view, leafTex, leafShader, selTree->getBranchs());
-
-	renderer.renderLeaves(view, leafTex, leafShader, tree2->getBranchs());
-
-	renderer.renderSkybox(view);
+	treeRenderer1->renderTree(view, true, true);
+	//treeRenderer2->renderTree(view, true, true);
 
 	if (appData.showShadowGrid) {
 		world->calculateShadows();
-		//std::vector<std::tuple<vec3, float>> cells = world->renderShadowCells(cam.getCameraPosition(), cam.getCameraDirection(), cam.getFov(), shadowCellVisibilityRadius);
+		if (!appData.shadowOnOnlyBuds) {
+			std::vector<vec4> cells
+				= world->renderShadowCells(cam.getCameraPosition(), cam.getCameraDirection(), cam.getFov(), appData.shadowCellVisibilityRadius);
 
-		//renderer.renderShadowPoints(view, shadowPointShader, cells);
-		std::vector<TreeNode> buds = selTree->AsNodeVector(true);
-		renderer.renderShadowsOnBuds(view, shadowPointShader, *world, buds);
-		buds = tree2->AsNodeVector(true);
-		renderer.renderShadowsOnBuds(view, shadowPointShader, *world, buds);
+			renderer.renderShadowPoints(view, shadowPointShader, cells);
+		}
+		else {
+			std::vector<TreeNode> buds = selTree->AsNodeVector(true);
+			renderer.renderShadowsOnBuds(view, shadowPointShader, *world, buds);
+			//buds = tree2->AsNodeVector(true);
+			//renderer.renderShadowsOnBuds(view, shadowPointShader, *world, buds);
+		}
+	}
+	if (appData.showVigor) {
+		treeRenderer1->renderVigor(view);
+		//treeRenderer2->renderVigor(view);
+	}
+	if (appData.showOptimalDirs) {
+		treeRenderer1->renderOptimalDirection(view);
+		//treeRenderer2->renderOptimalDirection(view);
 	}
 
+	renderer.renderBBoxLines(view, lineShader, world->getBBox(), vec3(1.0f));
+
+	renderer.renderSkybox(view);
 }
 
 void TreeApplication::endFrame()
 {
-
-
 	// Rendering
 	ImGui::Render();
 	int display_w, display_h;
@@ -279,9 +332,6 @@ void TreeApplication::endFrame()
 
 	glfwSwapBuffers(window);
 
-	treeSettingsEdited = false;
-	treePreviewChanged = false;
-	leafSettingsEdited = false;
 	Input::GetInstance().Reset();
 	renderer.endFrame();
 	framesRendered++;
@@ -323,10 +373,19 @@ void TreeApplication::keyInput()
 		camPos += glm::vec3(0.0f, -cameraSpeed, 0.0f);
 
 	if (ImGui::IsKeyPressed(ImGuiKey_F, false)) {
-		if (growTree1)
+		if (growTree1) {
 			generator->growTree(*tree);
-		if (growTree2)
-			generator->growTree(*tree2);
+			treeSettingsEdited = true;
+			if (!appData.renderPreviewTree) {
+				treeRenderer1->updateRenderer();
+			}
+		}
+		if (growTree2) {
+			//generator->growTree(*tree2);
+			//treeRenderer2->updateRenderer();
+
+		}
+
 	}
 
 	if (ImGui::IsKeyPressed(ImGuiKey_E, false)) {

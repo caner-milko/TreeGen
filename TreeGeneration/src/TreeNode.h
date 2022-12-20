@@ -4,15 +4,19 @@
 
 struct TreeNode;
 
+enum NodeStatus {
+	BUD, ALIVE, DEAD,
+};
+
 struct TreeNode
 {
 	vec3 startPos;
 	vec3 direction;
-
 	float length = 1.0f;
-	float radius = 0.0f;
 
-	bool bud = true;
+	uint32 childCount = 0;
+
+	uint8 nodeStatus = NodeStatus::BUD;
 	uint32 id = 0;
 	uint32 order = 0;
 	uint32 createdAt = 0;
@@ -41,28 +45,36 @@ struct TreeNode
 	}
 
 	TreeNode* dominantChild() const {
-		if (mainChild->bud) {
-			if (lateralChild->bud)
+		if (mainChild->nodeStatus != ALIVE) {
+			if (lateralChild->nodeStatus != ALIVE)
 				return nullptr;
 			return lateralChild;
 		}
-		if (lateralChild->bud)
+		if (lateralChild->nodeStatus != ALIVE)
 			return mainChild;
-		if (mainChild->radius >= lateralChild->radius)
+		if (mainChild->childCount >= lateralChild->childCount)
 			return mainChild;
 		return lateralChild;
 	}
 
 	TreeNode* weakerChild() const {
-		if (mainChild->bud || lateralChild->bud) {
+		if (mainChild->nodeStatus != ALIVE || lateralChild->nodeStatus != ALIVE) {
 			return nullptr;
 		}
-		if (mainChild->radius >= lateralChild->radius)
+		if (mainChild->childCount >= lateralChild->childCount)
 			return lateralChild;
 		return mainChild;
 	}
 
 	bool isDominantChild() const {
 		return order == 0 || parent->dominantChild()->id == id;
+	}
+
+	TreeNode* sibling() const {
+		if (order == 0)
+			return nullptr;
+		if (parent->lateralChild == this)
+			return parent->mainChild;
+		return parent->lateralChild;
 	}
 };

@@ -4,20 +4,20 @@
 #include <iostream>
 #include <queue>
 #include <stack>
-Tree::Tree(TreeWorld& world, vec3 position, uint32 seed) : world(world),
+Tree::Tree(TreeWorld& world, uint32 id, vec3 position, TreeGrowthData growthData, uint32 seed) : world(world), id(id), growthData(growthData),
 root(new TreeNode(nullptr, 0, position, vec3(0.0f, 1.0f, 0.0f))), seed(seed)
 {
 
 }
 
-Tree::Tree(const Tree& from) : world(from.world), growthData(from.growthData), age(from.age), seed(from.seed), metamerCount(from.metamerCount), budCount(from.budCount)
+Tree::Tree(const Tree& from) : world(from.world), id(from.id), growthData(from.growthData), age(from.age), seed(from.seed), metamerCount(from.metamerCount), budCount(from.budCount)
 {
 	root = new TreeNode(*from.root);
 	std::queue<TreeNode*> queue({ root });
 	while (!queue.empty()) {
 		TreeNode* selected = queue.front();
 		queue.pop();
-		if (selected->bud)
+		if (selected->nodeStatus != ALIVE)
 			continue;
 
 		selected->mainChild = new TreeNode(*selected->mainChild);
@@ -31,24 +31,19 @@ Tree::Tree(const Tree& from) : world(from.world), growthData(from.growthData), a
 	}
 }
 
-void Tree::init()
-{
-	root->length = growthData.baseLength;
-	budToMetamer(*root);
-	calculateRadiuses();
-}
-
 void Tree::budToMetamer(TreeNode& bud)
 {
-	bud.mainChild = new TreeNode(&bud, bud.id * 2 + 1, bud.endPos(), bud.direction);
-
+	bud.mainChild = new TreeNode(&bud, lastNodeId, bud.endPos(), bud.direction);
+	lastNodeId++;
 	vec3 lateralDir = util::randomPerturbateVector(glm::normalize(bud.direction), growthData.lateralAngle, world.seed + seed + age + bud.id * 2 + 2);
-	bud.lateralChild = new TreeNode(&bud, bud.id * 2 + 2, bud.endPos(), lateralDir);
+	bud.lateralChild = new TreeNode(&bud, lastNodeId, bud.endPos(), lateralDir);
+	budCount++;
+	lastNodeId++;
 
-	bud.bud = false;
+	bud.nodeStatus = ALIVE;
 	bud.createdAt = age;
 	metamerCount++;
-	budCount++;
+	maxOrder = glm::max(maxOrder, bud.order + 1);
 }
 
 void Tree::startGrow()
@@ -64,6 +59,7 @@ float Tree::accumulateLight()
 
 void Tree::distributeVigor()
 {
+	root->vigor = growthData.vigorMultiplier * root->light;
 	distributeVigorRecursive(*root);
 }
 
@@ -77,9 +73,14 @@ void Tree::addNewShoots()
 	addShootsRecursive(*root);
 }
 
-void Tree::calculateRadiuses()
+void Tree::shedBranchs()
 {
-	calculateRadiusRecursive(*root);
+	shedBranchsRecursive(*root);
+}
+
+void Tree::calculateChildCount()
+{
+	calculateChildCountRecursive(*root);
 }
 
 void Tree::endGrow()
@@ -88,7 +89,7 @@ void Tree::endGrow()
 
 void Tree::printTreeRecursive(TreeNode& node, const std::string& prefix) const
 {
-	if (!node.bud) {
+	if (node.nodeStatus == ALIVE) {
 		vec3 start = node.startPos;
 		vec3 end = node.endPos();
 		std::cout << prefix << "Start: " << start.x << ", " << start.y << ", " << start.z << " End:" << end.x << ", " << end.y << ", " << end.z << " Light: " << node.light << std::endl;
@@ -104,18 +105,18 @@ void Tree::calculateShadows() const
 
 std::vector<TreeNode> Tree::AsNodeVector(bool includeBuds) const
 {
-	if (root->bud)
+	if (root->nodeStatus != ALIVE)
 		return {};
 	std::vector<TreeNode> nodes;
 	std::queue<const TreeNode*> queue({ root });
 	while (!queue.empty()) {
 		const TreeNode* selected = queue.front();
 		queue.pop();
-		if (!selected->bud) {
-			if (includeBuds || !selected->mainChild->bud) {
+		if (selected->nodeStatus == ALIVE) {
+			if (includeBuds || selected->mainChild->nodeStatus == ALIVE) {
 				queue.push(selected->mainChild);
 			}
-			if (includeBuds || !selected->lateralChild->bud) {
+			if (includeBuds || selected->lateralChild->nodeStatus == ALIVE) {
 				queue.push(selected->lateralChild);
 			}
 		}
@@ -134,7 +135,7 @@ const std::vector<Branch>& Tree::getBranchs()
 
 const std::vector<Branch>& Tree::recalculateBranchs() {
 	branchs.clear();
-	if (root->bud)
+	if (root->nodeStatus != ALIVE)
 		return branchs;
 	std::stack<const TreeNode*> stack({ root });
 	float lastOffset = 0.0f;
@@ -156,7 +157,7 @@ const std::vector<Branch>& Tree::recalculateBranchs() {
 			branchEnd = false;
 		}
 
-		Branch branch(*selected, length, lastPlaneNormal, lastOffset);
+		Branch branch(*selected, growthData.baseRadius, growthData.radiusN, growthData.branchCurviness, length, lastPlaneNormal, lastOffset);
 
 		if (branchEnd) {
 			lastOffset = 0.0f;
@@ -177,7 +178,7 @@ const std::vector<Branch>& Tree::recalculateBranchs() {
 void Tree::generateLeaves()
 {
 	for (auto& branch : branchs) {
-		branch.generateLeaves(growthData.leafMaxWidth, growthData.leafDensity);
+		branch.generateLeaves(growthData.leafMaxChildCount, growthData.leafMinOrder, growthData.leafDensity, growthData.leafSizeMultiplier);
 	}
 }
 
@@ -187,7 +188,7 @@ Tree::~Tree()
 	while (!queue.empty()) {
 		TreeNode* selected = queue.front();
 		queue.pop();
-		if (!selected->bud) {
+		if (selected->nodeStatus == ALIVE) {
 			queue.push(selected->lateralChild);
 			queue.push(selected->mainChild);
 		}
@@ -196,27 +197,45 @@ Tree::~Tree()
 
 }
 
+bool Tree::operator==(const Tree& other) const
+{
+	return other.id == id && other.age == age;
+}
+
 float Tree::accumulateLightRecursive(TreeNode& node)
 {
-	if (node.bud)
+	if (node.nodeStatus == BUD)
 	{
-		node.light = lightAtBud(node);
+		if (!world.isOutOfBounds(node.startPos))
+			node.light = lightAtBud(node);
 	}
-	else
+	else if (node.nodeStatus == ALIVE)
 	{
 		node.light = accumulateLightRecursive(*node.mainChild) + accumulateLightRecursive(*node.lateralChild);
+	}
+	else {
+		node.light = 0.0f;
 	}
 	return node.light;
 }
 
 void Tree::distributeVigorRecursive(TreeNode& node)
 {
-	if (node.bud)
+	if (node.nodeStatus != ALIVE)
 		return;
 	float apicalControl = growthData.apicalControl;
-	float mainV = apicalControl * node.mainChild->light;
-	float lateralV = (1.0f - apicalControl) * node.lateralChild->light;
-	float multiplier = node.vigor / (mainV + lateralV);
+	float mainV = 0.0f;
+	float lateralV = 0.0f;
+	if (node.mainChild->nodeStatus != DEAD) {
+		mainV = apicalControl * node.mainChild->light;
+	}
+	if (node.lateralChild->nodeStatus != DEAD) {
+		lateralV = (1.0f - apicalControl) * node.lateralChild->light;
+	}
+	float tot = mainV + lateralV;
+	if (tot == 0.0f)
+		return;
+	float multiplier = node.vigor / (tot);
 	node.mainChild->vigor = mainV * multiplier;
 	node.lateralChild->vigor = lateralV * multiplier;
 	distributeVigorRecursive(*node.mainChild);
@@ -225,9 +244,12 @@ void Tree::distributeVigorRecursive(TreeNode& node)
 
 void Tree::addShootsRecursive(TreeNode& node)
 {
-	if (!node.bud) {
+	if (node.nodeStatus == ALIVE) {
 		addShootsRecursive(*node.mainChild);
 		addShootsRecursive(*node.lateralChild);
+		return;
+	}
+	else if (node.nodeStatus == DEAD) {
 		return;
 	}
 
@@ -236,39 +258,82 @@ void Tree::addShootsRecursive(TreeNode& node)
 
 	float metamerLength = growthData.baseLength * vigor / glm::floor(vigor);
 
-	vec3 optimal = world.getOptimalDirection(node.startPos, node.direction, growthData.perceptionRadius, growthData.perceptionAngle);
+	if (world.isOutOfBounds(node.startPos))
+		return;
 
-	vec3 direction = growthData.directionWeights.x * node.direction + growthData.directionWeights.y * optimal + growthData.directionWeights.z * growthData.tropism;
+	vec3 optimal = world.getOptimalDirection(node.startPos);
+
+	vec3 direction = node.direction;
 
 	TreeNode* current = &node;
 
 
 	for (int i = 0; i < vigorFloored; i++) {
+		if (world.isOutOfBounds(current->startPos))
+			break;
+
+		direction = glm::normalize(direction + growthData.directionWeights.x * optimal + growthData.directionWeights.y * growthData.tropism);
 		current->length = metamerLength;
-		current->direction = glm::normalize(direction);
+		current->direction = direction;
 		budToMetamer(*current);
 		//TODO create shadows here?-
-		direction = growthData.directionWeights.x * direction + growthData.directionWeights.y * optimal + growthData.directionWeights.z * growthData.tropism;
+		//optimal = world.getOptimalDirection(current->startPos, current->direction, growthData.perceptionRadius, growthData.perceptionAngle);
 		current = current->mainChild;
 	}
 }
 
-float Tree::calculateRadiusRecursive(TreeNode& node)
+void Tree::shedBranchsRecursive(TreeNode& node)
 {
-	if (node.bud)
-		return growthData.baseRadius;
-	node.radius = glm::pow(glm::pow(calculateRadiusRecursive(*node.mainChild), growthData.radiusN) + glm::pow(calculateRadiusRecursive(*node.lateralChild), growthData.radiusN), 1.0f / growthData.radiusN);
+	if (node.nodeStatus != ALIVE)
+		return;
 
-	return node.radius;
+	float p = node.vigor - growthData.shedMultiplier *
+		glm::pow(glm::pow(node.childCount, 1.0f / growthData.radiusN), growthData.shedExp);
+
+	if (age - node.createdAt < 4 || p >= 0)
+	{
+		shedBranchsRecursive(*node.mainChild);
+		shedBranchsRecursive(*node.lateralChild);
+		return;
+	}
+
+	node.nodeStatus = DEAD;
+	std::queue<TreeNode*> query({ node.mainChild, node.lateralChild });
+	while (!query.empty()) {
+		TreeNode* sel = query.front();
+		if (node.nodeStatus == ALIVE) {
+			query.emplace(sel->mainChild);
+			query.emplace(sel->lateralChild);
+		}
+		query.pop();
+		delete sel;
+	}
+}
+
+float Tree::calculateChildCountRecursive(TreeNode& node)
+{
+	if (node.nodeStatus == BUD)
+		return 1;
+	else if (node.nodeStatus == DEAD) {
+		return 0;
+	}
+	else {
+		uint32 newChildCount = calculateChildCountRecursive(*node.mainChild) + calculateChildCountRecursive(*node.lateralChild);
+		node.childCount = node.childCount > newChildCount ? node.childCount : newChildCount;
+		return node.childCount;
+	}
 }
 
 void Tree::calculateShadowsRecursive(TreeNode& node) const
 {
-	if (!node.bud) {
+	if (node.nodeStatus == ALIVE) {
 		calculateShadowsRecursive(*node.mainChild);
 		calculateShadowsRecursive(*node.lateralChild);
 	}
-	else {
-		world.castShadows(node.startPos, growthData.pyramidHeight, growthData.a, growthData.b);
+	else if (node.nodeStatus == BUD) {
+		if (!world.isOutOfBounds(node.startPos)) {
+			if (node.order == 0 || node.parent->mainChild->id == node.id)
+				world.castShadows(node.startPos, growthData.pyramidHeight, growthData.a, growthData.b);
+		}
 	}
 }
