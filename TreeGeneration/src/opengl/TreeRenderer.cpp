@@ -9,6 +9,10 @@ TreeRenderer::TreeRenderer(Tree& tree, const TreeRendererResources& resources) :
 	coloredLineSSBO.init();
 }
 
+vec3 lightDir = glm::normalize(vec3(0.4, -0.6, -0.4));
+vec3 ambientCol = 0.1f * vec3(0.2f, 0.2f, 0.15f);
+vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);
+
 void TreeRenderer::renderTree(DrawView view, bool branchs, bool leaves)
 {
 	if (branchs && resources.branchShader) {
@@ -46,9 +50,9 @@ void TreeRenderer::renderBranchs(DrawView view)
 	vec3 camDir = view.camera.getCameraDirection();
 	branchShader->setUniform("camPos", camPos);
 	branchShader->setUniform("viewDir", camDir);
-	branchShader->setUniform("ambientColor", vec3(0.3f, 0.3f, 0.3f));
-	branchShader->setUniform("lightColor", vec3(1.0f, 1.0f, 1.0f));
-	branchShader->setUniform("lightDir", glm::normalize(vec3(-0.3, 0.6, -0.2)));
+	branchShader->setUniform("ambientColor", ambientCol);
+	branchShader->setUniform("lightColor", lightColor);
+	branchShader->setUniform("lightDir", lightDir);
 	branchShader->setUniform("treeColor", vec3(166.0f / 255.0f, 123.0f / 255.0f, 81.0f / 255.0f));
 	branchShader->setUniform("farPlane", view.camera.getFarPlane());
 	branchShader->setUniform("nearPlane", view.camera.getNearPlane());
@@ -162,11 +166,14 @@ void TreeRenderer::renderLeaves(DrawView view)
 
 	resources.quadVAO->bind();
 	resources.leafShader->bind();
+	resources.leafShader->setUniform("ambientColor", ambientCol);
+	resources.leafShader->setUniform("lightColor", lightColor);
+	resources.leafShader->setUniform("lightDir", lightDir);
 
 	resources.leafShader->setUniform("VP", vp);
 	glBindTextureUnit(resources.leafShader->getTextureIndex("leafTex"), resources.leafTexture->getHandle());
 	leafSSBO.bindBase(0);
-	glDrawArraysInstanced(GL_TRIANGLES, 0, 12, leafCount);
+	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, leafCount);
 }
 
 TreeRenderer::~TreeRenderer()

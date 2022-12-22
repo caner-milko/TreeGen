@@ -13,10 +13,10 @@ Texture::Texture(std::string_view path, TextureWrapping wrapping, TextureFilteri
 
 	if (imageData != nullptr) {
 		if (imageData->nrChannels == 4) {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageData->width, imageData->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData->data);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, imageData->width, imageData->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData->data);
 		}
 		else if (imageData->nrChannels == 3) {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageData->width, imageData->height, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData->data);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, imageData->width, imageData->height, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData->data);
 		}
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}

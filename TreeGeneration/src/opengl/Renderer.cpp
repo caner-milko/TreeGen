@@ -60,27 +60,19 @@ void Renderer::init()
 
 	float quadVertices[] = {
 		// positions
-		 -0.5f,  1.0f, 0.0f,
-		 -0.5f,  0.0f, 0.0f,
-		 0.5f,  0.0f, 0.0f,
+		 -0.5f,  1.0f,
+		 -0.5f,  0.0f,
+		 0.5f,  0.0f,
 
-		 0.5f,  0.0f, 0.0f,
-		 0.5f,  1.0f, 0.0f,
-		-0.5f,  1.0f, 0.0f,
-
-		0.0f, 1.0f, -0.5f,
-		0.0f, 0.0f, -0.5f,
-		0.0f, 0.0f, 0.5f,
-
-		0.0f, 0.0f, 0.5f,
-		0.0f, 1.0f, 0.5f,
-		0.0f, 1.0f, -0.5f
+		 0.5f,  0.0f,
+		 0.5f,  1.0f,
+		-0.5f,  1.0f,
 	};
 	quadVAO.init();
 	quadVAO.bind();
 	quadVAO.attachBuffer(GLVertexArray::BufferType::ARRAY, sizeof(quadVertices), GLVertexArray::DrawMode::STATIC, quadVertices);
 
-	quadVAO.enableAttribute(0, 3, 3 * sizeof(float), nullptr);
+	quadVAO.enableAttribute(0, 2, 2 * sizeof(float), nullptr);
 
 	pointVAO.init();
 	pointVAO.bind();

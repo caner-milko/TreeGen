@@ -48,15 +48,13 @@ Branch::Branch(const TreeNode& node, float baseRadius, float radiusPow, float cu
 
 	bezierPlaneNormal = normalize(glm::cross(B - A, C - A));
 
-	float dot = glm::dot(lastPlaneNormal, bezierPlaneNormal);
+	vec3 bezDir = evaluateDir(0.0f);
 
-	float acos = 0.0f;
+	vec3 bezierNormalOnPlane = glm::normalize(glm::cross(bezierPlaneNormal, bezDir));
 
-	if (abs(dot) < 1.0f) {
-		acos = glm::acos(dot);
-	}
+	float angle = glm::atan(glm::dot(bezierNormalOnPlane, lastPlaneNormal), glm::dot(bezierPlaneNormal, lastPlaneNormal));
 
-	offset = lastOffset + acos;
+	offset = lastOffset + angle;
 
 	highRadius = dominantChild == nullptr ? 0.0f : (glm::pow(dominantChild->childCount, 1.0f / radiusPow) * baseRadius);
 	lowRadius = glm::max(lowRadius, 0.0001f);

@@ -31,7 +31,7 @@ void TreeWorld::calculateShadows()
 Tree* TreeWorld::createTree(vec3 position, TreeGrowthData growthData)
 {
 	treeCount++;
-	return trees.emplace_back(std::make_unique<Tree>(*this, trees.size(), position, growthData, util::hash(static_cast<uint32>(trees.size())))).get();
+	return trees.emplace_back(std::make_unique<Tree>(*this, trees.size(), position, growthData, trees.size())).get();//util::hash(static_cast<uint32>(trees.size())))).get();
 }
 
 void TreeWorld::removeTree(Tree& tree)

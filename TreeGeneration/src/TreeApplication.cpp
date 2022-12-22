@@ -180,6 +180,9 @@ void TreeApplication::drawGUI()
 		//b > 1
 		float b = 2.0f;
 
+		int32 seed = tree->seed;
+		treeSettingsEdited |= ImGui::DragInt("Seed", &seed);
+		tree->seed = seed;
 		treeSettingsEdited |= ImGui::SliderFloat("Apical Control", &growthData.apicalControl, 0.0f, 1.0f);
 		treeSettingsEdited |= ImGui::SliderFloat("Vigor Multiplier", &growthData.vigorMultiplier, 0.25f, 4.0f);
 		treeSettingsEdited |= ImGui::SliderFloat("Base Length", &growthData.baseLength, 0.01f, 1.0f);
@@ -200,6 +203,8 @@ void TreeApplication::drawGUI()
 		treeSettingsEdited |= ImGui::Checkbox("Shedding", &growthData.shouldShed);
 		treeSettingsEdited |= ImGui::SliderFloat("Shed Multiplier", &growthData.shedMultiplier, 0.0f, 3.0f);
 		treeSettingsEdited |= ImGui::SliderFloat("Shed Exp", &growthData.shedExp, 0.5f, 5.0f);
+
+
 
 		radiusSettingsEdited |= ImGui::SliderFloat("Branch Radius Min", &growthData.baseRadius, 0.00001f, 0.005f, "%.5f", ImGuiSliderFlags_Logarithmic);
 		radiusSettingsEdited |= ImGui::SliderFloat("Branch Radius Power", &growthData.radiusN, 1.0f, 4.0f);

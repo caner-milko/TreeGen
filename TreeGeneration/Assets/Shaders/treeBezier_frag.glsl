@@ -289,6 +289,17 @@ vec3 calcNorm(in vec3 pos, in float t, float tDif, in vec3 normal, in Bezier mai
     }
 }
 
+float calc_uvx(Branch branch, float clampedT, vec3 curPos) {
+    Bezier curve = toBezier(branch);
+    vec3 bezierPos = bezier(curve, clampedT);
+    vec3 bezierPlaneNormal = normalize(cross(curve.mid - curve.start, curve.end - curve.start));
+    vec3 bezierDir = normalize(bezier_dx(curve, clampedT));
+    vec3 bezierNormalOnPlane = normalize(cross(bezierPlaneNormal,bezierDir));
+    vec2 v = vec2(dot(curPos-bezierPos,bezierNormalOnPlane),dot(curPos-bezierPos,bezierPlaneNormal));
+
+    return atan(v.y,v.x) + branch.uvOffset.x;
+}
+
 Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
 	float t = 0.0;
 	vec3 norm = vec3(-2.0);
@@ -302,15 +313,9 @@ Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
 		if(dst.x < MIN_DIST) {
             curPos = pos + rayDir * t;
             float clampedT = clamp(dst.y, 0.0, 1.0);
-            vec3 bezierPos = bezier(curve, clampedT);
-            vec3 bezierPlaneNormal = normalize(cross(branch.mid - branch.start, branch.end - branch.start));
-            vec3 bezierDir = normalize(bezier_dx(curve, clampedT));
-            vec3 bezierNormalOnPlane = normalize(cross(bezierPlaneNormal,bezierDir));
-            vec2 v = vec2(dot(curPos-bezierPos,bezierNormalOnPlane),dot(curPos-bezierPos,bezierPlaneNormal));
-
-            float ka = atan(v.y,v.x) - branch.uvOffset.x;
-
-            uv = vec2(ka, dst.y);
+            
+            //ka = calc_uvx(curve, clampedT, curPos);
+            uv = vec2(calc_uvx(branch, clampedT, curPos), dst.y);
             uv.x = mod(uv.x, PI * 2.0) / PI / 2.0;
             uv.y = branch.startLength + uv.y * branch.branchLength;
             uv.y *= 20.0f;
@@ -330,10 +335,41 @@ Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
 	return Hit(t, uv, norm, onSphere);
 }
 
+bool test() {
+    Branch main = toBranch(branchs[instanceID]);
+    Branch bef = toBranch(branchs[instanceID-1]);
+    if(bef.end !=main.start) {
+        return false;
+    }
+
+    Bezier mainBez = toBezier(main);
+    Bezier befBez = toBezier(bef);
+
+    vec3 ABm = normalize(mainBez.mid- mainBez.start);
+    vec3 ACm = normalize(mainBez.mid- mainBez.start);
+
+    vec3 ABb = normalize(befBez.mid- befBez.start);
+    vec3 ACb = normalize(befBez.mid- befBez.start);
+
+    vec3 bezierPlaneNormal = normalize(cross(mainBez.mid - mainBez.start, mainBez.end - mainBez.start));
+
+    vec3 befNormal = normalize(cross(befBez.mid - befBez.start, befBez.end - befBez.start));
+
+    vec3 bezierDir = normalize(bezier_dx(mainBez, 0.0));
+
+    vec3 bezierNormalOnPlane = normalize(cross(bezierPlaneNormal,bezierDir));
+
+    vec3 bBezierDir = normalize(bezier_dx(befBez, 1.0));
+
+    vec3 bBezierNormalOnPlane = normalize(cross(befNormal,bBezierDir));
+
+    return cross(bezierPlaneNormal, befNormal).x > 0.0;
+
+}
+
 void main()
 {
     vec3 rayDir = normalize(fragPos - camPos);
-
 
     BranchData bData = branchs[instanceID];
 
@@ -356,11 +392,10 @@ void main()
      
     gl_FragDepth = dist;
 
-
-    vec3 light = dot(hit.normal, lightDir) * lightColor + ambientColor;
-
-    FragColor = vec4(light, 1.0f) * texture(barkTexture, hit.uv);
-
+    float d = clamp(dot(hit.normal, -lightDir), 0.0, 1.0);
+    vec3 light = d * lightColor + ambientColor;
+    vec4 color = vec4(light, 1.0f) * texture(barkTexture, hit.uv);
+    FragColor = pow(color, vec4(1.0/2.2));
+    //FragColor = vec4(0.0, floor(hit.uv.x*4.0)/4.0, 0.0, 1.0);
     return;
-    
 } 
