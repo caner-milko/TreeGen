@@ -57,9 +57,9 @@ private:
 	std::unique_ptr<TreeWorld> world;
 	std::unique_ptr<TreeGenerator> generator;
 	Tree* tree;
-	//Tree* tree2;
+	Tree* tree2;
 	std::unique_ptr<TreeRenderer> treeRenderer1;
-	//std::unique_ptr<TreeRenderer> treeRenderer2;
+	std::unique_ptr<TreeRenderer> treeRenderer2;
 
 	std::unique_ptr<Tree> previewTree;
 
@@ -75,6 +75,8 @@ private:
 	bool growTree1 = true;
 	bool growTree2 = true;
 
+	bool renderBody = true;
+	bool renderLeaves = true;
 
 
 	Shader* treeBezierShader{};

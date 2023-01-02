@@ -54,7 +54,7 @@ Branch::Branch(const TreeNode& node, float baseRadius, float radiusPow, float cu
 
 	float angle = glm::atan(glm::dot(bezierNormalOnPlane, lastPlaneNormal), glm::dot(bezierPlaneNormal, lastPlaneNormal));
 
-	offset = lastOffset + angle;
+	offset = lastOffset + angle, PI * 2.0f;
 
 	highRadius = dominantChild == nullptr ? 0.0f : (glm::pow(dominantChild->childCount, 1.0f / radiusPow) * baseRadius);
 	lowRadius = glm::max(lowRadius, 0.0001f);

@@ -15,7 +15,8 @@ public:
 	void init();
 	void startFrame();
 	void endFrame();
-
+	void startDraw();
+	void endDraw();
 	void renderPlane(DrawView view, Shader* shader, mat4 model);
 
 	void renderShadowPoints(DrawView view, Shader* shader, const std::vector<vec4>& points);

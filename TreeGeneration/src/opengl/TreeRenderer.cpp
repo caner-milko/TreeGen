@@ -166,6 +166,8 @@ void TreeRenderer::renderLeaves(DrawView view)
 
 	resources.quadVAO->bind();
 	resources.leafShader->bind();
+
+	resources.leafShader->setUniform("camPos", view.camera.getCameraPosition());
 	resources.leafShader->setUniform("ambientColor", ambientCol);
 	resources.leafShader->setUniform("lightColor", lightColor);
 	resources.leafShader->setUniform("lightDir", lightDir);

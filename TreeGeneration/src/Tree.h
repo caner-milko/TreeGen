@@ -10,7 +10,7 @@ struct TreeWorld;
 
 struct TreeGrowthData
 {
-	float apicalControl = 0.50f;
+	float apicalControl = 0.5f;
 	float vigorMultiplier = 2.0f;
 	float baseLength = .02f;
 

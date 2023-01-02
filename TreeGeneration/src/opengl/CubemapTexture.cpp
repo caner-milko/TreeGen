@@ -8,10 +8,10 @@ CubemapTexture::CubemapTexture(std::array<std::string_view, 6> paths, TextureWra
 	for (int i = 0; i < paths.size(); i++) {
 		ImageDataPtr imageData = ResourceManager::getInstance().readImageFile(paths[i]);
 		if (imageData->nrChannels == 4) {
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, imageData->width, imageData->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData->data);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB_ALPHA, imageData->width, imageData->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData->data);
 		}
 		else if (imageData->nrChannels == 3) {
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, imageData->width, imageData->height, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData->data);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB, imageData->width, imageData->height, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData->data);
 		}
 		this->paths[i] = paths[i];
 	}

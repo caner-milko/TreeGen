@@ -7,7 +7,6 @@
 void Renderer::init()
 {
 	glEnable(GL_DEPTH_TEST);
-
 	float cubeVertices[] = {
 		// Back face
 		-0.5f, -0.5f, -0.5f, // Bottom-left
@@ -101,14 +100,35 @@ void Renderer::endFrame()
 	lastShader = nullptr;
 }
 
+void Renderer::startDraw() {
+	glEnable(GL_FRAMEBUFFER_SRGB);
+}
+
+void Renderer::endDraw() {
+	glDisable(GL_FRAMEBUFFER_SRGB);
+}
+
+
+
+
 void Renderer::renderPlane(DrawView view, Shader* shader, mat4 model)
 {
+	vec3 lightDir = glm::normalize(vec3(0.4, -0.6, -0.4));
+	vec3 ambientCol = 0.1f * vec3(0.2f, 0.2f, 0.15f);
+	vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);
 	glDisable(GL_CULL_FACE);
 	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
 	quadVAO.bind();
 	shader->bind();
 	shader->setUniform("VP", vp);
 	shader->setUniform("model", model);
+
+	shader->setUniform("color", vec3(1.0));
+	shader->setUniform("camPos", view.camera.getCameraPosition());
+	shader->setUniform("lightDir", lightDir);
+	shader->setUniform("lightColor", lightColor);
+	shader->setUniform("ambientColor", ambientCol);
+
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glEnable(GL_CULL_FACE);
 }

@@ -98,7 +98,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 
 
 	barkTex = ResourceManager::getInstance().loadTexture("bark_texture", "./Assets/Textures/bark.jpg");
-	leafTex = ResourceManager::getInstance().loadTexture("leaf_texture", "./Assets/Textures/leaf3.png", TextureWrapping::CLAMP_TO_EDGE);
+	leafTex = ResourceManager::getInstance().loadTexture("leaf_texture", "./Assets/Textures/leaf2.png", TextureWrapping::CLAMP_TO_EDGE);
 
 	skyboxTex = ResourceManager::getInstance().loadCubemapTexture("skybox", "./Assets/Textures/skybox/posx.jpg", "./Assets/Textures/skybox/negx.jpg",
 		"./Assets/Textures/skybox/posy.jpg", "./Assets/Textures/skybox/negy.jpg",
@@ -121,8 +121,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 	world = std::make_unique<TreeWorld>(appData.worldBbox, growthData.baseLength);
 
 	tree = generator->createTree(*world, vec3(0.0f), growthData);
-	//tree2 = generator->createTree(*world, vec3(0.5f, 0.0f, 0.0f));
-	//tree2->growthData.baseLength = appData.baseTreeLength;
+	tree2 = generator->createTree(*world, vec3(0.2f, 0.0f, 0.0f), growthData);
 
 
 	TreeRendererResources resources{ .quadVAO = &renderer.getQuadVAO(), .cubeVAO = &renderer.getCubeVAO(), .pointVAO = &renderer.getPointVAO(), .lineVAO = &renderer.getLineVAO(),
@@ -130,9 +129,9 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 		.leafTexture = leafTex, .barkTexture = barkTex, };
 
 	treeRenderer1 = std::make_unique<TreeRenderer>(*tree, resources);
-	//treeRenderer2 = std::make_unique<TreeRenderer>(*tree2, resources);
+	treeRenderer2 = std::make_unique<TreeRenderer>(*tree2, resources);
 	treeRenderer1->updateRenderer();
-	//treeRenderer2->updateRenderer();
+	treeRenderer2->updateRenderer();
 #pragma endregion Setup_TreeGen
 }
 
@@ -216,9 +215,11 @@ void TreeApplication::drawGUI()
 		leafSettingsEdited |= ImGui::SliderFloat("Leaf Size Multiplier", &growthData.leafSizeMultiplier, 0.05f, 3.0f);
 		leafSettingsEdited |= ImGui::SliderAngle("Leaf Angle", &Leaf::pertubateAngle);
 
+		ImGui::Checkbox("Render Body", &renderBody);
+		ImGui::Checkbox("Render Leaves", &renderLeaves),
 
-		tree->growthData = growthData;
-		//tree2->growthData = growthData;
+			tree->growthData = growthData;
+		tree2->growthData = growthData;
 	}
 
 	if (ImGui::CollapsingHeader("Render Options")) {
@@ -236,7 +237,9 @@ void TreeApplication::drawGUI()
 	ImGui::Checkbox("Grow Tree 2", &growTree2);
 	if (ImGui::Button("Reset Trees")) {
 		world->removeTree(*tree);
+		world->removeTree(*tree2);
 		tree = generator->createTree(*world, vec3(0.0f, 0.0f, 0.0f), growthData);
+		tree2 = generator->createTree(*world, vec3(0.2f, 0.0f, 0.0f), growthData);
 		previewTree = nullptr;
 	}
 	ImGui::End();
@@ -244,9 +247,11 @@ void TreeApplication::drawGUI()
 
 void TreeApplication::drawScene()
 {
+	renderer.startDraw();
 	DrawView view{ cam };
 
-	renderer.renderPlane(view, planeShader, glm::scale(glm::rotate(glm::translate(glm::mat4(1.0), vec3(0.0f, 0.0f, -2.5f)), PI / 2.0f, vec3(1.0f, 0.0f, 0.0f)), vec3(5.0f)));
+
+	//renderer.renderPlane(view, planeShader, glm::scale(glm::rotate(glm::translate(glm::mat4(1.0), vec3(0.0f, 0.0f, -2.5f)), PI / 2.0f, vec3(1.0f, 0.0f, 0.0f)), vec3(5.0f)));
 
 
 	if (treePreviewChanged && !appData.renderPreviewTree) {
@@ -270,21 +275,21 @@ void TreeApplication::drawScene()
 
 	if (radiusSettingsEdited) {
 		selTree->recalculateBranchs();
-		//tree2->recalculateBranchs();
+		tree2->recalculateBranchs();
 		treeRenderer1->updateRenderer();
-		//treeRenderer2->updateRenderer();
+		treeRenderer2->updateRenderer();
 	}
 	else {
 		if (leafSettingsEdited) {
 			selTree->generateLeaves();
-			//tree2->generateLeaves();
+			tree2->generateLeaves();
 			treeRenderer1->updateRenderer();
-			//treeRenderer2->updateRenderer();
+			treeRenderer2->updateRenderer();
 		}
 	}
 
-	treeRenderer1->renderTree(view, true, true);
-	//treeRenderer2->renderTree(view, true, true);
+	treeRenderer1->renderTree(view, renderBody, renderLeaves);
+	treeRenderer2->renderTree(view, renderBody, renderLeaves);
 
 	if (appData.showShadowGrid) {
 		world->calculateShadows();
@@ -297,22 +302,23 @@ void TreeApplication::drawScene()
 		else {
 			std::vector<TreeNode> buds = selTree->AsNodeVector(true);
 			renderer.renderShadowsOnBuds(view, shadowPointShader, *world, buds);
-			//buds = tree2->AsNodeVector(true);
-			//renderer.renderShadowsOnBuds(view, shadowPointShader, *world, buds);
+			buds = tree2->AsNodeVector(true);
+			renderer.renderShadowsOnBuds(view, shadowPointShader, *world, buds);
 		}
 	}
 	if (appData.showVigor) {
 		treeRenderer1->renderVigor(view);
-		//treeRenderer2->renderVigor(view);
+		treeRenderer2->renderVigor(view);
 	}
 	if (appData.showOptimalDirs) {
 		treeRenderer1->renderOptimalDirection(view);
-		//treeRenderer2->renderOptimalDirection(view);
+		treeRenderer2->renderOptimalDirection(view);
 	}
 
 	renderer.renderBBoxLines(view, lineShader, world->getBBox(), vec3(1.0f));
 
 	renderer.renderSkybox(view);
+	renderer.endDraw();
 }
 
 void TreeApplication::endFrame()
@@ -386,8 +392,8 @@ void TreeApplication::keyInput()
 			}
 		}
 		if (growTree2) {
-			//generator->growTree(*tree2);
-			//treeRenderer2->updateRenderer();
+			generator->growTree(*tree2);
+			treeRenderer2->updateRenderer();
 
 		}
 
