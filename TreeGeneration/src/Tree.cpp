@@ -319,7 +319,7 @@ float Tree::calculateChildCountRecursive(TreeNode& node)
 	}
 	else {
 		uint32 newChildCount = calculateChildCountRecursive(*node.mainChild) + calculateChildCountRecursive(*node.lateralChild);
-		node.childCount = node.childCount > newChildCount ? node.childCount : newChildCount;
+		node.childCount = glm::max(node.childCount, newChildCount);
 		return node.childCount;
 	}
 }

@@ -98,7 +98,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 
 
 	barkTex = ResourceManager::getInstance().loadTexture("bark_texture", "./Assets/Textures/bark.jpg");
-	leafTex = ResourceManager::getInstance().loadTexture("leaf_texture", "./Assets/Textures/leaf2.png", TextureWrapping::CLAMP_TO_EDGE);
+	leafTex = ResourceManager::getInstance().loadTexture("leaf_texture", "./Assets/Textures/leaf3.png", TextureWrapping::CLAMP_TO_EDGE);
 
 	skyboxTex = ResourceManager::getInstance().loadCubemapTexture("skybox", "./Assets/Textures/skybox/posx.jpg", "./Assets/Textures/skybox/negx.jpg",
 		"./Assets/Textures/skybox/posy.jpg", "./Assets/Textures/skybox/negy.jpg",

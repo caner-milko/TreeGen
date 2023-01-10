@@ -5,7 +5,7 @@ Branch::Branch(const TreeNode& node, float baseRadius, float radiusPow, float cu
 
 	TreeNode* dominantChild = node.dominantChild();
 	length = node.length;
-	if (false && node.order > 0 && node.parent->dominantChild()->id != node.id) {
+	if (node.order > 0 && node.parent->dominantChild()->id != node.id) {
 
 		length += node.parent->length;
 		A = node.parent->startPos;
@@ -33,7 +33,6 @@ Branch::Branch(const TreeNode& node, float baseRadius, float radiusPow, float cu
 
 		B = (parentPoint + childPoint) / 2.0f;
 	}
-	A = node.startPos;
 	C = node.endPos();
 	B = glm::mix((A + C) / 2.0f, B, curviness);
 
