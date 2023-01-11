@@ -4,7 +4,7 @@ layout (depth_greater) out float gl_FragDepth;
 in vec3 fragPos;
 
 flat in int instanceID;
-
+flat in int inside;
 #define SHOW_BBOX 0
 
 
@@ -127,6 +127,7 @@ vec3 bezier_dx( in Bezier bez, float t )
 
 float dot2( in vec3 v ) { return dot(v,v); }
 
+#if 0
 vec2 sdBezier(vec3 pos, Bezier bezier)
 {    
     vec3 A = bezier.start;
@@ -200,6 +201,57 @@ vec2 sdBezier(vec3 pos, Bezier bezier)
     res.x = sqrt(res.x);
     return res;
 }
+#else
+
+vec2 solveCubic(float a, float b, float c) {
+    float p = b - a*a / 3.0, p3 = p*p*p;
+    float q = a * (2.0*a*a - 9.0*b) / 27.0 + c;
+    float d = q*q + 4.0*p3 / 27.0;
+    float offset = -a / 3.0;
+    if(d >= 0.0) { 
+        float z = sqrt(d);
+        vec2 x = (vec2(z, -z) - q) / 2.0;
+        vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));
+        return vec2(offset + uv.x + uv.y);
+    }
+    float x = -sqrt(-27.0 / p3) * q / 2.0;
+    x = sqrt(0.5+0.5*x);
+    
+    float m = x*(x*(x*(x*-0.008978+0.039075)-0.107071)+0.576974)+0.5;//;cos(acos(x)/3.);//(x * x * ( 0.01875324 * x - 0.08179158 ) + ( 0.33098754 * x + 1.7320508 ))/2.0;
+    float n = sqrt(1.-m*m)*sqrt(3.);
+    return vec2(m + m, -n - m) * sqrt(-p / 3.0) + offset;
+}
+
+vec2 sdBezier(vec3 p, Bezier bezier)
+{    
+    vec3 A = bezier.start;
+    vec3 B = bezier.mid;
+    vec3 C = bezier.end;
+    vec3 a = B - A;
+    vec3 b = A - B * 2.0 + C;
+    vec3 c = a * 2.0;
+    vec3 d = A - p;
+    
+    vec3 k = vec3(3.*dot(a,b),2.*dot(a,a)+dot(d,b),dot(d,a)) / dot(b,b);     
+    
+    
+    vec2 t = solveCubic(k.x, k.y, k.z);
+    vec2 clampedT = clamp(t, 0.0, 1.0);
+
+    vec3 pos = A + (c + b * clampedT.x) * clampedT.x;
+    float tt = t.x;
+    float dis = length(pos - p);
+    pos = A + (c + b * clampedT.y) * clampedT.y;
+    float dis2 = length(pos - p);
+    bool y = dis2 < dis;
+    dis = mix(dis, dis2, y);
+    tt = mix(t.x, t.y, y);
+    //pos = A + (c + b*t.z)*t.z;
+    //dis = min(dis, length(pos - p));
+    return vec2(dis, tt);
+}
+
+#endif
 
 float branchRadius(in float t, in  float lowRadius, in float highRadius) {
 
@@ -301,7 +353,7 @@ float calc_uvx(Branch branch, float clampedT, vec3 curPos) {
 
 vec2 calc_uv(Branch branch, float clampedT, vec3 curPos, float v) {
     vec2 uv = vec2(calc_uvx(branch, clampedT, curPos), v);
-    uv.x = mod(uv.x, PI * 2.0) / PI / 2.0;
+    uv.x = mod(uv.x + PI * 2.0, PI * 2.0) / PI / 2.0;
     uv.y = branch.startLength + uv.y * branch.branchLength;
     uv.y *= 20.0f;
     
@@ -371,19 +423,23 @@ void main()
 
     Branch branch = toBranch(bData);
 
-	Hit hit = intersect(fragPos, rayDir, branch);
-    
+    vec3 start = mix(fragPos, camPos, float(inside));
+
+	Hit hit = intersect(start, rayDir, branch);
 	if(hit.normal.x < -1.5) {
         #if SHOW_BBOX
-        FragColor = vec4(vec3(1.0), 1.0);
+
+        FragColor = vec4(vec3(float(gl_FrontFacing)), 1.0);
         gl_FragDepth = 0.999;
+        
+        return;
         #else
 		discard;
         return;
 	    #endif
     }
 
-    hit.t += length(camPos-fragPos);
+    hit.t += float(inside == 0) * length(camPos-fragPos);
 
     float dist = (1.0/(hit.t + float(hit.onSphere) * branch.highRadius / 10.0)  - 1.0/nearPlane)/(1.0/farPlane - 1.0/nearPlane);
      
