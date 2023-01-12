@@ -82,7 +82,7 @@ public:
 
 	void printTreeRecursive(TreeNode& node, const std::string& prefix) const;
 
-	void calculateShadows() const;
+	//void calculateShadows() const;
 
 	std::vector<TreeNode> AsNodeVector(bool includeBuds) const;
 
@@ -106,5 +106,8 @@ private:
 	void addShootsRecursive(TreeNode& node);
 	void shedBranchsRecursive(TreeNode& node);
 	float calculateChildCountRecursive(TreeNode& node);
-	void calculateShadowsRecursive(TreeNode& node) const;
+	//void calculateShadowsRecursive(TreeNode& node) const;
+
+	void removeShadows(const TreeNode& node) const;
+	void addShadows(TreeNode& node);
 };

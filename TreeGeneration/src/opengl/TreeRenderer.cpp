@@ -9,21 +9,19 @@ TreeRenderer::TreeRenderer(Tree& tree, const TreeRendererResources& resources) :
 	coloredLineSSBO.init();
 }
 
-vec3 lightDir = glm::normalize(vec3(0.4, -0.6, -0.4));
-vec3 ambientCol = 0.1f * vec3(0.2f, 0.2f, 0.15f);
-vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);
 
-void TreeRenderer::renderTree(DrawView view, bool branchs, bool leaves)
+
+void TreeRenderer::renderTree(DrawView view, bool branchs, bool leaves, Scene scene)
 {
 	if (branchs && resources.branchShader) {
-		renderBranchs(view);
+		renderBranchs(view, scene);
 	}
 	if (leaves && resources.leafShader) {
-		renderLeaves(view);
+		renderLeaves(view, scene);
 	}
 }
 
-void TreeRenderer::renderBranchs(DrawView view)
+void TreeRenderer::renderBranchs(DrawView view, Scene scene)
 {
 	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
 
@@ -50,9 +48,9 @@ void TreeRenderer::renderBranchs(DrawView view)
 	vec3 camDir = view.camera.getCameraDirection();
 	branchShader->setUniform("camPos", camPos);
 	branchShader->setUniform("viewDir", camDir);
-	branchShader->setUniform("ambientColor", ambientCol);
-	branchShader->setUniform("lightColor", lightColor);
-	branchShader->setUniform("lightDir", lightDir);
+	branchShader->setUniform("ambientColor", scene.ambientCol);
+	branchShader->setUniform("lightColor", scene.lightColor);
+	branchShader->setUniform("lightDir", scene.lightDir);
 	branchShader->setUniform("treeColor", vec3(166.0f / 255.0f, 123.0f / 255.0f, 81.0f / 255.0f));
 	branchShader->setUniform("farPlane", view.camera.getFarPlane());
 	branchShader->setUniform("nearPlane", view.camera.getNearPlane());
@@ -60,66 +58,23 @@ void TreeRenderer::renderBranchs(DrawView view)
 	glDrawArraysInstanced(GL_TRIANGLES, 0, 36, branchCount);
 }
 
-void TreeRenderer::updateRenderer()
+void TreeRenderer::renderLeaves(DrawView view, Scene scene)
 {
-	const std::vector<Branch>& branchs = tree.getBranchs();
-	std::vector<BranchShaderData> branchData;
+	glDisable(GL_CULL_FACE);
+	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
 
-	branchData.reserve(branchs.size());
+	resources.quadVAO->bind();
+	resources.leafShader->bind();
 
-	for (auto& branch : branchs) {
+	resources.leafShader->setUniform("camPos", view.camera.getCameraPosition());
+	resources.leafShader->setUniform("ambientColor", scene.ambientCol);
+	resources.leafShader->setUniform("lightColor", scene.lightColor);
+	resources.leafShader->setUniform("lightDir", scene.lightDir);
 
-		uint32 colorSelected = branch.from.order;
-		vec3 color = vec3(util::IntNoise2D(colorSelected), util::IntNoise2D(colorSelected, 1), util::IntNoise2D(colorSelected, 2)) * 0.5f + 0.5f;
-
-
-		branchData.push_back(branch.asShaderData(color));
-	}
-	branchSSBO.bufferData(sizeof(BranchShaderData) * branchData.size(), branchData.data(), GL_STATIC_DRAW);
-	branchCount = branchData.size();
-
-	std::vector<mat4> models;
-
-	for (auto& branch : branchs) {
-		for (auto& leaf : branch.leaves) {
-			models.emplace_back(leaf.model);
-		}
-	}
-	leafSSBO.bufferData(sizeof(mat4) * models.size(), models.data(), GL_STATIC_DRAW);
-	leafCount = models.size();
-
-
-	tree.world.calculateShadows();
-
-	tree.accumulateLight();
-	tree.root->vigor = tree.root->light;
-	tree.distributeVigor();
-
-	const auto& nodes = tree.AsNodeVector(true);
-	std::vector<BudPoint> points;
-	std::vector<ColoredLine> lines;
-	for (auto& node : nodes)
-	{
-		if (node.nodeStatus == ALIVE)
-			continue;
-		float vigor = node.vigor;
-
-		vec4 color = vigor >= 1.0f ? vec4(0.0f, 1.0f, 0.0f, vigor) : vec4(1.0f, 0.0f, 0.0f, vigor);
-		if (node.nodeStatus == DEAD)
-			color = vec4(0.0f, 0.0f, 0.0f, vigor);
-
-		points.emplace_back(vec4(node.startPos, 0.0f), color);
-
-		vec3 dir = 0.1f * tree.world.getOptimalDirection(node.startPos);
-		lines.emplace_back(vec4(node.startPos, 0.0f), vec4(node.startPos + dir, 0.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
-	}
-	budSSBO.bufferData(sizeof(BudPoint) * points.size(), points.data(), GL_STATIC_DRAW);
-	coloredLineSSBO.bufferData(sizeof(ColoredLine) * lines.size(), lines.data(), GL_STATIC_DRAW);
-	budCount = points.size();
-
-
-
-
+	resources.leafShader->setUniform("VP", vp);
+	glBindTextureUnit(resources.leafShader->getTextureIndex("leafTex"), resources.leafTexture->getHandle());
+	leafSSBO.bindBase(0);
+	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, leafCount);
 }
 
 uint32 TreeRenderer::getLeafCount() const
@@ -159,23 +114,68 @@ void TreeRenderer::renderOptimalDirection(DrawView view) {
 	glDrawElementsInstanced(GL_LINES, 2, GL_UNSIGNED_INT, 0, budCount);
 }
 
-void TreeRenderer::renderLeaves(DrawView view)
+
+
+void TreeRenderer::updateRenderer()
 {
-	glDisable(GL_CULL_FACE);
-	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
+	const std::vector<Branch>& branchs = tree.getBranchs();
+	std::vector<BranchShaderData> branchData;
 
-	resources.quadVAO->bind();
-	resources.leafShader->bind();
+	branchData.reserve(branchs.size());
 
-	resources.leafShader->setUniform("camPos", view.camera.getCameraPosition());
-	resources.leafShader->setUniform("ambientColor", ambientCol);
-	resources.leafShader->setUniform("lightColor", lightColor);
-	resources.leafShader->setUniform("lightDir", lightDir);
+	for (auto& branch : branchs) {
 
-	resources.leafShader->setUniform("VP", vp);
-	glBindTextureUnit(resources.leafShader->getTextureIndex("leafTex"), resources.leafTexture->getHandle());
-	leafSSBO.bindBase(0);
-	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, leafCount);
+		uint32 colorSelected = branch.from.order;
+		vec3 color = vec3(util::IntNoise2D(colorSelected), util::IntNoise2D(colorSelected, 1), util::IntNoise2D(colorSelected, 2)) * 0.5f + 0.5f;
+
+
+		branchData.push_back(branch.asShaderData(color));
+	}
+	branchSSBO.bufferData(sizeof(BranchShaderData) * branchData.size(), branchData.data(), GL_STATIC_DRAW);
+	branchCount = branchData.size();
+
+	std::vector<mat4> models;
+
+	for (auto& branch : branchs) {
+		for (auto& leaf : branch.leaves) {
+			models.emplace_back(leaf.model);
+		}
+	}
+	leafSSBO.bufferData(sizeof(mat4) * models.size(), models.data(), GL_STATIC_DRAW);
+	leafCount = models.size();
+
+
+	//tree.world.calculateShadows();
+
+	tree.accumulateLight();
+	tree.root->vigor = tree.root->light;
+	tree.distributeVigor();
+
+	const auto& nodes = tree.AsNodeVector(true);
+	std::vector<BudPoint> points;
+	std::vector<ColoredLine> lines;
+	for (auto& node : nodes)
+	{
+		if (node.nodeStatus == TreeNode::ALIVE)
+			continue;
+		float vigor = node.vigor;
+
+		vec4 color = vigor >= 1.0f ? vec4(0.0f, 1.0f, 0.0f, vigor) : vec4(1.0f, 0.0f, 0.0f, vigor);
+		if (node.nodeStatus == TreeNode::DEAD)
+			color = vec4(0.0f, 0.0f, 0.0f, vigor);
+
+		points.emplace_back(vec4(node.startPos, 0.0f), color);
+
+		vec3 dir = 0.1f * tree.world.getOptimalDirection(node.startPos);
+		lines.emplace_back(vec4(node.startPos, 0.0f), vec4(node.startPos + dir, 0.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	}
+	budSSBO.bufferData(sizeof(BudPoint) * points.size(), points.data(), GL_STATIC_DRAW);
+	coloredLineSSBO.bufferData(sizeof(ColoredLine) * lines.size(), lines.data(), GL_STATIC_DRAW);
+	budCount = points.size();
+
+
+
+
 }
 
 TreeRenderer::~TreeRenderer()

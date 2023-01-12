@@ -7,7 +7,7 @@
 Tree::Tree(TreeWorld& world, uint32 id, vec3 position, TreeGrowthData growthData, uint32 seed) : world(world), id(id), growthData(growthData),
 root(new TreeNode(nullptr, 0, position, vec3(0.0f, 1.0f, 0.0f))), seed(seed)
 {
-
+	addShadows(*root);
 }
 
 Tree::Tree(const Tree& from) : world(from.world), id(from.id), growthData(from.growthData), age(from.age), seed(from.seed), metamerCount(from.metamerCount), budCount(from.budCount)
@@ -17,7 +17,7 @@ Tree::Tree(const Tree& from) : world(from.world), id(from.id), growthData(from.g
 	while (!queue.empty()) {
 		TreeNode* selected = queue.front();
 		queue.pop();
-		if (selected->nodeStatus != ALIVE)
+		if (selected->nodeStatus != TreeNode::ALIVE)
 			continue;
 
 		selected->mainChild = new TreeNode(*selected->mainChild);
@@ -40,10 +40,12 @@ void Tree::budToMetamer(TreeNode& bud)
 	budCount++;
 	lastNodeId++;
 
-	bud.nodeStatus = ALIVE;
+	bud.nodeStatus = TreeNode::ALIVE;
 	bud.createdAt = age;
 	metamerCount++;
 	maxOrder = glm::max(maxOrder, bud.order + 1);
+
+	addShadows(*bud.mainChild);
 }
 
 void Tree::startGrow()
@@ -89,7 +91,7 @@ void Tree::endGrow()
 
 void Tree::printTreeRecursive(TreeNode& node, const std::string& prefix) const
 {
-	if (node.nodeStatus == ALIVE) {
+	if (node.nodeStatus == TreeNode::ALIVE) {
 		vec3 start = node.startPos;
 		vec3 end = node.endPos();
 		std::cout << prefix << "Start: " << start.x << ", " << start.y << ", " << start.z << " End:" << end.x << ", " << end.y << ", " << end.z << " Light: " << node.light << std::endl;
@@ -98,25 +100,25 @@ void Tree::printTreeRecursive(TreeNode& node, const std::string& prefix) const
 	}
 }
 
-void Tree::calculateShadows() const
+/*void Tree::calculateShadows() const
 {
 	calculateShadowsRecursive(*root);
-}
+}*/
 
 std::vector<TreeNode> Tree::AsNodeVector(bool includeBuds) const
 {
-	if (root->nodeStatus != ALIVE)
+	if (root->nodeStatus != TreeNode::ALIVE)
 		return {};
 	std::vector<TreeNode> nodes;
 	std::queue<const TreeNode*> queue({ root });
 	while (!queue.empty()) {
 		const TreeNode* selected = queue.front();
 		queue.pop();
-		if (selected->nodeStatus == ALIVE) {
-			if (includeBuds || selected->mainChild->nodeStatus == ALIVE) {
+		if (selected->nodeStatus == TreeNode::ALIVE) {
+			if (includeBuds || selected->mainChild->nodeStatus == TreeNode::ALIVE) {
 				queue.push(selected->mainChild);
 			}
-			if (includeBuds || selected->lateralChild->nodeStatus == ALIVE) {
+			if (includeBuds || selected->lateralChild->nodeStatus == TreeNode::ALIVE) {
 				queue.push(selected->lateralChild);
 			}
 		}
@@ -135,7 +137,7 @@ const std::vector<Branch>& Tree::getBranchs()
 
 const std::vector<Branch>& Tree::recalculateBranchs() {
 	branchs.clear();
-	if (root->nodeStatus != ALIVE)
+	if (root->nodeStatus != TreeNode::ALIVE)
 		return branchs;
 	std::stack<const TreeNode*> stack({ root });
 	float lastOffset = 0.0f;
@@ -188,7 +190,7 @@ Tree::~Tree()
 	while (!queue.empty()) {
 		TreeNode* selected = queue.front();
 		queue.pop();
-		if (selected->nodeStatus == ALIVE) {
+		if (selected->nodeStatus == TreeNode::ALIVE) {
 			queue.push(selected->lateralChild);
 			queue.push(selected->mainChild);
 		}
@@ -204,12 +206,16 @@ bool Tree::operator==(const Tree& other) const
 
 float Tree::accumulateLightRecursive(TreeNode& node)
 {
-	if (node.nodeStatus == BUD)
+	if (node.nodeStatus == TreeNode::BUD)
 	{
-		if (!world.isOutOfBounds(node.startPos))
+		if (!world.isOutOfBounds(node.startPos)) {
 			node.light = lightAtBud(node);
+		}
+		else {
+			node.light = 0.0f;
+		}
 	}
-	else if (node.nodeStatus == ALIVE)
+	else if (node.nodeStatus == TreeNode::ALIVE)
 	{
 		node.light = accumulateLightRecursive(*node.mainChild) + accumulateLightRecursive(*node.lateralChild);
 	}
@@ -221,15 +227,15 @@ float Tree::accumulateLightRecursive(TreeNode& node)
 
 void Tree::distributeVigorRecursive(TreeNode& node)
 {
-	if (node.nodeStatus != ALIVE)
+	if (node.nodeStatus != TreeNode::ALIVE)
 		return;
 	float apicalControl = growthData.apicalControl;
 	float mainV = 0.0f;
 	float lateralV = 0.0f;
-	if (node.mainChild->nodeStatus != DEAD) {
+	if (node.mainChild->nodeStatus != TreeNode::DEAD) {
 		mainV = apicalControl * node.mainChild->light;
 	}
-	if (node.lateralChild->nodeStatus != DEAD) {
+	if (node.lateralChild->nodeStatus != TreeNode::DEAD) {
 		lateralV = (1.0f - apicalControl) * node.lateralChild->light;
 	}
 	float tot = mainV + lateralV;
@@ -244,12 +250,12 @@ void Tree::distributeVigorRecursive(TreeNode& node)
 
 void Tree::addShootsRecursive(TreeNode& node)
 {
-	if (node.nodeStatus == ALIVE) {
+	if (node.nodeStatus == TreeNode::ALIVE) {
 		addShootsRecursive(*node.mainChild);
 		addShootsRecursive(*node.lateralChild);
 		return;
 	}
-	else if (node.nodeStatus == DEAD) {
+	else if (node.nodeStatus == TreeNode::DEAD) {
 		return;
 	}
 
@@ -284,7 +290,7 @@ void Tree::addShootsRecursive(TreeNode& node)
 
 void Tree::shedBranchsRecursive(TreeNode& node)
 {
-	if (node.nodeStatus != ALIVE)
+	if (node.nodeStatus != TreeNode::ALIVE)
 		return;
 
 	float p = node.vigor - growthData.shedMultiplier *
@@ -297,12 +303,18 @@ void Tree::shedBranchsRecursive(TreeNode& node)
 		return;
 	}
 
-	node.nodeStatus = DEAD;
+	node.nodeStatus = TreeNode::DEAD;
+	if (node.order != 0 && node.parent->mainChild->id == node.id) {
+		removeShadows(node);
+	}
 	std::queue<TreeNode*> query({ node.mainChild, node.lateralChild });
 	while (!query.empty()) {
 		TreeNode* sel = query.front();
-		if (node.nodeStatus == ALIVE) {
+		if (node.nodeStatus == TreeNode::ALIVE) {
 			query.emplace(sel->mainChild);
+			if (sel->mainChild->nodeStatus != TreeNode::DEAD)
+				removeShadows(*sel->mainChild);
+
 			query.emplace(sel->lateralChild);
 		}
 		query.pop();
@@ -312,10 +324,11 @@ void Tree::shedBranchsRecursive(TreeNode& node)
 
 float Tree::calculateChildCountRecursive(TreeNode& node)
 {
-	if (node.nodeStatus == BUD)
+	if (node.nodeStatus == TreeNode::BUD) {
 		return 1;
-	else if (node.nodeStatus == DEAD) {
-		return 0;
+	}
+	else if (node.nodeStatus == TreeNode::DEAD) {
+		return 1;
 	}
 	else {
 		uint32 newChildCount = calculateChildCountRecursive(*node.mainChild) + calculateChildCountRecursive(*node.lateralChild);
@@ -324,7 +337,7 @@ float Tree::calculateChildCountRecursive(TreeNode& node)
 	}
 }
 
-void Tree::calculateShadowsRecursive(TreeNode& node) const
+/*void Tree::calculateShadowsRecursive(TreeNode& node) const
 {
 	if (node.nodeStatus == ALIVE) {
 		calculateShadowsRecursive(*node.mainChild);
@@ -336,4 +349,11 @@ void Tree::calculateShadowsRecursive(TreeNode& node) const
 				world.castShadows(node.startPos, growthData.pyramidHeight, growthData.a, growthData.b);
 		}
 	}
+}*/
+
+void Tree::removeShadows(const TreeNode& node) const {
+	world.castShadows(node.startPos, growthData.pyramidHeight, growthData.a, growthData.b, false);
+}
+void Tree::addShadows(TreeNode& node) {
+	world.castShadows(node.startPos, growthData.pyramidHeight, growthData.a, growthData.b, true);
 }

@@ -21,13 +21,13 @@ struct TreeWorld
 
 	void resizeShadowGrid(ivec3 worldSize, vec3 leftBottomCorner, float cellSize);
 
-	void calculateShadows();
+	//void calculateShadows();
 	Tree* createTree(vec3 position, TreeGrowthData growthData);
 	void removeTree(Tree& tree);
 	float getLightAt(const vec3& position, float a, float fullExposure);
 	vec3 getOptimalDirection(const vec3& position);
 
-	void castShadows(const vec3& pos, int pyramidHeight, float a, float b);
+	void castShadows(const vec3& pos, int pyramidHeight, float a, float b, bool addShadows = true);
 	ivec3 coordinateToCell(const vec3& pos) const;
 	vec3 cellToCoordinate(const ivec3& cell) const;
 	int cellToIndex(const ivec3& cell) const;

@@ -4,12 +4,13 @@
 
 struct TreeNode;
 
-enum NodeStatus {
-	BUD, ALIVE, DEAD,
-};
+
 
 struct TreeNode
 {
+	enum NodeStatus {
+		BUD, ALIVE, DEAD,
+	};
 	vec3 startPos;
 	vec3 direction;
 	float length = 1.0f;

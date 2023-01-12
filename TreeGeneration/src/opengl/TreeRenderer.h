@@ -5,6 +5,7 @@
 #include "GLVertexArray.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "Scene.h"
 
 struct TreeRendererResources {
 	GLVertexArray* quadVAO = nullptr, * cubeVAO = nullptr, * pointVAO = nullptr, * lineVAO = nullptr;
@@ -27,9 +28,9 @@ public:
 	bool debug = false;
 	TreeRendererResources resources;
 	TreeRenderer(Tree& tree, const TreeRendererResources& resources = {});
-	void renderBranchs(DrawView view);
-	void renderLeaves(DrawView view);
-	void renderTree(DrawView view, bool renderBranchs, bool renderLeaves);
+	void renderBranchs(DrawView view, Scene scene);
+	void renderLeaves(DrawView view, Scene scene);
+	void renderTree(DrawView view, bool renderBranchs, bool renderLeaves, Scene scene);
 	void renderVigor(DrawView view);
 	void renderOptimalDirection(DrawView view);
 	void updateRenderer();
