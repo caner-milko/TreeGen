@@ -19,7 +19,9 @@ struct BranchData {
 	float highRadius;
     float startLength;
     float branchLength;
-    vec4 uvOffset;
+    float uvOffset;
+    int order;
+    //vec4 filler;
 };
 
 layout(std430, binding=0) buffer branch_data {

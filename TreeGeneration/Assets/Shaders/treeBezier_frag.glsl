@@ -32,7 +32,9 @@ struct BranchData {
 	float highRadius;
     float startLength;
     float branchLength;
-    vec4 uvOffset;
+    float uvOffset;
+    int order;
+    //vec4 filler;
 };
 
 struct Branch {
@@ -46,6 +48,7 @@ struct Branch {
     float startLength;
     float branchLength;
     float uvOffset;
+    int order;
 };
 
 layout(std430, binding=0) buffer branch_data {
@@ -86,7 +89,8 @@ Branch toBranch(in BranchData bData) {
 	                         bData.highRadius,
                              bData.startLength,
                              bData.branchLength,
-                             bData.uvOffset.x);
+                             bData.uvOffset,
+                             bData.order);
 }
 
 Bezier toBezier(in Branch branch) {
@@ -402,14 +406,14 @@ float specular(vec3 normal, vec3 viewDir, vec3 lightDir, float specularStrength,
     return spec * specularStrength;
 }
 
-vec3 calcLight(vec3 viewDir, vec3 normal, vec2 uv) {
+vec3 calcLight(vec3 viewDir, vec3 normal, vec3 col) {
     float diff = diffuse(normal, lightDir);
 
     float spec = specular(normal, viewDir, lightDir, 0.5, 32);
     
     vec3 light = (spec + diff) * lightColor + ambientColor;
 
-    vec3 color = light * texture(barkTexture, uv).xyz;
+    vec3 color = light * col;
 
     return color;
 
@@ -447,7 +451,9 @@ void main()
 
     vec3 pos = camPos + rayDir * hit.t;
 
-    vec3 color = calcLight(-rayDir, hit.normal, hit.uv);
+    vec3 col = texture(barkTexture, hit.uv).xyz * clamp(hit.uv.y/3.0, 0.4, 1.2);
+
+    vec3 color = calcLight(-rayDir, hit.normal, col);
 
     FragColor = vec4(color, 1.0);
     //FragColor = vec4(hit.normal, 1.0);

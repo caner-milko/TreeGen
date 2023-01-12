@@ -11,11 +11,18 @@ struct BranchShaderData {
 	vec4 B;
 	vec4 C;
 	vec4 color;
+
 	float lowRadius;
 	float highRadius;
 	float startLength;
 	float length;
-	vec4 offset;
+
+	float offset;
+	int order;
+
+	vec2 a;
+
+	//vec4 filler;
 };
 
 struct Branch {
@@ -27,6 +34,7 @@ struct Branch {
 	float startLength;
 	float length;
 	float offset;
+	int order;
 
 	BBox boundingBox;
 	std::vector<Leaf> leaves;

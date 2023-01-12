@@ -81,11 +81,11 @@ Branch::Branch(const TreeNode& node, float baseRadius, float radiusPow, float cu
 	}
 
 
-
 	boundingBox = { mi, ma };
 
 	model = boundingBox.asModel();
 
+	order = from.order;
 }
 
 void Branch::generateLeaves(uint32 maxChildCount, uint32 minOrder, float leafDensity, float sizeMultiplier)
@@ -149,7 +149,8 @@ BranchShaderData Branch::asShaderData(const vec3& color) const
 		.highRadius = highRadius,
 		.startLength = startLength,
 		.length = length,
-		.offset = vec4(offset)
+		.offset = offset,
+		.order = order
 	};
 }
 
