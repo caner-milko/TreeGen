@@ -9,7 +9,7 @@ void TreeGenerator::growTree(Tree& tree)
 {
 	tree.age++;
 	tree.startGrow();
-	tree.world.calculateShadows();
+	//tree.world.calculateShadows();
 
 	tree.accumulateLight();
 	tree.distributeVigor();

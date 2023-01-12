@@ -105,7 +105,7 @@ int8 Shader::getTextureIndex(const uint32 location)
 	auto found = textureIndices.find(location);
 	if (found != textureIndices.end())
 		return found->second;
-	uint8 index = textureIndices.insert({ location, textureIndices.size() }).first->second;
+	uint8 index = textureIndices.insert({ location, static_cast<uint8>(textureIndices.size()) }).first->second;
 	bind();
 	setUniform<int32>(location, index);
 	return index;

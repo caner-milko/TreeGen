@@ -7,15 +7,8 @@
 #include "./Shader.h"
 #include "./Texture.h"
 #include "./CubemapTexture.h"
-struct ImageData {
-	uint8_t* data;
-	int32 width, height, nrChannels;
-	ImageData(uint8_t* data, int32 width, int32 height, int32 nrChannels);
-	bool isEmpty();
-	~ImageData();
-};
+#include "Image.h"
 
-using ImageDataPtr = std::unique_ptr<ImageData>;
 
 class ResourceManager {
 public:
@@ -24,11 +17,10 @@ public:
 		return instance;
 	}
 	std::string readTextFile(std::string_view path) const;
-	ImageDataPtr readImageFile(std::string_view path) const;
-	Texture* loadTexture(const std::string& name, std::string_view path, TextureWrapping wrapping = TextureWrapping::REPEAT,
-		TextureFiltering minFiltering = TextureFiltering::LINEAR_MIPMAP_LINEAR, TextureFiltering maxFiltering = TextureFiltering::LINEAR);
+	ImagePtr readImageFile(std::string_view path) const;
+	Texture* loadTexture(const std::string& name, std::string_view path, const Texture::TextureData& data);
 	CubemapTexture* loadCubemapTexture(const std::string& name, std::string_view right, std::string_view left,
-		std::string_view top, std::string_view bottom, std::string_view front, std::string_view back);
+		std::string_view top, std::string_view bottom, std::string_view front, std::string_view back, const CubemapTexture::CubemapTextureData& data);
 	Shader* loadShader(const std::string& name, std::string_view vertex_path, std::string_view fragment_path);
 
 	void destroyShader(const std::string& name);

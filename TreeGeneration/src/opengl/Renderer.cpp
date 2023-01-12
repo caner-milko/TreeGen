@@ -193,7 +193,7 @@ void Renderer::renderShadowsOnBuds(DrawView view, Shader* shader, const TreeWorl
 	shader->setUniform("VP", vp);
 	std::vector<vec4> points;
 	for (auto& node : nodes) {
-		if (node.nodeStatus == BUD) {
+		if (node.nodeStatus == TreeNode::BUD) {
 			ivec3 cell = world.coordinateToCell(node.startPos);
 			for (int i = 0; i < 10; i++) {
 				if (cell.y + i >= world.worldSize.y)

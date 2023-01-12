@@ -95,18 +95,25 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 		"./Assets/Shaders/line_vert.glsl", "./Assets/Shaders/line_frag.glsl");
 	coloredLineShader = ResourceManager::getInstance().loadShader("colored_line_shader",
 		"./Assets/Shaders/coloredLineShader_vert.glsl", "./Assets/Shaders/coloredLineShader_frag.glsl");
+	terrainShader = ResourceManager::getInstance().loadShader("terrain_shader",
+		"./Assets/Shaders/terrain_vert.glsl", "./Assets/Shaders/terrain_frag.glsl");
 
 
-	barkTex = ResourceManager::getInstance().loadTexture("bark_texture", "./Assets/Textures/bark.jpg");
-	leafTex = ResourceManager::getInstance().loadTexture("leaf_texture", "./Assets/Textures/leaf3.png", TextureWrapping::CLAMP_TO_EDGE);
+	barkTex = ResourceManager::getInstance().loadTexture("bark_texture", "./Assets/Textures/bark.jpg", {});
+	leafTex = ResourceManager::getInstance().loadTexture("leaf_texture", "./Assets/Textures/leaf3.png", { .wrapping = Texture::TextureWrapping::CLAMP_TO_EDGE });
 
 	skyboxTex = ResourceManager::getInstance().loadCubemapTexture("skybox", "./Assets/Textures/skybox/posx.jpg", "./Assets/Textures/skybox/negx.jpg",
 		"./Assets/Textures/skybox/posy.jpg", "./Assets/Textures/skybox/negy.jpg",
-		"./Assets/Textures/skybox/posz.jpg", "./Assets/Textures/skybox/negz.jpg");
+		"./Assets/Textures/skybox/posz.jpg", "./Assets/Textures/skybox/negz.jpg", {});
 
 
 	renderer.setupSkybox(skyboxTex, skyboxShader);
 
+	heightMapImage = std::shared_ptr<Image>(ResourceManager::getInstance().readImageFile("./Assets/Textures/noiseTexture.png").release());
+
+	terrain = std::make_unique<Terrain>(Terrain::TerrainData{ .size = vec2(1.0), .heightMap = heightMapImage });
+	terrainRenderer = std::make_unique<TerrainRenderer>(*terrain, terrainShader);
+	terrainRenderer->update();
 #pragma endregion Load_Resources
 
 #pragma region Setup_TreeGen
@@ -124,7 +131,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 	tree2 = generator->createTree(*world, vec3(0.2f, 0.0f, 0.0f), growthData);
 
 
-	TreeRendererResources resources{ .quadVAO = &renderer.getQuadVAO(), .cubeVAO = &renderer.getCubeVAO(), .pointVAO = &renderer.getPointVAO(), .lineVAO = &renderer.getLineVAO(),
+	resources = { .quadVAO = &renderer.getQuadVAO(), .cubeVAO = &renderer.getCubeVAO(), .pointVAO = &renderer.getPointVAO(), .lineVAO = &renderer.getLineVAO(),
 		.branchShader = treeBezierShader, .leafShader = leafShader, .budPointShader = budPointShader, .coloredLineShader = coloredLineShader,
 		.leafTexture = leafTex, .barkTexture = barkTex, };
 
@@ -235,13 +242,17 @@ void TreeApplication::drawGUI()
 	ImGui::Text("Tree1 Branch Count: %u, Bud Count: %u, Leaf Count: %u, Max Order: %u", treeRenderer1->getBranchCount(), treeRenderer1->getBudCount(), treeRenderer1->getLeafCount(), tree->maxOrder);
 	ImGui::Checkbox("Grow Tree 1", &growTree1);
 	ImGui::Checkbox("Grow Tree 2", &growTree2);
+
 	if (ImGui::Button("Reset Trees")) {
 		world->removeTree(*tree);
 		world->removeTree(*tree2);
 		tree = generator->createTree(*world, vec3(0.0f, 0.0f, 0.0f), growthData);
 		tree2 = generator->createTree(*world, vec3(0.2f, 0.0f, 0.0f), growthData);
+		treeRenderer1 = std::make_unique<TreeRenderer>(*tree, resources);
+		treeRenderer2 = std::make_unique<TreeRenderer>(*tree2, resources);
 		previewTree = nullptr;
 	}
+
 	ImGui::End();
 }
 
@@ -249,7 +260,7 @@ void TreeApplication::drawScene()
 {
 	renderer.startDraw();
 	DrawView view{ cam };
-
+	Scene scene{};
 
 	//renderer.renderPlane(view, planeShader, glm::scale(glm::rotate(glm::translate(glm::mat4(1.0), vec3(0.0f, 0.0f, -2.5f)), PI / 2.0f, vec3(1.0f, 0.0f, 0.0f)), vec3(5.0f)));
 
@@ -288,11 +299,11 @@ void TreeApplication::drawScene()
 		}
 	}
 
-	treeRenderer1->renderTree(view, renderBody, renderLeaves);
-	treeRenderer2->renderTree(view, renderBody, renderLeaves);
+	treeRenderer1->renderTree(view, renderBody, renderLeaves, scene);
+	treeRenderer2->renderTree(view, renderBody, renderLeaves, scene);
 
 	if (appData.showShadowGrid) {
-		world->calculateShadows();
+		//world->calculateShadows();
 		if (!appData.shadowOnOnlyBuds) {
 			std::vector<vec4> cells
 				= world->renderShadowCells(cam.getCameraPosition(), cam.getCameraDirection(), cam.getFov(), appData.shadowCellVisibilityRadius);
@@ -316,6 +327,8 @@ void TreeApplication::drawScene()
 	}
 
 	renderer.renderBBoxLines(view, lineShader, world->getBBox(), vec3(1.0f));
+
+	terrainRenderer->render(view, scene);
 
 	renderer.renderSkybox(view);
 	renderer.endDraw();

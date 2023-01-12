@@ -4,7 +4,6 @@
 
 #include "ResourceManager.h"
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include "../Util.hpp"
 #include <optional>
@@ -26,7 +25,7 @@ std::string ResourceManager::readTextFile(std::string_view path) const
 }
 
 
-ImageDataPtr loadJPG(std::string_view imgPath)
+ImagePtr loadJPG(std::string_view imgPath)
 {
 	stbi_set_flip_vertically_on_load(false);
 	int width, height, nrChannels;
@@ -38,10 +37,10 @@ ImageDataPtr loadJPG(std::string_view imgPath)
 		return nullptr;
 	}
 
-	return std::make_unique<ImageData>(data, width, height, nrChannels);
+	return std::make_unique<Image>(data, width, height, nrChannels);
 }
 
-ImageDataPtr loadPNG(std::string_view imgPath)
+ImagePtr loadPNG(std::string_view imgPath)
 {
 	stbi_set_flip_vertically_on_load(true);
 	int width, height, nrChannels;
@@ -53,10 +52,10 @@ ImageDataPtr loadPNG(std::string_view imgPath)
 		return nullptr;
 	}
 
-	return std::make_unique<ImageData>(data, width, height, nrChannels);
+	return std::make_unique<Image>(data, width, height, nrChannels);
 }
 
-ImageDataPtr ResourceManager::readImageFile(std::string_view path) const
+ImagePtr ResourceManager::readImageFile(std::string_view path) const
 {
 	if (util::endsWith(path, ".jpg") || util::endsWith(path, ".jpeg"))
 	{
@@ -72,20 +71,20 @@ ImageDataPtr ResourceManager::readImageFile(std::string_view path) const
 		return nullptr;
 	}
 }
-Texture* ResourceManager::loadTexture(const std::string& name, std::string_view path, TextureWrapping wrapping, TextureFiltering minFiltering, TextureFiltering maxFiltering)
+Texture* ResourceManager::loadTexture(const std::string& name, std::string_view path, const Texture::TextureData& data)
 {
 	auto found = m_Textures.find(name);
 	if (found != m_Textures.end())
 		return found->second.get();
-	return m_Textures.insert({ name, std::make_unique<Texture>(path, wrapping, minFiltering, maxFiltering) }).first->second.get();
+	return m_Textures.insert({ name, std::make_unique<Texture>(path, data) }).first->second.get();
 }
 CubemapTexture* ResourceManager::loadCubemapTexture(const std::string& name, std::string_view right, std::string_view left,
-	std::string_view top, std::string_view bottom, std::string_view front, std::string_view back)
+	std::string_view top, std::string_view bottom, std::string_view front, std::string_view back, const CubemapTexture::CubemapTextureData& data)
 {
 	auto found = m_CubemapTextures.find(name);
 	if (found != m_CubemapTextures.end())
 		return found->second.get();
-	return m_CubemapTextures.insert({ name, std::make_unique<CubemapTexture>(std::array<std::string_view, 6>{right, left, top, bottom, front, back}) }).first->second.get();
+	return m_CubemapTextures.insert({ name, std::make_unique<CubemapTexture>(std::array<std::string_view, 6>{right, left, top, bottom, front, back}, data) }).first->second.get();
 }
 Shader* ResourceManager::loadShader(const std::string& name, std::string_view vertex_path, std::string_view fragment_path)
 {
@@ -130,15 +129,3 @@ void ResourceManager::ClearResources()
 	m_Shaders.clear();
 }
 
-ImageData::ImageData(uint8_t* data, int32 width, int32 height, int32 nrChannels) : data(data), width(width), height(height), nrChannels(nrChannels)
-{
-}
-
-bool ImageData::isEmpty() {
-	return !data;
-}
-
-ImageData::~ImageData()
-{
-	stbi_image_free(data);
-}

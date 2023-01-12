@@ -9,6 +9,7 @@
 #include "./opengl/Texture.h"
 #include "./opengl/Shader.h"
 #include "./opengl/TreeRenderer.h"
+#include "./opengl//terrain/TerrainRenderer.h"
 struct TreeApplicationData {
 	uint32 width = 1600, height = 900;
 	float mouseSensitivity = 0.1f;
@@ -18,7 +19,7 @@ struct TreeApplicationData {
 	float yaw = 0.0f, pitch = 0.0f;
 	float fov = 45.0f;
 
-	bool renderPreviewTree = true;
+	bool renderPreviewTree = false;
 	bool showShadowGrid = false;
 	bool shadowOnOnlyBuds = false;
 	float shadowCellVisibilityRadius = 10.0f;
@@ -60,10 +61,14 @@ private:
 	Tree* tree2;
 	std::unique_ptr<TreeRenderer> treeRenderer1;
 	std::unique_ptr<TreeRenderer> treeRenderer2;
+	TreeRendererResources resources;
+
+	std::unique_ptr<Terrain> terrain;
+	std::unique_ptr<TerrainRenderer> terrainRenderer;
 
 	std::unique_ptr<Tree> previewTree;
 
-	TreeGrowthData growthData{ .baseLength = 0.02 };
+	TreeGrowthData growthData{ .baseLength = 0.02f };
 
 	Renderer renderer;
 
@@ -87,11 +92,14 @@ private:
 	Shader* lineShader{};
 	Shader* budPointShader{};
 	Shader* coloredLineShader{};
+	Shader* terrainShader{};
 
 	Texture* barkTex{};
 	Texture* leafTex{};
+	std::shared_ptr<Image> heightMapImage;
 
 	CubemapTexture* skyboxTex{};
+
 
 	void startFrame();
 

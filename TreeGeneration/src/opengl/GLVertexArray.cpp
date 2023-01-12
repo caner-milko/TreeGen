@@ -30,6 +30,6 @@ VertexArrayHandle GLVertexArray::getHandle() const
 }
 
 void GLVertexArray::enableAttribute(const uint32 index, const uint32 size, const uint32 offset, const void* data) {
-	glEnableVertexAttribArray(index);
 	glVertexAttribPointer(index, size, GL_FLOAT, GL_FALSE, offset, data);
+	glEnableVertexAttribArray(index);
 }

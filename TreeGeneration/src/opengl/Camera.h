@@ -36,7 +36,7 @@ private:
 	glm::vec3 cameraPosition{ 0.0f };
 	float pitch = 0.0f, yaw = 0.0f;
 	float fov = 45.0f;
-	float aspectRatio = 16.0f / 9.0f, nearPlane = 0.1f, farPlane = 100.0f;
+	float aspectRatio = 16.0f / 9.0f, nearPlane = 0.01f, farPlane = 10.0f;
 
 	void validateMaxMins();
 };
