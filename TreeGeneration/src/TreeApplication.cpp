@@ -101,6 +101,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 
 	barkTex = ResourceManager::getInstance().loadTexture("bark_texture", "./Assets/Textures/bark.jpg", {});
 	leafTex = ResourceManager::getInstance().loadTexture("leaf_texture", "./Assets/Textures/leaf3.png", { .wrapping = Texture::TextureWrapping::CLAMP_TO_EDGE });
+	grassTex = ResourceManager::getInstance().loadTexture("grass_texture", "./Assets/Textures/grass.jpg", {});
 
 	skyboxTex = ResourceManager::getInstance().loadCubemapTexture("skybox", "./Assets/Textures/skybox/posx.jpg", "./Assets/Textures/skybox/negx.jpg",
 		"./Assets/Textures/skybox/posy.jpg", "./Assets/Textures/skybox/negy.jpg",
@@ -111,8 +112,8 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 
 	heightMapImage = std::shared_ptr<Image>(ResourceManager::getInstance().readImageFile("./Assets/Textures/noiseTexture.png").release());
 
-	terrain = std::make_unique<Terrain>(Terrain::TerrainData{ .size = vec2(1.0), .heightMap = heightMapImage });
-	terrainRenderer = std::make_unique<TerrainRenderer>(*terrain, terrainShader);
+	terrain = std::make_unique<Terrain>(Terrain::TerrainData{ .heightMap = heightMapImage });
+	terrainRenderer = std::make_unique<TerrainRenderer>(*terrain, TerrainRenderer::TerrainRendererResources{ .terrainShader = terrainShader, .grassTexture = grassTex, .lineShader = lineShader, .lineVAO = &renderer.getLineVAO() });
 	terrainRenderer->update();
 #pragma endregion Load_Resources
 
@@ -127,8 +128,9 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 
 	world = std::make_unique<TreeWorld>(appData.worldBbox, growthData.baseLength);
 
-	tree = generator->createTree(*world, vec3(0.0f), growthData);
-	tree2 = generator->createTree(*world, vec3(0.2f, 0.0f, 0.0f), growthData);
+
+	tree = generator->createTree(*world, vec3(0.0f, terrain->heightAtWorldPos(vec3(0.0f)), 0.0), growthData);
+	tree2 = generator->createTree(*world, vec3(0.2f, terrain->heightAtWorldPos(vec3(0.2f, 0.0f, 0.0f)), 0.0f), growthData);
 
 
 	resources = { .quadVAO = &renderer.getQuadVAO(), .cubeVAO = &renderer.getCubeVAO(), .pointVAO = &renderer.getPointVAO(), .lineVAO = &renderer.getLineVAO(),

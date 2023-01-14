@@ -5,7 +5,7 @@ in vec3 fragPos;
 in vec3 normal;
 in vec2 uv;
 
-uniform vec3 color;
+uniform sampler2D grassTex;
 
 uniform vec3 camPos;
 
@@ -27,12 +27,11 @@ float specular(vec3 norm, vec3 viewDir, vec3 lightDir, float specularStrength, i
 vec3 calcLight(vec3 viewDir, vec3 norm, vec3 col) {
     float diff = diffuse(norm, lightDir);
 
-    float spec = specular(norm, viewDir, lightDir, 0.5, 32);
-    
-    vec3 light = (spec + diff) * lightColor + ambientColor;
+    float spec = specular(norm, viewDir, lightDir, 0.0, 32);
+    vec3 light = clamp((spec + diff), 0.0, 1.0) * lightColor + ambientColor;
 
     vec3 color = light * col;
-
+    
     return color;
 
 }
@@ -40,5 +39,7 @@ vec3 calcLight(vec3 viewDir, vec3 norm, vec3 col) {
 void main()
 {
     vec3 norm = normalize(normal);
-    FragColor = vec4(calcLight(normalize(camPos - fragPos), norm, color), 1.0);
+    vec3 col = texture(grassTex, uv * 5.0).xyz;
+    FragColor = vec4(calcLight(normalize(camPos - fragPos), norm, vec3(1.0)), 1.0);
+    //FragColor = vec4(norm, 1.0);
 } 

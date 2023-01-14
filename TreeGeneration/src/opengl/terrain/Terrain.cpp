@@ -18,7 +18,7 @@ void Terrain::generateMesh(std::vector<TerrainVertex>* vertices, std::vector<int
 		for (int32 x = 0; x <= data.gridSize.x; x++) {
 			TerrainVertex vertex;
 			vec2 uv = cellSize() * vec2(x, y);
-			vertex.pos = vec3(uv.x, heightAt(uv), uv.y);
+			vertex.pos = vec3(uv.x, valueAt(uv), uv.y);
 			vertex.normal = normalAt(vec2(x, y));
 			vertices->emplace_back(vertex);
 		}
@@ -39,17 +39,34 @@ void Terrain::generateMesh(std::vector<TerrainVertex>* vertices, std::vector<int
 
 }
 
+vec2 Terrain::worldPosToUv(vec2 worldPos) const
+{
+	vec2 center2D = vec2(data.center.x, data.center.z);
+	vec2 transformed = worldPos - center2D + data.size / 2.0f;
+	transformed = transformed / data.size;
+	return glm::clamp(transformed, 0.0f, 1.0f);
+}
+
+float Terrain::heightAtWorldPos(vec3 worldPos) const
+{
+	return heightAt(worldPosToUv(vec2(worldPos.x, worldPos.z)));
+}
+
 float Terrain::heightAt(vec2 uv) const
 {
-	return data.heightMap->getRGB<1>(uv).x / 256.0;
+	return glm::mix(data.minHeight, data.maxHeight, valueAt(uv));
+}
+
+float Terrain::valueAt(vec2 uv) const {
+	return data.heightMap->getRGB<1>(uv).x / 256.0f;
 }
 
 vec3 Terrain::normalAt(ivec2 vertex) const
 {
-	ivec2 nX = vertex + ivec2(-1 * (vertex.x > 0), 0);
-	ivec2 nY = vertex + ivec2(0, -1 * (vertex.y > 0));
-	ivec2 pX = vertex + ivec2(1 * (vertex.x <= data.gridSize.y), 0);
-	ivec2 pY = vertex + ivec2(0, 1 * (vertex.y <= data.gridSize.y));
+	vec2 nX = vec2(vertex) + vec2(-1.0f * (vertex.x > 0), 0);
+	vec2 nY = vec2(vertex) + vec2(0, -1.0f * (vertex.y > 0));
+	vec2 pX = vec2(vertex) + vec2(1.0f * (vertex.x <= data.gridSize.y), 0);
+	vec2 pY = vec2(vertex) + vec2(0, 1.0f * (vertex.y <= data.gridSize.y));
 
 	vec2 cells = cellSize();
 
@@ -58,14 +75,24 @@ vec3 Terrain::normalAt(ivec2 vertex) const
 	vec2 pXuv = cells * vec2(pX);
 	vec2 pYuv = cells * vec2(pY);
 
-	float nXh = heightAt(nXuv);
-	float nYh = heightAt(nYuv);
-	float pXh = heightAt(pXuv);
-	float pYh = heightAt(pYuv);
+	float nXh = valueAt(nXuv);
+	float nYh = valueAt(nYuv);
+	float pXh = valueAt(pXuv);
+	float pYh = valueAt(pYuv);
 
-	vec3 xDif = glm::normalize(vec3(pXuv.x, pXh, pXuv.y) - vec3(nXuv.x, nXh, nXuv.y));
-	vec3 yDif = glm::normalize(vec3(pYuv.x, pYh, pYuv.y) - vec3(nYuv.x, nYh, nYuv.y));
+	vec2 posuv = cells * vec2(vertex);
+	vec3 pos = vec3(posuv.x, valueAt(posuv), posuv.y);
 
-	return glm::normalize(glm::cross(yDif, xDif));
+	float xGrad = (pXh - nXh) / cells.x / (pX.x - nX.x);
+	float yGrad = (pYh - nYh) / cells.y / (pY.y - nY.y);
+
+	return glm::normalize(vec3(-xGrad, 2.0f, -yGrad));
+
+	//vec3 nX3 = vec3(nXuv.x / cells.x, nXh, nXuv.y / cells.y);// / vec3(cells.x, 1.0f, cells.y);
+	//vec3 nY3 = vec3(nYuv.x / cells.x, nYh, nYuv.y / cells.y);// / vec3(cells.x, 1.0f, cells.y);
+	//vec3 pX3 = vec3(pXuv.x / cells.x, pXh, pXuv.y / cells.y);// / vec3(cells.x, 1.0f, cells.y);
+	//vec3 pY3 = vec3(pYuv.x / cells.x, pYh, pYuv.y / cells.y);// / vec3(cells.x, 1.0f, cells.y);
+
+	//return glm::normalize((pY3 - nY3), (pX3 - nX3)));
 
 }

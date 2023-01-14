@@ -8,13 +8,16 @@ out vec2 uv;
 
 uniform mat4 VP;
 uniform mat4 model;
+uniform mat4 ITmodel;
 
 void main()
 {
     vec3 pos = aPos;
-    pos.y /= 5.0;
-    fragPos = pos; //(model * vec4(uv.x, 0.0, uv.y, 1.0)).xyz;
-    gl_Position = VP * vec4(pos, 1.0);
-    uv = pos.xz;
-    normal = aNormal;
+    pos.xz -= vec2(0.5);
+    vec4 transformed = model * vec4(pos, 1.0);
+    fragPos = transformed.xyz;
+    gl_Position = VP * transformed;
+    uv = aPos.xz;
+    normal = normalize(mat3(transpose(inverse(model))) * aNormal);
+    //normal = aNormal;
 }  

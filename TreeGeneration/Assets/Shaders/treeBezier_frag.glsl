@@ -56,6 +56,7 @@ layout(std430, binding=0) buffer branch_data {
 };
 
 uniform vec3 camPos;
+uniform vec3 viewDir;
 uniform float farPlane, nearPlane;
 
 uniform vec3 treeColor;
@@ -69,6 +70,7 @@ uniform sampler2D barkTexture;
 struct Hit {
 	float t;
     vec2 uv;
+    float splineT;
 	vec3 normal;
     bool onSphere;
 };
@@ -112,6 +114,10 @@ float easeInOutQuad(float x)
    float outStep = step(0.5 , outValue ) * outValue;
    
    return inStep + outStep;
+}
+
+float easeOutQuad(float x){
+return 1.0 - (1.0 - x) * (1.0 - x);
 }
 
 float ease(float x) {
@@ -218,6 +224,7 @@ vec2 solveCubic(float a, float b, float c) {
         vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));
         return vec2(offset + uv.x + uv.y);
     }
+
     float x = -sqrt(-27.0 / p3) * q / 2.0;
     x = sqrt(0.5+0.5*x);
     
@@ -368,6 +375,7 @@ Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
 	float t = 0.0;
 	vec3 norm = vec3(-2.0);
     vec2 uv = vec2(0.0);
+    float splineT = 0.0;
     Bezier curve = toBezier(branch);
 	bool onSphere = false;
     for(float i = 0; i < MAX_STEPS; i++) {
@@ -377,7 +385,7 @@ Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
 		if(dst.x < MIN_DIST) {
             curPos = pos + rayDir * t;
             float clampedT = clamp(dst.y, 0.0, 1.0);
-            
+            splineT = clampedT;
             uv = calc_uv(branch, clampedT, curPos, dst.y);
 
 			norm = normal(curPos, curve);
@@ -391,7 +399,7 @@ Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
 			break;
 		}
 	}
-	return Hit(t, uv, norm, onSphere);
+	return Hit(t, uv, splineT, norm, onSphere);
 }
 
 
@@ -409,7 +417,7 @@ float specular(vec3 normal, vec3 viewDir, vec3 lightDir, float specularStrength,
 vec3 calcLight(vec3 viewDir, vec3 normal, vec3 col) {
     float diff = diffuse(normal, lightDir);
 
-    float spec = specular(normal, viewDir, lightDir, 0.5, 32);
+    float spec = specular(normal, viewDir, lightDir, 1.0, 32);
     
     vec3 light = (spec + diff) * lightColor + ambientColor;
 
@@ -445,13 +453,22 @@ void main()
 
     hit.t += float(inside == 0) * length(camPos-fragPos);
 
-    float dist = (1.0/(hit.t + float(hit.onSphere) * branch.highRadius / 10.0)  - 1.0/nearPlane)/(1.0/farPlane - 1.0/nearPlane);
-     
-    gl_FragDepth = dist;
+    float dist = hit.t + float(hit.onSphere) * branch.highRadius / 10.0;
+
+    float eyeHitZ = -dist * dot(viewDir, rayDir);
+
+    float ndcDepth = ((farPlane + nearPlane) + (2.0 * farPlane * nearPlane) / eyeHitZ) / (farPlane - nearPlane);
+
+    gl_FragDepth =((gl_DepthRange.diff * ndcDepth) 
+		+ gl_DepthRange.near + gl_DepthRange.far) / 2.0;
 
     vec3 pos = camPos + rayDir * hit.t;
+    
+    float order = easeOutQuad(min(float(branch.order), 100.0)/100.0);
+    float nextOrder = easeOutQuad(min(float(branch.order+1), 100.0)/100.0);
 
-    vec3 col = texture(barkTexture, hit.uv).xyz * clamp(hit.uv.y/3.0, 0.4, 1.2);
+    float mixedOrder = mix(0.2, 1.0, mix(order, nextOrder, hit.splineT));
+    vec3 col = texture(barkTexture, hit.uv).xyz * mixedOrder;
 
     vec3 color = calcLight(-rayDir, hit.normal, col);
 

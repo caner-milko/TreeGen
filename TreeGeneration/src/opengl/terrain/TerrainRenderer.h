@@ -5,16 +5,23 @@
 #include "../Shader.h"
 #include "../DrawView.h"
 #include "../Scene.h"
+#include "../Texture.h"
 class TerrainRenderer {
 public:
-	TerrainRenderer(Terrain& terrain, Shader* terrainShader);
+	struct TerrainRendererResources {
+		Shader* terrainShader;
+		Texture* grassTexture;
+		Shader* lineShader;
+		GLVertexArray* lineVAO;
+	};
+	TerrainRenderer(Terrain& terrain, const TerrainRendererResources& resources);
 	~TerrainRenderer();
 	void update();
 	void render(DrawView view, Scene scene) const;
-
+	TerrainRendererResources resources;
 private:
 	Terrain& terrain;
-	Shader* shader;
+	std::vector<Terrain::TerrainVertex> vertices;
 	GLVertexArray vao;
-	int indicesSize;
+	int indicesSize = 0;
 };

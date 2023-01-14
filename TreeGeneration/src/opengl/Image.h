@@ -8,7 +8,7 @@ struct Image {
 	~Image();
 	bool isEmpty() const;
 	inline ivec2 uvToPixel(vec2 uv) const {
-		return glm::min(ivec2(uv * vec2(width, height)), ivec2(width-1, height-1));
+		return glm::max(ivec2(0, 0), glm::min(ivec2(uv * vec2(width, height)), ivec2(width - 1, height - 1)));
 	}
 	template<int N>
 	glm::vec<N, uint8> getRGB(vec2 uv) const {

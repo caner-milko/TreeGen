@@ -94,8 +94,10 @@ private:
 	Shader* coloredLineShader{};
 	Shader* terrainShader{};
 
+
 	Texture* barkTex{};
 	Texture* leafTex{};
+	Texture* grassTex{};
 	std::shared_ptr<Image> heightMapImage;
 
 	CubemapTexture* skyboxTex{};
