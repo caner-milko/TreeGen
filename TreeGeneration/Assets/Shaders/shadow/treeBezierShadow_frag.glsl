@@ -1,6 +1,5 @@
 ﻿#version 460 core
-out vec4 FragColor;
-layout (depth_greater) out float gl_FragDepth;
+out float gl_FragDepth;
 in vec3 fragPos;
 
 flat in int instanceID;
@@ -9,10 +8,8 @@ flat in int inside;
 
 
 #define MAX_STEPS 50.0
-#define MIN_DIST 0.0001
+#define MIN_DIST 0.001
 #define PI 3.14159265359
-
-#define NORMAL_T 0.2
 
 struct Bezier {
     vec3 start;
@@ -58,24 +55,10 @@ layout(std430, binding=0) buffer branch_data {
 uniform vec3 camPos;
 uniform vec3 viewDir;
 uniform float farPlane, nearPlane;
-
-uniform vec3 treeColor;
-
-uniform vec3 ambientColor;
-uniform vec3 lightDir;
-uniform vec3 lightColor;
-
-uniform sampler2D barkTexture;
-
-
-uniform mat4 lightVP;
-uniform sampler2D shadowMap;
-
+uniform mat4 VP;
 struct Hit {
 	float t;
-    vec2 uv;
-    float splineT;
-	vec3 normal;
+    bool hit;
     bool onSphere;
 };
 
@@ -283,119 +266,18 @@ vec2 dist(in vec3 pos, in Bezier bezier) {
     return vec2(midDist, sdBranch.y);
 }
 
-vec2 smoothDist(in vec3 pos) {
-    Branch main = toBranch(branchs[instanceID]);
-    vec2 a = dist(pos, toBezier(main));
-    float dst = a.x;
-    const float k = 0.001;
-    const float offset = 0.00005;
-
-    if(instanceID > 0) {
-        Bezier beforeBez = toBezier(toBranch(branchs[instanceID-1]));
-        if(beforeBez.end == main.start) {
-            a = dist(pos, beforeBez);
-            dst = smin(dst, dist(pos, beforeBez).x + offset, k);
-        }
-    }
-    Bezier afterBez = toBezier(toBranch(branchs[instanceID+1]));
-    if(afterBez.start == main.end) {
-        a = dist(pos, afterBez);
-        dst = smin(dst, a.x + offset, k);
-    }
-
-    return vec2(dst, a.y);
-}
-
-vec3 normal(vec3 pos, in Bezier bezier) {
-	const vec2 e = vec2(MIN_DIST, 0.);
-    return normalize(vec3(dist(pos + e.xyy, bezier).x - dist(pos - e.xyy, bezier).x,
-              			    dist(pos + e.yxy, bezier).x - dist(pos - e.yxy, bezier).x,
-              			    dist(pos + e.yyx, bezier).x - dist(pos - e.yyx, bezier).x));
-}
-
-vec3 smoothNormal(in vec3 pos) {
-	const vec2 e = vec2(MIN_DIST, 0.);
-    return normalize(vec3(smoothDist(pos + e.xyy).x - smoothDist(pos - e.xyy).x,
-              			    smoothDist(pos + e.yxy).x - smoothDist(pos - e.yxy).x,
-              			    smoothDist(pos + e.yyx).x - smoothDist(pos - e.yyx).x));
-}
-
-vec3 coneNormal(in vec3 pos, in float t, in vec3 A, in vec3 B, in float Arad, in float Brad) {
-    vec3 AP = normalize(pos-A);
-    vec3 BP = normalize(pos-B);
-    vec3 dif = AP;
-    vec3 AB = normalize(B-A);
-    vec3 Acone = normalize(AP - dot(AB, AP) * AB) * Arad + A;
-    vec3 Bcone = normalize(BP - dot(AB, BP) * AB) * Brad + B;
-
-    vec3 coneDif = normalize(Bcone-Acone);
-
-    return normalize(AP - dot(AP, coneDif) * coneDif);
-}
-
-vec3 calcNorm(in vec3 pos, in float t, float tDif, in vec3 normal, in Bezier main) {
-    if(t < tDif) {
-        vec3 mid = bezier(main, tDif);
-        float widthAtTdif = branchRadius(tDif, main.lowRadius, main.highRadius);
-        vec3 coneNorm = coneNormal(pos, t, main.start, mid, main.lowRadius, widthAtTdif);
-        return normalize(mix(normal, coneNorm, (tDif - t)/tDif));
-    } else if(t > (1.0 - tDif)) {
-        Bezier bez = toBezier(toBranch(branchs[instanceID + 1]));
-        if(bez.start == main.end) {
-            vec3 mid = bezier(bez, tDif);
-            float widthAtTdif = branchRadius(tDif, bez.lowRadius, bez.highRadius);
-            vec3 coneNorm = coneNormal(pos, t, bez.start, mid, bez.lowRadius, widthAtTdif);
-            return normalize(mix(normal, coneNorm, (t - (1.0 - tDif))/tDif));
-        } else {
-            return normal;
-        }
-    }
-    else {
-        return normal;
-    }
-}
-
-float calc_uvx(Branch branch, float clampedT, vec3 curPos) {
-    Bezier curve = toBezier(branch);
-    vec3 bezierPos = bezier(curve, clampedT);
-    vec3 bezierPlaneNormal = normalize(cross(curve.mid - curve.start, curve.end - curve.start));
-    vec3 bezierDir = normalize(bezier_dx(curve, clampedT));
-    vec3 bezierNormalOnPlane = normalize(cross(bezierPlaneNormal,bezierDir));
-    vec2 v = vec2(dot(curPos-bezierPos,bezierNormalOnPlane),dot(curPos-bezierPos,bezierPlaneNormal));
-
-    return atan(v.y,v.x) + branch.uvOffset.x;
-}
-
-vec2 calc_uv(Branch branch, float clampedT, vec3 curPos, float v) {
-    vec2 uv = vec2(calc_uvx(branch, clampedT, curPos), v);
-    uv.x = mod(uv.x + PI * 2.0, PI * 2.0) / PI / 2.0;
-    uv.y = branch.startLength + uv.y * branch.branchLength;
-    uv.y *= 20.0f;
-    
-    return uv;
-}
-
 Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
 	float t = 0.0;
-	vec3 norm = vec3(-2.0);
-    vec2 uv = vec2(0.0);
-    float splineT = 0.0;
     Bezier curve = toBezier(branch);
 	bool onSphere = false;
+    bool hit = false;
     for(float i = 0; i < MAX_STEPS; i++) {
 		vec3 curPos = pos + rayDir * t;
         vec2 dst = dist(curPos, curve);
         t += dst.x;
 		if(dst.x < MIN_DIST) {
             curPos = pos + rayDir * t;
-            float clampedT = clamp(dst.y, 0.0, 1.0);
-            splineT = clampedT;
-            uv = calc_uv(branch, clampedT, curPos, dst.y);
-
-			norm = normal(curPos, curve);
-
-            norm = calcNorm(curPos, clampedT, NORMAL_T, norm, curve);
-            
+            hit = true;
             onSphere = dst.y > 1.0 || dst.y < 0.0;
 			break;
 		}
@@ -403,67 +285,21 @@ Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
 			break;
 		}
 	}
-	return Hit(t, uv, splineT, norm, onSphere);
-}
-
-
-float diffuse(vec3 normal, vec3 lightDir) {
-    return max(dot(normal, -lightDir), 0.0);
-}
-
-float specular(vec3 normal, vec3 viewDir, vec3 lightDir, float specularStrength, int shininess) {
-    vec3 halfwayDir = normalize(-lightDir + viewDir);
-
-    float spec = pow(max(dot(halfwayDir, normal), 0.0), shininess);
-    return spec * specularStrength;
-}
-
-vec3 calcLight(vec3 viewDir, vec3 normal, vec3 col) {
-    float diff = diffuse(normal, lightDir);
-
-    float spec = specular(normal, viewDir, lightDir, 1.0, 32);
-    
-    vec3 light = (spec + diff) * lightColor + ambientColor;
-
-    vec3 color = light * col;
-
-    return color;
-}
-
-vec2 poissonDisk[4] = vec2[](
-  vec2( -0.94201624, -0.39906216 ),
-  vec2( 0.94558609, -0.76890725 ),
-  vec2( -0.094184101, -0.92938870 ),
-  vec2( 0.34495938, 0.29387760 )
-);
-
-float calcShadow(vec3 pos) {
-    vec4 posLightSpace = lightVP * vec4(pos, 1.0);
-
-    vec3 projCoords = posLightSpace.xyz / posLightSpace.w;
-    projCoords = projCoords * 0.5 + 0.5; 
-
-    float bias = 0.001;
-    float visibility = 1.0;
-    for (int i=0;i<4;i++){
-            visibility -= 0.2 * float((projCoords.z - bias)  > texture(shadowMap, projCoords.xy + poissonDisk[i]/700.0).r);
-    }
-
-    return visibility;
+	return Hit(t, hit, onSphere);
 }
 
 void main()
 {
-    vec3 rayDir = normalize(fragPos - camPos);
+    vec3 rayDir = normalize(-viewDir);
 
     BranchData bData = branchs[instanceID];
 
     Branch branch = toBranch(bData);
 
-    vec3 start = mix(fragPos, camPos, float(inside));
+    vec3 start = fragPos;
 
 	Hit hit = intersect(start, rayDir, branch);
-	if(hit.normal.x < -1.5) {
+	if(!hit.hit) {
         #if SHOW_BBOX
 
         FragColor = vec4(vec3(float(gl_FrontFacing)), 1.0);
@@ -476,30 +312,15 @@ void main()
 	    #endif
     }
 
-    hit.t += float(inside == 0) * length(camPos-fragPos);
+    hit.t += float(hit.onSphere) * branch.highRadius / 10.0;
 
-    float dist = hit.t + float(hit.onSphere) * branch.highRadius / 10.0;
+    vec3 pos = fragPos + rayDir * hit.t;
 
-    float eyeHitZ = -dist * dot(viewDir, rayDir);
+    vec4 posLightSpace = VP * vec4(pos, 1.0);
 
-    float ndcDepth = ((farPlane + nearPlane) + (2.0 * farPlane * nearPlane) / eyeHitZ) / (farPlane - nearPlane);
+    vec3 projCoords = posLightSpace.xyz / posLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5; 
 
-    gl_FragDepth =((gl_DepthRange.diff * ndcDepth) 
-		+ gl_DepthRange.near + gl_DepthRange.far) / 2.0;
-
-    vec3 pos = camPos + rayDir * hit.t;
-    
-    float order = easeOutQuad(min(float(branch.order), 100.0)/100.0);
-    float nextOrder = easeOutQuad(min(float(branch.order+1), 100.0)/100.0);
-
-    float mixedOrder = mix(0.2, 1.0, mix(order, nextOrder, hit.splineT));
-    vec3 col = texture(barkTexture, hit.uv).xyz * mixedOrder;
-
-    vec3 color = calcLight(-rayDir, hit.normal, col) * calcShadow(pos);
-    //vec3 color = vec3(calcShadow(pos));
-
-    FragColor = vec4(color, 1.0);
-    //FragColor = vec4(hit.normal, 1.0);
-    //FragColor = vec4(floor(hit.uv.x*4.0)/4.0, 0.0, 0.0, 1.0);
+    gl_FragDepth = projCoords.z;
     return;
 } 

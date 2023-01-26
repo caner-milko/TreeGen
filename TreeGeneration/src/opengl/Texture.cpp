@@ -1,66 +1,99 @@
 #include "./Texture.h"
 #include "./ResourceManager.h"
-int Texture::selectInternalFormat(TextureColorSpace colorSpace, bool alpha)
+#include "ApiToEnum.h"
+
+#include <glm/gtc/integer.hpp>
+
+Texture::Texture(TextureCreateData data) : data(data)
 {
-	if (alpha) {
-		switch (colorSpace) {
-		case SRGB:
-			return GL_SRGB_ALPHA;
-		case RAW:
-			return GL_RGBA;
-		default:
-			return GL_RGBA;
-		}
-	}
-	else {
-		int space = GL_RGB;
-		switch (colorSpace) {
-		case SRGB:
-			return GL_SRGB;
-		case RAW:
-			return GL_RGB;
-		default:
-			return GL_RGB;
-		}
-	}
-	return GL_RGB;
+	glCreateTextures(ImageTypeToGL(data.imageType), 1, &handle);
+    auto a = AddressModeToGL(data.wrapping);
+    auto ab = AddressModeToGL(data.wrapping);
+
+	glTextureParameteri(handle, GL_TEXTURE_WRAP_S, AddressModeToGL(data.wrapping));
+	glTextureParameteri(handle, GL_TEXTURE_WRAP_T, AddressModeToGL(data.wrapping));
+    glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, FilterToGL(data.minFiltering));
+	glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, FilterToGL(data.maxFiltering));
+
+    switch (data.imageType)
+    {
+    case ImageType::TEX_1D:
+        data.mipLevels = data.mipLevels == -1 ? 1 + glm::log2(data.size.x) : data.mipLevels;
+        glTextureStorage1D(handle, data.mipLevels, FormatToGL(data.textureFormat), data.size.x);
+        break;
+    case ImageType::TEX_2D:
+        data.mipLevels = data.mipLevels == -1 ? 1 + glm::log2(glm::max(data.size.x, data.size.y)) : data.mipLevels;
+        glTextureStorage2D(handle,
+            data.mipLevels,
+            FormatToGL(data.textureFormat),
+            data.size.x,
+            data.size.y);
+        break;
+    case ImageType::TEX_3D:
+        data.mipLevels = data.mipLevels == -1 ? 1 + glm::log2(glm::max(glm::max(data.size.x, data.size.y), data.size.z))
+            : data.mipLevels;
+        glTextureStorage3D(handle,
+            data.mipLevels,
+            FormatToGL(data.textureFormat),
+            data.size.x,
+            data.size.y,
+            data.size.z);
+        break;
+    case ImageType::TEX_CUBEMAP:
+        data.mipLevels = data.mipLevels == -1 ? 1 + glm::log2(glm::max(data.size.x, data.size.y)) : data.mipLevels;
+        glTextureStorage2D(handle,
+            data.mipLevels,
+            FormatToGL(data.textureFormat),
+            data.size.x,
+            data.size.y);
+        break;
+        // case ImageType::TEX_CUBEMAP_ARRAY:
+        //   ASSERT(false);
+        //   break;
+    case ImageType::TEX_2D_MULTISAMPLE:
+        data.mipLevels = data.mipLevels == -1 ? 1 + glm::log2(glm::max(data.size.x, data.size.y)) : data.mipLevels;
+        glTextureStorage2DMultisample(handle,
+            SampleCountToGL(data.sampleCount),
+            FormatToGL(data.textureFormat),
+            data.size.x,
+            data.size.y,
+            GL_FALSE);
+        break;
+    default: break;
+    }
 }
-Texture::Texture(std::string_view path, const TextureData& data) : path(path), data(data)
-{
-	glGenTextures(1, &handle);
-	glBindTexture(GL_TEXTURE_2D, handle);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (int32_t)data.wrapping);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (int32_t)data.wrapping);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (int32_t)data.minFiltering);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (int32_t)data.maxFiltering);
-
-	ImagePtr imageData = ResourceManager::getInstance().readImageFile(path);
-
-	if (imageData != nullptr) {
-		if (imageData->nrChannels == 4) {
-
-			glTexImage2D(GL_TEXTURE_2D, 0, selectInternalFormat(data.colorSpace, true), imageData->width, imageData->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData->data);
-		}
-		else if (imageData->nrChannels == 3) {
-
-			glTexImage2D(GL_TEXTURE_2D, 0, selectInternalFormat(data.colorSpace, false), imageData->width, imageData->height, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData->data);
-		}
-		if (data.generateMipMap)
-			glGenerateMipmap(GL_TEXTURE_2D);
-	}
-}
-
-void Texture::bind()
-{
-	glBindTexture(GL_TEXTURE_2D, handle);
-}
-
-TextureHandle Texture::getHandle() const
-{
-	return handle;
-}
-
-void Texture::destroy()
+Texture::~Texture()
 {
 	glDeleteTextures(1, &handle);
+}
+
+void Texture::bindTo(int32 unit) const
+{
+	glBindTextureUnit(unit, handle);
+}
+
+void Texture::subImage(TextureUploadData uploadData)
+{
+	switch (uploadData.dimensions) {
+	case UploadDimension::ONE:
+		glTextureSubImage1D(handle, uploadData.level, uploadData.offset.x, uploadData.size.x,
+            UploadFormatToGL(uploadData.inputFormat), UploadTypeToGL(uploadData.type), uploadData.data);
+		return;
+	case UploadDimension::TWO:
+		glTextureSubImage2D(handle, uploadData.level, uploadData.offset.x, uploadData.offset.y,
+            uploadData.size.x, uploadData.size.y, UploadFormatToGL(uploadData.inputFormat),
+            UploadTypeToGL(uploadData.type), uploadData.data);
+		return;
+	case UploadDimension::THREE:
+		glTextureSubImage3D(handle, uploadData.level, uploadData.offset.x, uploadData.offset.y, uploadData.offset.z,
+            uploadData.size.x, uploadData.size.y, uploadData.size.z,
+            UploadFormatToGL(uploadData.inputFormat), UploadTypeToGL(uploadData.type), uploadData.data);
+		return;
+	}
+    assert(false);
+}
+
+void Texture::genMipMaps()
+{
+    glGenerateTextureMipmap(handle);
 }

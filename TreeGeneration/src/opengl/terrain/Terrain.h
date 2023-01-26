@@ -16,7 +16,7 @@ public:
 		float minHeight = 0.0;
 		ivec2 gridSize = ivec2(255, 255);
 
-		std::shared_ptr<Image> heightMap = nullptr;
+		sp<Image> heightMap = nullptr;
 	};
 	Terrain(const TerrainData& data);
 	void generateMesh(std::vector<TerrainVertex>* vertices, std::vector<int32>* indices) const;

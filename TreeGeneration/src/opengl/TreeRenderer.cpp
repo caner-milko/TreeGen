@@ -33,17 +33,18 @@ void TreeRenderer::renderBranchs(DrawView view, Scene scene)
 
 	glDepthFunc(GL_LESS);
 
-	Shader* branchShader = resources.branchShader;
-	Texture* barkTexture = resources.barkTexture;
-	GLVertexArray* cubeVAO = resources.cubeVAO;
+	const sp<Shader>& branchShader = resources.branchShader;
+	const sp<Texture>& barkTexture = resources.barkTexture;
+	const sp<GLVertexArray>& cubeVAO = resources.cubeVAO;
 
 	branchShader->bind();
 	cubeVAO->bind();
 
 	branchShader->setUniform("VP", vp);
 
-	glBindTextureUnit(branchShader->getTextureIndex("barkTexture"), barkTexture->getHandle());
-
+	barkTexture->bindTo(branchShader->getTextureIndex("barkTexture"));
+	scene.shadowMap->bindTo(branchShader->getTextureIndex("shadowMap"));
+	branchShader->setUniform("lightVP", scene.LightVP);
 	vec3 camPos = view.camera.getCameraPosition();
 	vec3 camDir = view.camera.getCameraDirection();
 	branchShader->setUniform("camPos", camPos);
@@ -54,6 +55,34 @@ void TreeRenderer::renderBranchs(DrawView view, Scene scene)
 	branchShader->setUniform("treeColor", vec3(166.0f / 255.0f, 123.0f / 255.0f, 81.0f / 255.0f));
 	branchShader->setUniform("farPlane", view.camera.getFarPlane());
 	branchShader->setUniform("nearPlane", view.camera.getNearPlane());
+	branchSSBO.bindBase(0);
+	glDrawArraysInstanced(GL_TRIANGLES, 0, 36, branchCount);
+}
+
+void TreeRenderer::renderBranchsShadow(Scene scene)
+{
+	glEnable(GL_CULL_FACE);
+
+	glCullFace(GL_FRONT);
+
+	glFrontFace(GL_CCW);
+
+	glDepthFunc(GL_LESS);
+
+	const sp<Shader>& branchShadowShader = resources.branchShadowShader;
+	const sp<GLVertexArray>& cubeVAO = resources.cubeVAO;
+
+	branchShadowShader->bind();
+	cubeVAO->bind();
+
+	branchShadowShader->setUniform("VP", scene.LightVP);
+
+	vec3 camPos = scene.lightPos;
+	vec3 camDir = scene.lightDir;
+	branchShadowShader->setUniform("camPos", camPos);
+	branchShadowShader->setUniform("viewDir", camDir);
+	branchShadowShader->setUniform("farPlane", scene.lightFarPlane);
+	branchShadowShader->setUniform("nearPlane", scene.lightNearPlane);
 	branchSSBO.bindBase(0);
 	glDrawArraysInstanced(GL_TRIANGLES, 0, 36, branchCount);
 }
@@ -72,6 +101,20 @@ void TreeRenderer::renderLeaves(DrawView view, Scene scene)
 	resources.leafShader->setUniform("lightDir", scene.lightDir);
 
 	resources.leafShader->setUniform("VP", vp);
+	glBindTextureUnit(resources.leafShader->getTextureIndex("leafTex"), resources.leafTexture->getHandle());
+	leafSSBO.bindBase(0);
+	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, leafCount);
+}
+
+void TreeRenderer::renderLeavesShadow(Scene scene)
+{
+	glDisable(GL_CULL_FACE);
+
+	resources.quadVAO->bind();
+	resources.leavesShadowShader->bind();
+
+
+	resources.leavesShadowShader->setUniform("VP", scene.LightVP);
 	glBindTextureUnit(resources.leafShader->getTextureIndex("leafTex"), resources.leafTexture->getHandle());
 	leafSSBO.bindBase(0);
 	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, leafCount);

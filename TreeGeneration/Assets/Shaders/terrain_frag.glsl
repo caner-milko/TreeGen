@@ -40,6 +40,6 @@ void main()
 {
     vec3 norm = normalize(normal);
     vec3 col = texture(grassTex, uv * 5.0).xyz;
-    FragColor = vec4(calcLight(normalize(camPos - fragPos), norm, vec3(1.0)), 1.0);
+    FragColor = vec4(calcLight(normalize(camPos - fragPos), norm, col), 1.0);
     //FragColor = vec4(norm, 1.0);
 } 

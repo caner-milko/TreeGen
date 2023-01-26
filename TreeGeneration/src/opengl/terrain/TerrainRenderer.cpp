@@ -37,7 +37,7 @@ void TerrainRenderer::render(DrawView view, Scene scene) const
 
 	glDepthFunc(GL_LESS);
 
-	Shader* shader = resources.terrainShader;
+	auto& shader = resources.terrainShader;
 
 	shader->bind();
 	vao.bind();

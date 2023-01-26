@@ -8,9 +8,10 @@
 #include "Scene.h"
 
 struct TreeRendererResources {
-	GLVertexArray* quadVAO = nullptr, * cubeVAO = nullptr, * pointVAO = nullptr, * lineVAO = nullptr;
-	Shader* branchShader = nullptr, * leafShader = nullptr, * budPointShader = nullptr, * coloredLineShader = nullptr;
-	Texture* leafTexture = nullptr, * barkTexture = nullptr;
+	sp<GLVertexArray> quadVAO = nullptr, cubeVAO = nullptr, pointVAO = nullptr, lineVAO = nullptr;
+	sp<Shader> branchShader = nullptr, leafShader = nullptr, budPointShader = nullptr, coloredLineShader = nullptr;
+	sp<Shader> branchShadowShader = nullptr, leavesShadowShader = nullptr;
+	sp<Texture> leafTexture = nullptr, barkTexture = nullptr;
 };
 
 
@@ -29,7 +30,9 @@ public:
 	TreeRendererResources resources;
 	TreeRenderer(Tree& tree, const TreeRendererResources& resources = {});
 	void renderBranchs(DrawView view, Scene scene);
+	void renderBranchsShadow(Scene scene);
 	void renderLeaves(DrawView view, Scene scene);
+	void renderLeavesShadow(Scene scene);
 	void renderTree(DrawView view, bool renderBranchs, bool renderLeaves, Scene scene);
 	void renderVigor(DrawView view);
 	void renderOptimalDirection(DrawView view);

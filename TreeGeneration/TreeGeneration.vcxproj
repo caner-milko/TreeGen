@@ -108,7 +108,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level2</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
@@ -123,7 +123,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level2</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
@@ -152,8 +152,10 @@
     <ClCompile Include="src\Branch.cpp" />
     <ClCompile Include="src\Leaf.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\opengl\ApiToEnum.cpp" />
     <ClCompile Include="src\opengl\Camera.cpp" />
     <ClCompile Include="src\opengl\CubemapTexture.cpp" />
+    <ClCompile Include="src\opengl\FrameBuffer.cpp" />
     <ClCompile Include="src\opengl\GLVertexArray.cpp" />
     <ClCompile Include="src\opengl\Image.cpp" />
     <ClCompile Include="src\opengl\Renderer.cpp" />
@@ -173,9 +175,12 @@
     <ClInclude Include="src\Branch.h" />
     <ClInclude Include="src\Input.h" />
     <ClInclude Include="src\Leaf.h" />
+    <ClInclude Include="src\opengl\ApiToEnum.h" />
+    <ClInclude Include="src\opengl\BasicTypes.h" />
     <ClInclude Include="src\opengl\Camera.h" />
     <ClInclude Include="src\opengl\CubemapTexture.h" />
     <ClInclude Include="src\opengl\DrawView.h" />
+    <ClInclude Include="src\opengl\FrameBuffer.h" />
     <ClInclude Include="src\opengl\GLBuffer.hpp" />
     <ClInclude Include="src\opengl\GLVertexArray.h" />
     <ClInclude Include="src\opengl\Image.h" />

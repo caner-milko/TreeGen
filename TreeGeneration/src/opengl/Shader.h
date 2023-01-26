@@ -3,12 +3,20 @@
 #include <string_view>
 #include <unordered_map>
 #include "../Definitions.h"
+#include <glad/glad.h>
 using ShaderHandle = uint32;
 class Shader {
 public:
-	Shader(std::string_view vertexPath, std::string_view fragmentPath);
+	struct UniformInfo
+	{
+		GLint location = -1;
+		GLsizei count;
+	};
+	Shader(std::string_view vertexSrc, std::string_view fragmentSrc);
+	~Shader();
 	void bind() const;
-	void destroy();
+	DELETE_COPY_CONSTRUCTORS(Shader)
+
 	template<typename T>
 	Shader& setUniform(std::string_view name, const T& value) {
 		int32 loc = getUniformLocation(std::string(name));
@@ -20,12 +28,13 @@ public:
 	template<typename T>
 	Shader& setUniform(const uint32 location, const T& value);
 	int32 getUniformLocation(const std::string& name);
+	UniformInfo getUniformInfo(const std::string& name);
+	void getAllUniformLocations();
 	int8 getTextureIndex(const std::string& name);
 	int8 getTextureIndex(const uint32 location);
 private:
 	ShaderHandle handle;
-	const std::string vertexPath, fragmentPath;
-	std::unordered_map<std::string, uint32> uniformLocations;
+	std::unordered_map<std::string, UniformInfo> uniformLocations;
 	std::unordered_map<uint32, uint8> textureIndices;
-	void compile();
+	void compile(std::string_view vertexSrc, std::string_view fragmentSrc);
 };

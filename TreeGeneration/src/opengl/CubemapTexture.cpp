@@ -1,35 +1,24 @@
 #include "CubemapTexture.h"
 #include "ResourceManager.h"
-CubemapTexture::CubemapTexture(std::array<std::string_view, 6> paths, const CubemapTextureData& data) : data(data)
+CubemapTexture::CubemapTexture(TextureCreateData data) 
+	: Texture((
+		data.imageType = ImageType::TEX_CUBEMAP,
+		data.mipLevels = 1,
+		data.wrapping = AddressMode::CLAMP_TO_EDGE,
+		data.minFiltering = Filter::LINEAR,
+		data.maxFiltering = Filter::LINEAR, 
+		data))
 {
-	glGenTextures(1, &handle);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, handle);
+}
 
-	for (int i = 0; i < paths.size(); i++) {
-		ImagePtr imageData = ResourceManager::getInstance().readImageFile(paths[i]);
-		int space = Texture::selectInternalFormat(data.colorSpace, imageData->nrChannels == 4);
-		if (imageData->nrChannels == 4) {
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, space, imageData->width, imageData->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData->data);
-		}
-		else if (imageData->nrChannels == 3) {
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, space, imageData->width, imageData->height, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData->data);
-		}
-		this->paths[i] = paths[i];
+void CubemapTexture::uploadFaces(const std::array<const void*, 6> faces, TextureUploadData uploadData)
+{
+	for (int i = 0; i < 6; i++) {
+		uploadData.data = faces[i];
+		uploadData.offset.z = i;
+		uploadData.size.z = 1;
+		uploadData.level = 0;
+		uploadData.dimensions = UploadDimension::THREE;
+		subImage(uploadData);
 	}
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, (int32_t)data.wrapping);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, (int32_t)data.wrapping);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, (int32_t)data.wrapping);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, (int32_t)data.minFiltering);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, (int32_t)data.maxFiltering);
-
-}
-
-void CubemapTexture::bind()
-{
-	glBindTexture(GL_TEXTURE_CUBE_MAP, handle);
-}
-
-void CubemapTexture::destroy()
-{
-	glDeleteTextures(1, &handle);
 }

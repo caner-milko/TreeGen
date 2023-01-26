@@ -4,6 +4,8 @@
 #include "../Util.hpp"
 #include "../Branch.h"
 #include "GLBuffer.hpp"
+#include "Scene.h"
+Scene Gscene = {};
 void Renderer::init()
 {
 	glEnable(GL_DEPTH_TEST);
@@ -52,10 +54,11 @@ void Renderer::init()
 		-0.5f,  0.5f,  0.5f, // bottom-left        
 	};
 
-	cubeVAO.init();
-	cubeVAO.bind();
-	cubeVAO.attachBuffer(GLVertexArray::BufferType::ARRAY, sizeof(cubeVertices), GLVertexArray::DrawMode::STATIC, cubeVertices);
-	cubeVAO.enableAttribute(0, 3, 3 * sizeof(float), nullptr);
+	cubeVAO = std::make_shared<GLVertexArray>();
+	cubeVAO->init();
+	cubeVAO->bind();
+	cubeVAO->attachBuffer(GLVertexArray::BufferType::ARRAY, sizeof(cubeVertices), GLVertexArray::DrawMode::STATIC, cubeVertices);
+	cubeVAO->enableAttribute(0, 3, 3 * sizeof(float), nullptr);
 
 	float quadVertices[] = {
 		// positions
@@ -67,22 +70,37 @@ void Renderer::init()
 		 0.5f,  1.0f,
 		-0.5f,  1.0f,
 	};
-	quadVAO.init();
-	quadVAO.bind();
-	quadVAO.attachBuffer(GLVertexArray::BufferType::ARRAY, sizeof(quadVertices), GLVertexArray::DrawMode::STATIC, quadVertices);
+	quadVAO = std::make_shared<GLVertexArray>();
+	quadVAO->init();
+	quadVAO->bind();
+	quadVAO->attachBuffer(GLVertexArray::BufferType::ARRAY, sizeof(quadVertices), GLVertexArray::DrawMode::STATIC, quadVertices);
 
-	quadVAO.enableAttribute(0, 2, 2 * sizeof(float), nullptr);
+	quadVAO->enableAttribute(0, 2, 2 * sizeof(float), nullptr);
 
-	pointVAO.init();
-	pointVAO.bind();
+	pointVAO = std::make_shared<GLVertexArray>();
+	pointVAO->init();
+	pointVAO->bind();
 	const int32 pointData[] = { 0 };
-	pointVAO.attachBuffer(GLVertexArray::BufferType::ELEMENT, sizeof(pointData), GLVertexArray::DrawMode::STATIC, pointData);
+	pointVAO->attachBuffer(GLVertexArray::BufferType::ELEMENT, sizeof(pointData), GLVertexArray::DrawMode::STATIC, pointData);
 
-	lineVAO.init();
-	lineVAO.bind();
+	lineVAO = std::make_shared<GLVertexArray>();
+	lineVAO->init();
+	lineVAO->bind();
 	const int32 lineData[] = { 0, 1 };
-	lineVAO.attachBuffer(GLVertexArray::BufferType::ELEMENT, sizeof(lineData), GLVertexArray::DrawMode::STATIC, lineData);
+	lineVAO->attachBuffer(GLVertexArray::BufferType::ELEMENT, sizeof(lineData), GLVertexArray::DrawMode::STATIC, lineData);
 
+
+	Texture::TextureCreateData tcd;
+	tcd.imageType = ImageType::TEX_2D;
+	tcd.mipLevels = 1;
+	tcd.size = ivec3(2048, 2048, 0);
+	tcd.textureFormat = Format::D16_UNORM;
+	tcd.minFiltering = Filter::LINEAR;
+	tcd.maxFiltering = Filter::LINEAR;
+	tcd.wrapping = AddressMode::CLAMP_TO_EDGE;
+	shadowTexture = std::make_shared<Texture>(tcd);
+	shadowFrameBuffer = std::make_shared<FrameBuffer>();
+	shadowFrameBuffer->attachColor(GL_DEPTH_ATTACHMENT, shadowTexture);
 }
 
 void Renderer::startFrame()
@@ -100,34 +118,36 @@ void Renderer::endFrame()
 	lastShader = nullptr;
 }
 
-void Renderer::startDraw() {
-	glEnable(GL_FRAMEBUFFER_SRGB);
+void Renderer::startDraw(bool SRGB) {
+	if(SRGB)
+		glEnable(GL_FRAMEBUFFER_SRGB);
 }
 
-void Renderer::endDraw() {
-	glDisable(GL_FRAMEBUFFER_SRGB);
+void Renderer::endDraw(bool SRGB) {
+	if(SRGB)
+		glDisable(GL_FRAMEBUFFER_SRGB);
 }
 
 
 
 
-void Renderer::renderPlane(DrawView view, Shader* shader, mat4 model)
+void Renderer::renderPlane(DrawView view, Shader& shader, mat4 model)
 {
 	vec3 lightDir = glm::normalize(vec3(0.4, -0.6, -0.4));
 	vec3 ambientCol = 0.1f * vec3(0.2f, 0.2f, 0.15f);
 	vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);
 	glDisable(GL_CULL_FACE);
 	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
-	quadVAO.bind();
-	shader->bind();
-	shader->setUniform("VP", vp);
-	shader->setUniform("model", model);
+	quadVAO->bind();
+	shader.bind();
+	shader.setUniform("VP", vp);
+	shader.setUniform("model", model);
 
-	shader->setUniform("color", vec3(1.0));
-	shader->setUniform("camPos", view.camera.getCameraPosition());
-	shader->setUniform("lightDir", lightDir);
-	shader->setUniform("lightColor", lightColor);
-	shader->setUniform("ambientColor", ambientCol);
+	shader.setUniform("color", vec3(1.0));
+	shader.setUniform("camPos", view.camera.getCameraPosition());
+	shader.setUniform("lightDir", lightDir);
+	shader.setUniform("lightColor", lightColor);
+	shader.setUniform("ambientColor", ambientCol);
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glEnable(GL_CULL_FACE);
@@ -164,13 +184,13 @@ void RenderShadowPoint(Shader* shader, const vec3& pos, float shadow) {
 	shader->setUniform("shadow", shadow);
 	glDrawArrays(GL_POINTS, 0, 1);
 }
-void Renderer::renderShadowPoints(DrawView view, Shader* shader, const std::vector<vec4>& points)
+void Renderer::renderShadowPoints(DrawView view, Shader& shader, const std::vector<vec4>& points)
 {
 	glEnable(GL_PROGRAM_POINT_SIZE);
 	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
-	shader->bind();
-	pointVAO.bind();
-	shader->setUniform("VP", vp);
+	shader.bind();
+	pointVAO->bind();
+	shader.setUniform("VP", vp);
 
 	uint32 ssbo;
 	glCreateBuffers(1, &ssbo);
@@ -184,13 +204,13 @@ void Renderer::renderShadowPoints(DrawView view, Shader* shader, const std::vect
 	glDisable(GL_PROGRAM_POINT_SIZE);
 }
 
-void Renderer::renderShadowsOnBuds(DrawView view, Shader* shader, const TreeWorld& world, const std::vector<TreeNode>& nodes)
+void Renderer::renderShadowsOnBuds(DrawView view, Shader& shader, const TreeWorld& world, const std::vector<TreeNode>& nodes)
 {
 	glEnable(GL_PROGRAM_POINT_SIZE);
 	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
-	shader->bind();
-	pointVAO.bind();
-	shader->setUniform("VP", vp);
+	shader.bind();
+	pointVAO->bind();
+	shader.setUniform("VP", vp);
 	std::vector<vec4> points;
 	for (auto& node : nodes) {
 		if (node.nodeStatus == TreeNode::BUD) {
@@ -215,17 +235,17 @@ void Renderer::renderShadowsOnBuds(DrawView view, Shader* shader, const TreeWorl
 	glDisable(GL_PROGRAM_POINT_SIZE);
 }
 
-void Renderer::renderBBoxLines(DrawView view, Shader* shader, const BBox& bbox, const vec3& color)
+void Renderer::renderBBoxLines(DrawView view, Shader& shader, const BBox& bbox, const vec3& color)
 {
 	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
-	shader->bind();
-	lineVAO.bind();
-	shader->setUniform("VP", vp);
-	shader->setUniform("color", color);
+	shader.bind();
+	lineVAO->bind();
+	shader.setUniform("VP", vp);
+	shader.setUniform("color", color);
 
 	auto const drawLine = [&](const vec3& first, const vec3& second) {
-		shader->setUniform("pos1", first);
-		shader->setUniform("pos2", second);
+		shader.setUniform("pos1", first);
+		shader.setUniform("pos2", second);
 		glDrawArrays(GL_LINES, 0, 2);
 	};
 
@@ -300,7 +320,7 @@ void Renderer::renderBBoxLines(DrawView view, Shader* shader, const BBox& bbox, 
 	drawLine(first, second);
 }
 
-void Renderer::setupSkybox(CubemapTexture* skyboxTexture, Shader* skyboxShader)
+void Renderer::setupSkybox(const sp<CubemapTexture>& skyboxTexture, const sp<Shader>& skyboxShader)
 {
 	this->skyboxShader = skyboxShader;
 	this->skyboxTexture = skyboxTexture;
@@ -315,33 +335,65 @@ void Renderer::renderSkybox(DrawView view)
 	if (skyboxTexture && skyboxShader) {
 		mat4 vp = view.camera.getProjectionMatrix() * glm::mat4(glm::mat3(view.camera.getViewMatrix()));
 		skyboxShader->bind();
-		cubeVAO.bind();
-		glActiveTexture(GL_TEXTURE0 + skyboxShader->getTextureIndex("skybox"));
-		skyboxTexture->bind();
+		cubeVAO->bind();
+		skyboxTexture->bindTo(skyboxShader->getTextureIndex("skybox"));
 		skyboxShader->setUniform("skybox_vp", vp);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 	glEnable(GL_CULL_FACE);
 }
 
-GLVertexArray& Renderer::getCubeVAO()
+void Renderer::startShadowPass()
+{
+	Scene& scene = Gscene;
+	glViewport(0, 0, shadowTexture->getCreateData().size.x, shadowTexture->getCreateData().size.y);
+	bindFramebuffer(shadowFrameBuffer);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	mat4 lightProjection = glm::ortho(scene.ortho.x, scene.ortho.y, scene.ortho.z, scene.ortho.w, scene.lightNearPlane, scene.lightFarPlane);
+	mat4 lightView = glm::lookAt(scene.lightPos, scene.lightDir + scene.lightPos, vec3(0.0f, 1.0f, 0.0f));
+	scene.LightVP = lightProjection * lightView;
+	scene.shadowMap = shadowTexture;
+}
+
+void Renderer::endShadowPass(DrawView view)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, 1600, 900);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
+
+	pointVAO->bind();
+	pointShader->setUniform("VP", vp);
+	pointShader->setUniform("pos", Gscene.lightPos);
+	pointShader->bind();
+	glPointSize(10.0f);
+	glDrawElements(GL_POINTS, 1, GL_UNSIGNED_INT, 0);
+}
+
+const sp<GLVertexArray>& Renderer::getCubeVAO()
 {
 	return cubeVAO;
 }
 
-GLVertexArray& Renderer::getQuadVAO()
+const sp<GLVertexArray>& Renderer::getQuadVAO()
 {
 	return quadVAO;
 }
 
-GLVertexArray& Renderer::getLineVAO()
+const sp<GLVertexArray>& Renderer::getLineVAO()
 {
 	return lineVAO;
 }
 
-GLVertexArray& Renderer::getPointVAO()
+const sp<GLVertexArray>& Renderer::getPointVAO()
 {
 	return pointVAO;
+}
+
+void Renderer::bindFramebuffer(const sp<FrameBuffer>& fb, GLenum bindType)
+{
+	glBindFramebuffer(bindType, fb->getHandle());
 }
 
 

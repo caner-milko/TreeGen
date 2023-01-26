@@ -84,23 +84,25 @@ private:
 	bool renderLeaves = true;
 
 
-	Shader* treeBezierShader{};
-	Shader* leafShader{};
-	Shader* shadowPointShader{};
-	Shader* skyboxShader{};
-	Shader* planeShader{};
-	Shader* lineShader{};
-	Shader* budPointShader{};
-	Shader* coloredLineShader{};
-	Shader* terrainShader{};
+	sp<Shader> treeBezierShader{};
+	sp<Shader> leafShader{};
+	sp<Shader> shadowPointShader{};
+	sp<Shader> skyboxShader{};
+	sp<Shader> planeShader{};
+	sp<Shader> lineShader{};
+	sp<Shader> budPointShader{};
+	sp<Shader> coloredLineShader{};
+	sp<Shader> terrainShader{};
+	sp<Shader> branchShadowShader{};
+	sp<Shader> leavesShadowShader{};
 
+	sp<Texture> barkTex{};
+	sp<Texture> leafTex{};
+	sp<Texture> grassTex{};
 
-	Texture* barkTex{};
-	Texture* leafTex{};
-	Texture* grassTex{};
-	std::shared_ptr<Image> heightMapImage;
+	sp<Image> heightMapImage;
 
-	CubemapTexture* skyboxTex{};
+	sp<CubemapTexture> skyboxTex{};
 
 
 	void startFrame();

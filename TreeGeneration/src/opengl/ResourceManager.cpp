@@ -24,8 +24,7 @@ std::string ResourceManager::readTextFile(std::string_view path) const
 	return "";
 }
 
-
-ImagePtr loadJPG(std::string_view imgPath)
+sp<Image> loadJPG(std::string_view imgPath)
 {
 	stbi_set_flip_vertically_on_load(false);
 	int width, height, nrChannels;
@@ -37,10 +36,10 @@ ImagePtr loadJPG(std::string_view imgPath)
 		return nullptr;
 	}
 
-	return std::make_unique<Image>(data, width, height, nrChannels);
+	return std::make_shared<Image>(data, width, height, nrChannels);
 }
 
-ImagePtr loadPNG(std::string_view imgPath)
+sp<Image> loadPNG(std::string_view imgPath)
 {
 	stbi_set_flip_vertically_on_load(true);
 	int width, height, nrChannels;
@@ -52,10 +51,10 @@ ImagePtr loadPNG(std::string_view imgPath)
 		return nullptr;
 	}
 
-	return std::make_unique<Image>(data, width, height, nrChannels);
+	return std::make_shared<Image>(data, width, height, nrChannels);
 }
 
-ImagePtr ResourceManager::readImageFile(std::string_view path) const
+sp<Image> ResourceManager::readImageFile(std::string_view path) const
 {
 	if (util::endsWith(path, ".jpg") || util::endsWith(path, ".jpeg"))
 	{
@@ -71,61 +70,50 @@ ImagePtr ResourceManager::readImageFile(std::string_view path) const
 		return nullptr;
 	}
 }
-Texture* ResourceManager::loadTexture(const std::string& name, std::string_view path, const Texture::TextureData& data)
+
+sp<Shader> ResourceManager::createShader(std::string_view vertexPath, std::string_view fragmentPath) const
 {
-	auto found = m_Textures.find(name);
-	if (found != m_Textures.end())
-		return found->second.get();
-	return m_Textures.insert({ name, std::make_unique<Texture>(path, data) }).first->second.get();
-}
-CubemapTexture* ResourceManager::loadCubemapTexture(const std::string& name, std::string_view right, std::string_view left,
-	std::string_view top, std::string_view bottom, std::string_view front, std::string_view back, const CubemapTexture::CubemapTextureData& data)
-{
-	auto found = m_CubemapTextures.find(name);
-	if (found != m_CubemapTextures.end())
-		return found->second.get();
-	return m_CubemapTextures.insert({ name, std::make_unique<CubemapTexture>(std::array<std::string_view, 6>{right, left, top, bottom, front, back}, data) }).first->second.get();
-}
-Shader* ResourceManager::loadShader(const std::string& name, std::string_view vertex_path, std::string_view fragment_path)
-{
-	auto found = m_Shaders.find(name);
-	if (found != m_Shaders.end())
-		return found->second.get();
-	return m_Shaders.insert({ name, std::make_unique<Shader>(vertex_path, fragment_path) }).first->second.get();
+	std::string vertexSrc = readTextFile(vertexPath);
+	std::string fragSrc = readTextFile(fragmentPath);
+	return std::make_shared<Shader>(vertexSrc, fragSrc);
 }
 
-void ResourceManager::destroyShader(const std::string& name)
+sp<Texture> ResourceManager::createTexture(std::string_view imagePath, Texture::TextureCreateData createData, bool dataFromImage) const
 {
-	auto& map = m_Shaders;
-	auto found = map.find(name);
-	if (found == map.end())
-		return;
-	found->second.get()->destroy();
-	map.erase(name);
+	sp<Image> img = readImageFile(imagePath);
+	if (dataFromImage) {
+		createData.size = ivec3(img->width, img->height, 0);
+		createData.textureFormat = img->nrChannels == 4 ? Format::R8G8B8A8_SRGB : Format::R8G8B8_SRGB;
+	}
+	auto tex = std::make_shared<Texture>(createData);
+	Texture::TextureUploadData uploadData = {};
+	uploadData.size = ivec3(img->width, img->height, 0);
+	uploadData.inputFormat = img->nrChannels == 4 ? UploadFormat::RGBA : UploadFormat::RGB;
+	uploadData.data = img->data;
+	tex->subImage(uploadData);
+	tex->genMipMaps();
+	return tex;
 }
 
-void ResourceManager::destroyTexture(const std::string& name)
+sp<CubemapTexture> ResourceManager::createCubemapTexture(std::array<std::string_view, 6> facePaths, Texture::TextureCreateData createData, bool dataFromImage)
 {
-	auto& map = m_Textures;
-	auto found = map.find(name);
-	if (found == map.end())
-		return;
-	found->second.get()->destroy();
-	map.erase(name);
+	std::array<sp<Image>, 6> faces;
+	std::array<const void*, 6> datas;
+	Texture::TextureUploadData uploadData = {};
+	for (int i = 0; i < 6; i++) {
+		sp<Image> img = readImageFile(facePaths[i]);
+		if(i == 0) {
+			if (dataFromImage) {
+				createData.size = ivec3(img->width, img->height, 0);
+				createData.textureFormat = img->nrChannels == 4 ? Format::R8G8B8A8_SRGB : Format::R8G8B8_SRGB;
+			}
+			uploadData.size = ivec3(img->width, img->height, 1);
+			uploadData.inputFormat = img->nrChannels == 4 ? UploadFormat::RGBA : UploadFormat::RGB;
+		}
+		faces[i] = img;
+		datas[i] = img->data;
+	}
+	auto tex = std::make_shared<CubemapTexture>(createData);
+	tex->uploadFaces(datas, uploadData);
+	return tex;
 }
-
-void ResourceManager::destroyCubemapTexture(const std::string& name)
-{
-	auto& map = m_CubemapTextures;
-	auto found = map.find(name);
-	if (found == map.end())
-		return;
-	found->second.get()->destroy();
-	map.erase(name);
-}
-
-void ResourceManager::ClearResources()
-{
-	m_Shaders.clear();
-}
-

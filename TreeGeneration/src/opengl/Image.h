@@ -24,4 +24,3 @@ struct Image {
 		return vals;
 	}
 };
-using ImagePtr = std::unique_ptr<Image>;

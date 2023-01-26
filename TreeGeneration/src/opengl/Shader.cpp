@@ -1,6 +1,5 @@
 #include "Shader.h"
 #include <glad/glad.h>
-#include "./ResourceManager.h"
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -10,64 +9,62 @@
 template<>
 Shader& Shader::setUniform(const uint32 location, const bool& value)
 {
-	bind();
-	glUniform1i(location, (int)value);
+	glProgramUniform1i(handle, location, (int)value);
 	return *this;
 }
 template<>
 Shader& Shader::setUniform(const uint32 location, const int32& value)
 {
-	bind();
-	glUniform1i(location, value);
+	glProgramUniform1i(handle, location, value);
 	return *this;
 }
 template<>
 Shader& Shader::setUniform(const uint32 location, const float& val)
 {
-	bind();
-	glUniform1f(location, val);
+	glProgramUniform1f(handle, location, val);
 	return *this;
 }
 template<>
 Shader& Shader::setUniform(const uint32 location, const glm::vec1& val)
 {
-	bind();
-	glUniform1f(location, val.x);
+	glProgramUniform1f(handle, location, val.x);
 	return *this;
 }
 template<>
 Shader& Shader::setUniform(const uint32 location, const vec2& val)
 {
-	bind();
-	glUniform2f(location, val.x, val.y);
+	glProgramUniform2f(handle, location, val.x, val.y);
 	return *this;
 }
 template<>
 Shader& Shader::setUniform(const uint32 location, const vec3& val)
 {
-	bind();
-	glUniform3f(location, val.x, val.y, val.z);
+	glProgramUniform3f(handle, location, val.x, val.y, val.z);
 	return *this;
 }
 template<>
 Shader& Shader::setUniform(const uint32 location, const vec4& val)
 {
-	bind();
-	glUniform4f(location, val.x, val.y, val.z, val.w);
+	glProgramUniform4f(handle, location, val.x, val.y, val.z, val.w);
 	return *this;
 }
 template<>
 Shader& Shader::setUniform(const uint32 location, const mat4& val)
 {
-	bind();
-	glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(val));
+	glProgramUniformMatrix4fv(handle, location, 1, GL_FALSE, glm::value_ptr(val));
 	return *this;
 }
 
 
-Shader::Shader(std::string_view vertexPath, std::string_view fragmentPath) : vertexPath(vertexPath), fragmentPath(fragmentPath)
+Shader::Shader(std::string_view vertexSrc, std::string_view fragmentSrc)
 {
-	compile();
+	compile(vertexSrc, fragmentSrc);
+	getAllUniformLocations();
+}
+
+Shader::~Shader()
+{
+	glDeleteProgram(handle);
 }
 
 void Shader::bind() const
@@ -75,21 +72,45 @@ void Shader::bind() const
 	glUseProgram(handle);
 }
 
-void Shader::destroy()
-{
-	glDeleteProgram(handle);
-}
-
 int32 Shader::getUniformLocation(const std::string& name)
 {
-	auto found = uniformLocations.find(name);
-	if (found != uniformLocations.end())
-		return found->second;
-	int32 loc = glGetUniformLocation(handle, name.c_str());
-	if (loc == -1)
-		std::cout << "Warning: uniform '" << name << "' doesn't exist!" << std::endl;
-	uniformLocations[name] = loc;
-	return loc;
+	return getUniformInfo(name).location;
+}
+
+Shader::UniformInfo Shader::getUniformInfo(const std::string& name)
+{
+	auto it = uniformLocations.find(name);
+	if (it != uniformLocations.end())
+		return it->second;
+	return {};
+}
+
+void Shader::getAllUniformLocations()
+{
+	GLint uniform_count = 0;
+	glGetProgramiv(handle, GL_ACTIVE_UNIFORMS, &uniform_count);
+
+	if (uniform_count != 0)
+	{
+		GLint 	max_name_len = 0;
+		GLsizei length = 0;
+		GLsizei count = 0;
+		GLenum 	type = GL_NONE;
+		glGetProgramiv(handle, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_name_len);
+
+		auto uniform_name = std::make_unique<char[]>(max_name_len);
+
+		for (GLint i = 0; i < uniform_count; ++i)
+		{
+			glGetActiveUniform(handle, i, max_name_len, &length, &count, &type, uniform_name.get());
+
+			UniformInfo ui = {};
+			ui.location = glGetUniformLocation(handle, uniform_name.get());
+			ui.count = count;
+
+			uniformLocations.emplace(std::make_pair(std::string(uniform_name.get(), length), ui));
+		}
+	}
 }
 
 int8 Shader::getTextureIndex(const std::string& name)
@@ -106,19 +127,15 @@ int8 Shader::getTextureIndex(const uint32 location)
 	if (found != textureIndices.end())
 		return found->second;
 	uint8 index = textureIndices.insert({ location, static_cast<uint8>(textureIndices.size()) }).first->second;
-	bind();
 	setUniform<int32>(location, index);
 	return index;
 }
 
 
-void Shader::compile()
+void Shader::compile(std::string_view vertexSrc, std::string_view fragmentSrc)
 {
-	std::string vertexShaderCodeStr = ResourceManager::getInstance().readTextFile(vertexPath);
-	std::string fragmentShaderCodeStr = ResourceManager::getInstance().readTextFile(fragmentPath);
-
-	const char* vertexShaderCode = vertexShaderCodeStr.c_str();
-	const char* fragmentShaderCode = fragmentShaderCodeStr.c_str();
+	const char* vertexShaderCode = vertexSrc.data();
+	const char* fragmentShaderCode = fragmentSrc.data();
 
 	uint32 vertex, fragment;
 	int32 success;
@@ -133,7 +150,8 @@ void Shader::compile()
 	if (!success)
 	{
 		glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-		std::cout << "Shader Compilation: Error at Vertex Shader Compilation in path: " << vertexPath << "\n" << infoLog << std::endl;
+		std::cout << "Shader Compilation: Error at Vertex Shader Compilation\n" << infoLog << std::endl;
+		std::exit(1);
 	}
 
 	fragment = glCreateShader(GL_FRAGMENT_SHADER);
@@ -145,7 +163,8 @@ void Shader::compile()
 	if (!success)
 	{
 		glGetShaderInfoLog(fragment, 512, NULL, infoLog);
-		std::cout << "Shader Compilation: Error at Fragment Shader Compilation in path: " << fragmentPath << "\n" << infoLog << std::endl;
+		std::cout << "Shader Compilation: Error at Fragment Shader Compilation\n" << infoLog << std::endl;
+		std::exit(1);
 	}
 
 	handle = glCreateProgram();

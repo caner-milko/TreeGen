@@ -78,43 +78,74 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 	renderer.init();
 
 #pragma region Load_Resources
+	{
+		const std::string SHADERS_FOLDER = "./Assets/Shaders/";
+		auto& rm = ResourceManager::getInstance();
+		std::string vertex = ResourceManager::getInstance().readTextFile(SHADERS_FOLDER + "shadowPoint_vert.glsl");
+		std::string fragment = ResourceManager::getInstance().readTextFile(SHADERS_FOLDER + "shadowPoint_frag.glsl");
+		shadowPointShader = rm.createShader(
+			SHADERS_FOLDER + "shadowPoint_vert.glsl", 
+			SHADERS_FOLDER + "shadowPoint_frag.glsl");
 
-	shadowPointShader = ResourceManager::getInstance().loadShader("shadowPoint_shader",
-		"./Assets/Shaders/shadowPoint_vert.glsl", "./Assets/Shaders/shadowPoint_frag.glsl");
-	treeBezierShader = ResourceManager::getInstance().loadShader("treeQuadMarch_shader",
-		"./Assets/Shaders/treeBezier_vert.glsl", "./Assets/Shaders/treeBezier_frag.glsl");
-	skyboxShader = ResourceManager::getInstance().loadShader("skybox_shader",
-		"./Assets/Shaders/skybox_vert.glsl", "./Assets/Shaders/skybox_frag.glsl");
-	leafShader = ResourceManager::getInstance().loadShader("leaf_shader",
-		"./Assets/Shaders/leaf_vert.glsl", "./Assets/Shaders/leaf_frag.glsl");
-	budPointShader = ResourceManager::getInstance().loadShader("bud_point_shader",
-		"./Assets/Shaders/budPoint_vert.glsl", "./Assets/Shaders/budPoint_frag.glsl");
-	planeShader = ResourceManager::getInstance().loadShader("plane_shader",
-		"./Assets/Shaders/basic_vert.glsl", "./Assets/Shaders/basic_frag.glsl");
-	lineShader = ResourceManager::getInstance().loadShader("line_shader",
-		"./Assets/Shaders/line_vert.glsl", "./Assets/Shaders/line_frag.glsl");
-	coloredLineShader = ResourceManager::getInstance().loadShader("colored_line_shader",
-		"./Assets/Shaders/coloredLineShader_vert.glsl", "./Assets/Shaders/coloredLineShader_frag.glsl");
-	terrainShader = ResourceManager::getInstance().loadShader("terrain_shader",
-		"./Assets/Shaders/terrain_vert.glsl", "./Assets/Shaders/terrain_frag.glsl");
+		treeBezierShader = rm.createShader(
+			SHADERS_FOLDER + "treeBezier_vert.glsl",
+			SHADERS_FOLDER + "treeBezier_frag.glsl");
+
+		skyboxShader = rm.createShader(
+			SHADERS_FOLDER + "skybox_vert.glsl",
+			SHADERS_FOLDER + "skybox_frag.glsl");
+
+		leafShader = rm.createShader(
+			SHADERS_FOLDER + "leaf_vert.glsl",
+			SHADERS_FOLDER + "leaf_frag.glsl");
+
+		budPointShader = rm.createShader(
+			SHADERS_FOLDER + "budPoint_vert.glsl",
+			SHADERS_FOLDER + "budPoint_frag.glsl");
+
+		planeShader = rm.createShader(
+			SHADERS_FOLDER + "basic_vert.glsl",
+			SHADERS_FOLDER + "basic_frag.glsl");
+
+		lineShader = rm.createShader(
+			SHADERS_FOLDER + "line_vert.glsl",
+			SHADERS_FOLDER + "line_frag.glsl");
+		coloredLineShader = rm.createShader(
+			SHADERS_FOLDER + "coloredLineShader_vert.glsl",
+			SHADERS_FOLDER + "coloredLineShader_frag.glsl");
+		terrainShader = rm.createShader(
+			SHADERS_FOLDER + "terrain_vert.glsl",
+			SHADERS_FOLDER + "terrain_frag.glsl");
+
+		branchShadowShader = rm.createShader(
+			SHADERS_FOLDER + "shadow/treeBezierShadow_vert.glsl",
+			SHADERS_FOLDER + "shadow/treeBezierShadow_frag.glsl");
+
+		leavesShadowShader = rm.createShader(
+			SHADERS_FOLDER + "shadow/leafShadow_vert.glsl",
+			SHADERS_FOLDER + "shadow/leafShadow_frag.glsl");
+
+		renderer.pointShader = rm.createShader(
+			SHADERS_FOLDER + "point_vert.glsl",
+			SHADERS_FOLDER + "point_frag.glsl");
+
+		barkTex = rm.createTexture("./Assets/Textures/bark.jpg", {});
+		leafTex = rm.createTexture("./Assets/Textures/leaf3.png", { .wrapping = AddressMode::CLAMP_TO_EDGE });
+		grassTex = rm.createTexture("./Assets/Textures/grass.jpg", {});
+
+		skyboxTex = rm.createCubemapTexture({ "./Assets/Textures/skybox/posx.jpg", "./Assets/Textures/skybox/negx.jpg",
+			"./Assets/Textures/skybox/posy.jpg", "./Assets/Textures/skybox/negy.jpg",
+			"./Assets/Textures/skybox/posz.jpg", "./Assets/Textures/skybox/negz.jpg" }, {}, true);
 
 
-	barkTex = ResourceManager::getInstance().loadTexture("bark_texture", "./Assets/Textures/bark.jpg", {});
-	leafTex = ResourceManager::getInstance().loadTexture("leaf_texture", "./Assets/Textures/leaf3.png", { .wrapping = Texture::TextureWrapping::CLAMP_TO_EDGE });
-	grassTex = ResourceManager::getInstance().loadTexture("grass_texture", "./Assets/Textures/grass.jpg", {});
+		renderer.setupSkybox(skyboxTex, skyboxShader);
 
-	skyboxTex = ResourceManager::getInstance().loadCubemapTexture("skybox", "./Assets/Textures/skybox/posx.jpg", "./Assets/Textures/skybox/negx.jpg",
-		"./Assets/Textures/skybox/posy.jpg", "./Assets/Textures/skybox/negy.jpg",
-		"./Assets/Textures/skybox/posz.jpg", "./Assets/Textures/skybox/negz.jpg", {});
+		heightMapImage = ResourceManager::getInstance().readImageFile("./Assets/Textures/noiseTexture.png");
 
-
-	renderer.setupSkybox(skyboxTex, skyboxShader);
-
-	heightMapImage = std::shared_ptr<Image>(ResourceManager::getInstance().readImageFile("./Assets/Textures/noiseTexture.png").release());
-
-	terrain = std::make_unique<Terrain>(Terrain::TerrainData{ .heightMap = heightMapImage });
-	terrainRenderer = std::make_unique<TerrainRenderer>(*terrain, TerrainRenderer::TerrainRendererResources{ .terrainShader = terrainShader, .grassTexture = grassTex, .lineShader = lineShader, .lineVAO = &renderer.getLineVAO() });
-	terrainRenderer->update();
+		terrain = std::make_unique<Terrain>(Terrain::TerrainData{ .heightMap = heightMapImage });
+		terrainRenderer = std::make_unique<TerrainRenderer>(*terrain, TerrainRenderer::TerrainRendererResources{ .terrainShader = terrainShader, .grassTexture = grassTex, .lineShader = lineShader, .lineVAO = renderer.getLineVAO() });
+		terrainRenderer->update();
+	}
 #pragma endregion Load_Resources
 
 #pragma region Setup_TreeGen
@@ -133,8 +164,11 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 	tree2 = generator->createTree(*world, vec3(0.2f, terrain->heightAtWorldPos(vec3(0.2f, 0.0f, 0.0f)), 0.0f), growthData);
 
 
-	resources = { .quadVAO = &renderer.getQuadVAO(), .cubeVAO = &renderer.getCubeVAO(), .pointVAO = &renderer.getPointVAO(), .lineVAO = &renderer.getLineVAO(),
-		.branchShader = treeBezierShader, .leafShader = leafShader, .budPointShader = budPointShader, .coloredLineShader = coloredLineShader,
+	resources = {
+		.quadVAO = renderer.getQuadVAO(), .cubeVAO = renderer.getCubeVAO(), .pointVAO = renderer.getPointVAO(),
+		.lineVAO = renderer.getLineVAO(), .branchShader = treeBezierShader, .leafShader = leafShader,
+		.budPointShader = budPointShader, .coloredLineShader = coloredLineShader,
+		.branchShadowShader = branchShadowShader, .leavesShadowShader = leavesShadowShader,
 		.leafTexture = leafTex, .barkTexture = barkTex, };
 
 	treeRenderer1 = std::make_unique<TreeRenderer>(*tree, resources);
@@ -260,10 +294,8 @@ void TreeApplication::drawGUI()
 
 void TreeApplication::drawScene()
 {
-	renderer.startDraw();
+	renderer.startDraw(true);
 	DrawView view{ cam };
-	Scene scene{};
-
 	//renderer.renderPlane(view, planeShader, glm::scale(glm::rotate(glm::translate(glm::mat4(1.0), vec3(0.0f, 0.0f, -2.5f)), PI / 2.0f, vec3(1.0f, 0.0f, 0.0f)), vec3(5.0f)));
 
 
@@ -301,8 +333,16 @@ void TreeApplication::drawScene()
 		}
 	}
 
-	treeRenderer1->renderTree(view, renderBody, renderLeaves, scene);
-	treeRenderer2->renderTree(view, renderBody, renderLeaves, scene);
+	renderer.startShadowPass();
+
+	treeRenderer1->renderBranchsShadow(Gscene);
+	treeRenderer2->renderBranchsShadow(Gscene);
+	treeRenderer1->renderLeavesShadow(Gscene);
+	treeRenderer2->renderLeavesShadow(Gscene);
+	renderer.endShadowPass(view);
+
+	treeRenderer1->renderTree(view, renderBody, renderLeaves, Gscene);
+	treeRenderer2->renderTree(view, renderBody, renderLeaves, Gscene);
 
 	if (appData.showShadowGrid) {
 		//world->calculateShadows();
@@ -310,13 +350,13 @@ void TreeApplication::drawScene()
 			std::vector<vec4> cells
 				= world->renderShadowCells(cam.getCameraPosition(), cam.getCameraDirection(), cam.getFov(), appData.shadowCellVisibilityRadius);
 
-			renderer.renderShadowPoints(view, shadowPointShader, cells);
+			renderer.renderShadowPoints(view, *shadowPointShader, cells);
 		}
 		else {
 			std::vector<TreeNode> buds = selTree->AsNodeVector(true);
-			renderer.renderShadowsOnBuds(view, shadowPointShader, *world, buds);
+			renderer.renderShadowsOnBuds(view, *shadowPointShader, *world, buds);
 			buds = tree2->AsNodeVector(true);
-			renderer.renderShadowsOnBuds(view, shadowPointShader, *world, buds);
+			renderer.renderShadowsOnBuds(view, *shadowPointShader, *world, buds);
 		}
 	}
 	if (appData.showVigor) {
@@ -328,12 +368,12 @@ void TreeApplication::drawScene()
 		treeRenderer2->renderOptimalDirection(view);
 	}
 
-	renderer.renderBBoxLines(view, lineShader, world->getBBox(), vec3(1.0f));
+	renderer.renderBBoxLines(view, *lineShader, world->getBBox(), vec3(1.0f));
 
-	terrainRenderer->render(view, scene);
+	//terrainRenderer->render(view, scene);
 
-	renderer.renderSkybox(view);
-	renderer.endDraw();
+	//renderer.renderSkybox(view);
+	renderer.endDraw(true);
 }
 
 void TreeApplication::endFrame()

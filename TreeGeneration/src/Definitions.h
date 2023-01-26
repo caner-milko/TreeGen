@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp> 
 #include <glm/gtx/quaternion.hpp>
+#include <memory>
 typedef uint8_t uint8;
 typedef int8_t int8;
 typedef uint16_t uint16;
@@ -22,3 +23,11 @@ typedef glm::mat3 mat3;
 typedef vec3 Color;
 typedef glm::quat quat;
 const float PI = glm::pi<float>();
+
+template<typename T>
+using sp = std::shared_ptr<T>;
+
+#define DELETE_COPY_CONSTRUCTORS(TYPE) \
+TYPE(const TYPE&) = delete;            \
+TYPE& operator=(const TYPE&) = delete; \
+TYPE& operator=(TYPE&) = delete;       \

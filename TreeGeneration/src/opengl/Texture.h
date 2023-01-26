@@ -2,36 +2,45 @@
 #include <glad/glad.h>
 #include <string>
 #include "../Definitions.h"
+#include "./Image.h"
+#include "./BasicTypes.h"
 using TextureHandle = uint32;
 
 class Texture {
 public:
-	enum TextureWrapping
-	{
-		REPEAT = GL_REPEAT, MIRRORED_REPEAT = GL_MIRRORED_REPEAT, CLAMP_TO_EDGE = GL_CLAMP_TO_EDGE, CLAMP_TO_BORDER = GL_CLAMP_TO_BORDER
+	struct TextureCreateData {
+		ImageType imageType = ImageType::TEX_2D;
+		ivec3 size = {1920, 1080, 1};
+		int32 mipLevels = -1;
+		AddressMode wrapping = AddressMode::REPEAT;
+		Filter minFiltering = Filter::LINEAR_MIPMAP_LINEAR;
+		Filter maxFiltering = Filter::LINEAR;
+		Format textureFormat = Format::R8G8B8_SRGB;
+		SampleCount sampleCount = SampleCount::SAMPLES_1;
 	};
-	enum TextureFiltering
-	{
-		NONE = -1, LINEAR = GL_LINEAR, NEAREST = GL_NEAREST, LINEAR_MIPMAP_LINEAR = GL_LINEAR_MIPMAP_LINEAR
+	struct TextureUploadData {
+		UploadDimension dimensions = UploadDimension::TWO;
+		UploadFormat inputFormat = UploadFormat::RGBA;
+		uint32 level = 0;
+		ivec3 offset = ivec3(0);
+		ivec3 size = ivec3(1920, 1080, 1);
+		UploadType type = UploadType::UBYTE;
+		const void* data = nullptr;
 	};
-	enum TextureColorSpace
-	{
-		RAW, SRGB
-	};
-	struct TextureData {
-		TextureWrapping wrapping = Texture::REPEAT;
-		TextureFiltering minFiltering = Texture::LINEAR_MIPMAP_LINEAR;
-		TextureFiltering maxFiltering = Texture::LINEAR;
-		TextureColorSpace colorSpace = Texture::SRGB;
-		bool generateMipMap = true;
-	};
-	static int selectInternalFormat(TextureColorSpace colorSpace, bool alpha);
-	Texture(std::string_view path, const TextureData& data);
-	void bind();
-	TextureHandle getHandle() const;
-	void destroy();
+	Texture(TextureCreateData data = {});
+	virtual ~Texture();
+	void bindTo(int32 unit) const;
+	DELETE_COPY_CONSTRUCTORS(Texture)
+
+	virtual void subImage(TextureUploadData uploadData = {});
+	void genMipMaps();
+	TextureHandle getHandle() const {
+		return handle;
+	}
+	TextureCreateData getCreateData() const {
+		return data;
+	}
 private:
-	const std::string path;
-	TextureData data;
-	TextureHandle handle;
+	TextureCreateData data;
+	TextureHandle handle = 0;
 };

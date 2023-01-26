@@ -9,10 +9,10 @@
 class TerrainRenderer {
 public:
 	struct TerrainRendererResources {
-		Shader* terrainShader;
-		Texture* grassTexture;
-		Shader* lineShader;
-		GLVertexArray* lineVAO;
+		sp<Shader> terrainShader;
+		sp<Texture> grassTexture;
+		sp<Shader> lineShader;
+		sp<GLVertexArray> lineVAO;
 	};
 	TerrainRenderer(Terrain& terrain, const TerrainRendererResources& resources);
 	~TerrainRenderer();
