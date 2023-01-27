@@ -142,7 +142,11 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 
 		heightMapImage = ResourceManager::getInstance().readImageFile("./Assets/Textures/noiseTexture.png");
 
-		terrain = std::make_unique<Terrain>(Terrain::TerrainData{ .heightMap = heightMapImage });
+		Terrain::TerrainData terrainData = {};
+		terrainData.heightMap = heightMapImage;
+		terrainData.maxHeight = 0.2f;
+
+		terrain = std::make_unique<Terrain>(terrainData);
 		terrainRenderer = std::make_unique<TerrainRenderer>(*terrain, TerrainRenderer::TerrainRendererResources{ .terrainShader = terrainShader, .grassTexture = grassTex, .lineShader = lineShader, .lineVAO = renderer.getLineVAO() });
 		terrainRenderer->update();
 	}
@@ -370,9 +374,9 @@ void TreeApplication::drawScene()
 
 	renderer.renderBBoxLines(view, *lineShader, world->getBBox(), vec3(1.0f));
 
-	//terrainRenderer->render(view, scene);
+	terrainRenderer->render(view, Gscene);
 
-	//renderer.renderSkybox(view);
+	renderer.renderSkybox(view);
 	renderer.endDraw(true);
 }
 

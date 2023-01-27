@@ -17,7 +17,7 @@ void main()
     vec4 transformed = model * vec4(pos, 1.0);
     fragPos = transformed.xyz;
     gl_Position = VP * transformed;
-    uv = aPos.xz;
+    uv = aPos.xz * 3.0f;
     normal = normalize(mat3(transpose(inverse(model))) * aNormal);
     //normal = aNormal;
 }  

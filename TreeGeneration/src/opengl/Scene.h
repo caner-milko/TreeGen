@@ -4,7 +4,7 @@
 struct Scene {
 	vec3 lightDir = glm::normalize(vec3(0.4, -0.6, -0.4));
 	vec3 lightPos = 0.5f * vec3(-4.0f, 8.0f, 4.0f);
-	vec3 ambientCol = 0.2f * vec3(0.2f, 0.2f, 0.15f);
+	vec3 ambientCol = 0.5f * vec3(0.2f, 0.2f, 0.15f);
 	vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);
 	mat4 LightVP;
 	sp<Texture> shadowMap;

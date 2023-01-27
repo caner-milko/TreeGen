@@ -48,17 +48,20 @@ void TerrainRenderer::render(DrawView view, Scene scene) const
 	vec3 camDir = view.camera.getCameraDirection();
 	shader->setUniform("camPos", camPos);
 	shader->setUniform("viewDir", camDir);
+	shader->setUniform("lightVP", scene.LightVP);
+	
 	shader->setUniform("ambientColor", scene.ambientCol);
 	shader->setUniform("lightColor", scene.lightColor);
 	shader->setUniform("lightDir", scene.lightDir);
 	shader->setUniform("color", vec3(0.0, 1.0, 0.0));
+	resources.grassTexture->bindTo(shader->getTextureIndex("grassTex"));
+	scene.shadowMap->bindTo(shader->getTextureIndex("shadowMap"));
 
 	mat4 model = glm::scale(glm::translate(mat4(1.0), terrain.data.center + vec3(0.0f, terrain.data.minHeight, 0.0f))
 		, vec3(terrain.data.size.x, terrain.data.maxHeight - terrain.data.minHeight, terrain.data.size.y));
 
 	shader->setUniform("model", model);
 
-	glBindTextureUnit(shader->getTextureIndex("grassTex"), resources.grassTexture->getHandle());
 
 	glDrawElements(GL_TRIANGLES, indicesSize, GL_UNSIGNED_INT, 0);
 
