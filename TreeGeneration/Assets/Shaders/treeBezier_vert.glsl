@@ -5,9 +5,23 @@ out vec3 fragPos;
 flat out int instanceID;
 flat out int inside;
 
-uniform mat4 VP;
+struct Camera {
+    mat4 vp;
+    vec4 pos_near;
+    vec4 dir_far;
+    vec4 ortho;
+    vec2 aspectRatio_projection;
+};
 
-uniform vec3 camPos;
+layout(std140, binding=0) uniform Cam {
+    Camera cam;
+};
+
+layout(std140, binding=1) uniform Light {
+    vec4 lightColor; 
+    vec4 ambientColor;
+    Camera lightCam;
+};
 
 struct BranchData {
     mat4 model;
@@ -34,7 +48,7 @@ void main()
 {
     mat4 model = branchs[gl_InstanceID].model;
     
-
+    vec3 camPos = cam.pos_near.xyz;
     
     
     vec3 pos = model[3].xyz;
@@ -45,7 +59,7 @@ void main()
 
     vec4 calcP = model * vec4(p, 1.0);
 
-    gl_Position = VP * calcP;
+    gl_Position = cam.vp * calcP;
     fragPos = calcP.xyz;
 
     instanceID = gl_InstanceID;

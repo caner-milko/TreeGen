@@ -71,11 +71,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)\dependencies\include;$(ProjectDir)\dependencies\include\imgui;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\src\generation;$(ProjectDir)\src\graphics\opengl;$(ProjectDir)\src\graphics;$(ProjectDir)\src;$(ProjectDir)\dependencies\include;$(ProjectDir)\dependencies\include\imgui;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)\dependencies\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)\dependencies\include;$(ProjectDir)\dependencies\include\imgui;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\src\generation;$(ProjectDir)\src\graphics\opengl;$(ProjectDir)\src\graphics;$(ProjectDir)\src;$(ProjectDir)\dependencies\include;$(ProjectDir)\dependencies\include\imgui;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)\dependencies\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -149,58 +149,65 @@
     <ClCompile Include="dependencies\include\imgui\imgui_tables.cpp" />
     <ClCompile Include="dependencies\include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="dependencies\include\stb_image.cpp" />
-    <ClCompile Include="src\Branch.cpp" />
-    <ClCompile Include="src\Leaf.cpp" />
+    <ClCompile Include="src\generation\Branch.cpp" />
+    <ClCompile Include="src\generation\Leaf.cpp" />
+    <ClCompile Include="src\graphics\MeshTest.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\opengl\ApiToEnum.cpp" />
-    <ClCompile Include="src\opengl\Camera.cpp" />
-    <ClCompile Include="src\opengl\CubemapTexture.cpp" />
-    <ClCompile Include="src\opengl\FrameBuffer.cpp" />
-    <ClCompile Include="src\opengl\GLVertexArray.cpp" />
-    <ClCompile Include="src\opengl\Image.cpp" />
-    <ClCompile Include="src\opengl\Renderer.cpp" />
-    <ClCompile Include="src\opengl\ResourceManager.cpp" />
-    <ClCompile Include="src\opengl\Shader.cpp" />
-    <ClCompile Include="src\opengl\terrain\Terrain.cpp" />
-    <ClCompile Include="src\opengl\terrain\TerrainRenderer.cpp" />
-    <ClCompile Include="src\opengl\Texture.cpp" />
-    <ClCompile Include="src\opengl\TreeRenderer.cpp" />
-    <ClCompile Include="src\Tree.cpp" />
+    <ClCompile Include="src\graphics\opengl\ApiToEnum.cpp" />
+    <ClCompile Include="src\graphics\Camera.cpp" />
+    <ClCompile Include="src\graphics\opengl\types\CubemapTexture.cpp" />
+    <ClCompile Include="src\graphics\opengl\types\FrameBuffer.cpp" />
+    <ClCompile Include="src\graphics\opengl\types\VertexArray.cpp" />
+    <ClCompile Include="src\graphics\Image.cpp" />
+    <ClCompile Include="src\graphics\Renderer.cpp" />
+    <ClCompile Include="src\graphics\opengl\Rendering.cpp" />
+    <ClCompile Include="src\graphics\ResourceManager.cpp" />
+    <ClCompile Include="src\graphics\opengl\types\Shader.cpp" />
+    <ClCompile Include="src\graphics\terrain\Terrain.cpp" />
+    <ClCompile Include="src\graphics\terrain\TerrainRenderer.cpp" />
+    <ClCompile Include="src\graphics\opengl\types\Texture.cpp" />
+    <ClCompile Include="src\graphics\TreeRenderer.cpp" />
+    <ClCompile Include="src\generation\Tree.cpp" />
     <ClCompile Include="src\TreeApplication.cpp" />
-    <ClCompile Include="src\TreeGenerator.cpp" />
-    <ClCompile Include="src\TreeWorld.cpp" />
-    <ClCompile Include="src\Util.cpp" />
+    <ClCompile Include="src\generation\TreeGenerator.cpp" />
+    <ClCompile Include="src\generation\TreeWorld.cpp" />
+    <ClCompile Include="src\util\Util.cpp" />
     <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_opengl3_loader.h" />
-    <ClInclude Include="src\BBox.h" />
-    <ClInclude Include="src\Branch.h" />
+    <ClInclude Include="src\graphics\Mesh.h" />
+    <ClInclude Include="src\util\BBox.h" />
+    <ClInclude Include="src\generation\Branch.h" />
     <ClInclude Include="src\Input.h" />
-    <ClInclude Include="src\Leaf.h" />
-    <ClInclude Include="src\opengl\ApiToEnum.h" />
-    <ClInclude Include="src\opengl\BasicTypes.h" />
-    <ClInclude Include="src\opengl\Camera.h" />
-    <ClInclude Include="src\opengl\CubemapTexture.h" />
-    <ClInclude Include="src\opengl\DrawView.h" />
-    <ClInclude Include="src\opengl\FrameBuffer.h" />
-    <ClInclude Include="src\opengl\GLBuffer.hpp" />
-    <ClInclude Include="src\opengl\GLVertexArray.h" />
-    <ClInclude Include="src\opengl\Image.h" />
-    <ClInclude Include="src\opengl\Renderer.h" />
-    <ClInclude Include="src\opengl\ResourceManager.h" />
-    <ClInclude Include="src\opengl\Scene.h" />
-    <ClInclude Include="src\opengl\Shader.h" />
-    <ClInclude Include="src\opengl\terrain\Terrain.h" />
-    <ClInclude Include="src\opengl\terrain\TerrainRenderer.h" />
-    <ClInclude Include="src\opengl\Texture.h" />
-    <ClInclude Include="src\opengl\TreeRenderer.h" />
+    <ClInclude Include="src\generation\Leaf.h" />
+    <ClInclude Include="src\graphics\opengl\ApiToEnum.h" />
+    <ClInclude Include="src\graphics\opengl\BasicTypes.h" />
+    <ClInclude Include="src\graphics\Camera.h" />
+    <ClInclude Include="src\graphics\Light.h" />
+    <ClInclude Include="src\graphics\opengl\types\CubemapTexture.h" />
+    <ClInclude Include="src\graphics\DrawView.h" />
+    <ClInclude Include="src\graphics\opengl\types\FrameBuffer.h" />
+    <ClInclude Include="src\graphics\opengl\types\Buffer.h" />
+    <ClInclude Include="src\graphics\opengl\types\VertexArray.h" />
+    <ClInclude Include="src\graphics\Image.h" />
+    <ClInclude Include="src\graphics\opengl\Pipeline.h" />
+    <ClInclude Include="src\graphics\Renderer.h" />
+    <ClInclude Include="src\graphics\opengl\Rendering.h" />
+    <ClInclude Include="src\graphics\ResourceManager.h" />
+    <ClInclude Include="src\graphics\opengl\types\Sampler.h" />
+    <ClInclude Include="src\graphics\DrawScene.h" />
+    <ClInclude Include="src\graphics\opengl\types\Shader.h" />
+    <ClInclude Include="src\graphics\terrain\Terrain.h" />
+    <ClInclude Include="src\graphics\terrain\TerrainRenderer.h" />
+    <ClInclude Include="src\graphics\opengl\types\Texture.h" />
+    <ClInclude Include="src\graphics\TreeRenderer.h" />
     <ClInclude Include="src\TreeApplication.h" />
-    <ClInclude Include="src\Util.hpp" />
+    <ClInclude Include="src\util\Util.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Definitions.h" />
-    <ClInclude Include="src\Tree.h" />
-    <ClInclude Include="src\TreeGenerator.h" />
-    <ClInclude Include="src\TreeNode.h" />
-    <ClInclude Include="src\TreeWorld.h" />
+    <ClInclude Include="src\Common.h" />
+    <ClInclude Include="src\generation\Tree.h" />
+    <ClInclude Include="src\generation\TreeGenerator.h" />
+    <ClInclude Include="src\generation\TreeNode.h" />
+    <ClInclude Include="src\generation\TreeWorld.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

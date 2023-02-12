@@ -1,7 +1,7 @@
 #include "./TreeApplication.h"
 
 int main() {
-	TreeApplication app({});
+	tgen::app::TreeApplication app({});
 	app.execute();
 }
 

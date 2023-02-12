@@ -5,13 +5,25 @@ in vec3 fragPos;
 in vec3 normal;
 in vec2 uv;
 
+struct Camera {
+    mat4 vp;
+    vec4 pos_near;
+    vec4 dir_far;
+    vec4 ortho;
+    vec2 aspectRatio_projection;
+};
+
+layout(std140, binding=0) uniform Cam {
+    Camera cam;
+};
+
+layout(std140, binding=1) uniform Light {
+    vec4 lightColor; 
+    vec4 ambientColor;
+    Camera lightCam;
+};
+
 uniform sampler2D leafTex;
-
-uniform vec3 camPos;
-
-uniform vec3 ambientColor;
-uniform vec3 lightDir;
-uniform vec3 lightColor;
 
 float diffuse(vec3 norm, vec3 lightDir) {
     return clamp(dot(norm, -lightDir), 0.5, 1.0);
@@ -25,10 +37,10 @@ float specular(vec3 norm, vec3 viewDir, vec3 lightDir, float specularStrength, i
 }
 
 vec3 calcLight(vec3 viewDir, vec3 norm, vec3 diffCol) {
-    float diff = diffuse(norm, lightDir);
-    float spec = specular(norm, viewDir, lightDir, 0.7, 32);
+    float diff = diffuse(norm, lightCam.dir_far.xyz);
+    float spec = specular(norm, viewDir, lightCam.dir_far.xyz, 0.7, 32);
     
-    vec3 light = (spec + diff) * lightColor + ambientColor;
+    vec3 light = (spec + diff) * lightColor.xyz + ambientColor.xyz;
 
     return light * diffCol;
 }
@@ -41,7 +53,7 @@ void main()
         discard;
     
     vec3 norm = normalize(normal);
-    vec3 viewDir = normalize(camPos - fragPos);
+    vec3 viewDir = normalize(cam.pos_near.xyz - fragPos);
 
     norm *= 2.0 * (float(gl_FrontFacing) - 0.5);
 

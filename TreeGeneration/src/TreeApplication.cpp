@@ -8,9 +8,10 @@
 #include <backends/imgui_impl_opengl3.h>
 
 #include "Input.h"
-#include "opengl/ResourceManager.h"
+#include "ResourceManager.h"
 #include "Leaf.h"
-TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appData.width / (float)appData.height)
+namespace tgen::app {
+TreeApplication::TreeApplication(const TreeApplicationData& appData)
 {
 #pragma region Setup_GLFW
 
@@ -44,6 +45,10 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 		return;
 	}
 	const char* glsl_version = "#version 460";
+	double xpos, ypos;
+	glfwGetCursorPos(window, &xpos, &ypos);
+	Input::GetInstance().init(xpos, ypos);
+
 #pragma endregion Setup_GLFW
 
 #pragma region ImGui_Setup
@@ -75,7 +80,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 	ImGui_ImplOpenGL3_Init(glsl_version);
 #pragma endregion ImGui_Setup
 
-	renderer.init();
+	Renderer::getRenderer();
 
 #pragma region Load_Resources
 	{
@@ -117,6 +122,10 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 			SHADERS_FOLDER + "terrain_vert.glsl",
 			SHADERS_FOLDER + "terrain_frag.glsl");
 
+
+		terrainShadowShader = rm.createShader(
+			SHADERS_FOLDER + "shadow/terrainShadow_vert.glsl",
+			SHADERS_FOLDER + "shadow/terrainShadow_frag.glsl");
 		branchShadowShader = rm.createShader(
 			SHADERS_FOLDER + "shadow/treeBezierShadow_vert.glsl",
 			SHADERS_FOLDER + "shadow/treeBezierShadow_frag.glsl");
@@ -125,7 +134,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 			SHADERS_FOLDER + "shadow/leafShadow_vert.glsl",
 			SHADERS_FOLDER + "shadow/leafShadow_frag.glsl");
 
-		renderer.pointShader = rm.createShader(
+		Renderer::getRenderer().pointShader = rm.createShader(
 			SHADERS_FOLDER + "point_vert.glsl",
 			SHADERS_FOLDER + "point_frag.glsl");
 
@@ -138,22 +147,32 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 			"./Assets/Textures/skybox/posz.jpg", "./Assets/Textures/skybox/negz.jpg" }, {}, true);
 
 
-		renderer.setupSkybox(skyboxTex, skyboxShader);
+		Renderer::getRenderer().setupSkybox(skyboxTex, skyboxShader);
 
 		heightMapImage = ResourceManager::getInstance().readImageFile("./Assets/Textures/noiseTexture.png");
 
-		Terrain::TerrainData terrainData = {};
+		TerrainData terrainData = {};
 		terrainData.heightMap = heightMapImage;
 		terrainData.maxHeight = 0.2f;
 
 		terrain = std::make_unique<Terrain>(terrainData);
-		terrainRenderer = std::make_unique<TerrainRenderer>(*terrain, TerrainRenderer::TerrainRendererResources{ .terrainShader = terrainShader, .grassTexture = grassTex, .lineShader = lineShader, .lineVAO = renderer.getLineVAO() });
+		terrainRenderer = std::make_unique<TerrainRenderer>(*terrain);
+		TerrainRenderer::resources = TerrainRenderer::TerrainRendererResources{
+			.terrainShader = terrainShader, 
+			.terrainShadowShader = terrainShadowShader,
+			.grassTexture = grassTex, 
+			.lineShader = lineShader, 
+			.lineVAO = &Renderer::getRenderer().getLineMesh() ,
+			.camUBO = &Renderer::getRenderer().getCamUBO(),
+			.lightUBO = &Renderer::getRenderer().getLightUBO()
+		};
 		terrainRenderer->update();
 	}
 #pragma endregion Load_Resources
 
 #pragma region Setup_TreeGen
-	cam.setCameraPosition(appData.camPos);
+	cam.projection = ((float)appData.width) / ((float)appData.height);
+	cam.cameraPosition = appData.camPos;
 	cam.setFov(appData.fov);
 	cam.setYaw(appData.yaw);
 	cam.setPitch(appData.pitch);
@@ -168,15 +187,25 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData) : cam(appDa
 	tree2 = generator->createTree(*world, vec3(0.2f, terrain->heightAtWorldPos(vec3(0.2f, 0.0f, 0.0f)), 0.0f), growthData);
 
 
-	resources = {
-		.quadVAO = renderer.getQuadVAO(), .cubeVAO = renderer.getCubeVAO(), .pointVAO = renderer.getPointVAO(),
-		.lineVAO = renderer.getLineVAO(), .branchShader = treeBezierShader, .leafShader = leafShader,
-		.budPointShader = budPointShader, .coloredLineShader = coloredLineShader,
-		.branchShadowShader = branchShadowShader, .leavesShadowShader = leavesShadowShader,
-		.leafTexture = leafTex, .barkTexture = barkTex, };
+	TreeRenderer::resources = {
+		.quadMesh = &Renderer::getRenderer().getQuadMesh(), 
+		.cubeMesh = &Renderer::getRenderer().getCubeMesh(), 
+		.pointMesh = &Renderer::getRenderer().getPointMesh(),
+		.lineMesh = &Renderer::getRenderer().getLineMesh(), 
+		.branchShader = treeBezierShader, 
+		.leafShader = leafShader,
+		.budPointShader = budPointShader, 
+		.coloredLineShader = coloredLineShader,
+		.branchShadowShader = branchShadowShader, 
+		.leavesShadowShader = leavesShadowShader,
+		.leafTexture = leafTex, 
+		.barkTexture = barkTex,
+		.camUBO = &Renderer::getRenderer().getCamUBO(),
+		.lightUBO = &Renderer::getRenderer().getLightUBO()
+	};
 
-	treeRenderer1 = std::make_unique<TreeRenderer>(*tree, resources);
-	treeRenderer2 = std::make_unique<TreeRenderer>(*tree2, resources);
+	treeRenderer1 = std::make_unique<TreeRenderer>(*tree);
+	treeRenderer2 = std::make_unique<TreeRenderer>(*tree2);
 	treeRenderer1->updateRenderer();
 	treeRenderer2->updateRenderer();
 #pragma endregion Setup_TreeGen
@@ -187,6 +216,7 @@ void TreeApplication::execute()
 	while (!glfwWindowShouldClose(window)) {
 		startFrame();
 		processInputs();
+		updateScene();
 		drawGUI();
 		drawScene();
 		endFrame();
@@ -197,7 +227,6 @@ void TreeApplication::execute()
 #pragma region Frame
 void TreeApplication::startFrame()
 {
-	renderer.startFrame();
 
 	treeSettingsEdited = false;
 	treePreviewChanged = false;
@@ -212,6 +241,16 @@ void TreeApplication::startFrame()
 
 	currentFrame = (float)glfwGetTime();
 	deltaTime = currentFrame - lastFrame;
+}
+
+void TreeApplication::updateScene() {
+
+	float sinDeltaTime = glm::sin(currentFrame);
+	float cosDeltaTime = glm::cos(currentFrame);
+	const vec3 lightDir = glm::normalize(vec3(0.4, -0.6, -0.4));
+	vec3 lDir = vec3(cosDeltaTime, sinDeltaTime, cosDeltaTime) * lightDir;
+
+	//DirectionalLight::GDirLight.SetDir(lDir);
 }
 
 void TreeApplication::drawGUI()
@@ -288,8 +327,8 @@ void TreeApplication::drawGUI()
 		world->removeTree(*tree2);
 		tree = generator->createTree(*world, vec3(0.0f, 0.0f, 0.0f), growthData);
 		tree2 = generator->createTree(*world, vec3(0.2f, 0.0f, 0.0f), growthData);
-		treeRenderer1 = std::make_unique<TreeRenderer>(*tree, resources);
-		treeRenderer2 = std::make_unique<TreeRenderer>(*tree2, resources);
+		treeRenderer1 = std::make_unique<TreeRenderer>(*tree);
+		treeRenderer2 = std::make_unique<TreeRenderer>(*tree2);
 		previewTree = nullptr;
 	}
 
@@ -298,14 +337,14 @@ void TreeApplication::drawGUI()
 
 void TreeApplication::drawScene()
 {
-	renderer.startDraw(true);
+	DrawScene scene(DirectionalLight::GDirLight);
 	DrawView view{ cam };
 	//renderer.renderPlane(view, planeShader, glm::scale(glm::rotate(glm::translate(glm::mat4(1.0), vec3(0.0f, 0.0f, -2.5f)), PI / 2.0f, vec3(1.0f, 0.0f, 0.0f)), vec3(5.0f)));
 
 
 	if (treePreviewChanged && !appData.renderPreviewTree) {
 		previewTree.reset();
-		treeRenderer1 = std::make_unique<TreeRenderer>(*tree, treeRenderer1->resources);
+		treeRenderer1 = std::make_unique<TreeRenderer>(*tree);
 		treeRenderer1->updateRenderer();
 	}
 
@@ -313,7 +352,7 @@ void TreeApplication::drawScene()
 		if (previewTree == nullptr || treeSettingsEdited) {
 			previewTree = std::make_unique<Tree>(*tree);
 			generator->growTree(*previewTree);
-			treeRenderer1 = std::make_unique<TreeRenderer>(*previewTree, treeRenderer1->resources);
+			treeRenderer1 = std::make_unique<TreeRenderer>(*previewTree);
 			treeRenderer1->updateRenderer();
 		}
 		previewTree->growthData = tree->growthData;
@@ -337,18 +376,28 @@ void TreeApplication::drawScene()
 		}
 	}
 
-	renderer.startShadowPass();
+	rb<TreeRenderer> treeRenderers[] = { treeRenderer1.get(), treeRenderer2.get()};
+	rb<TerrainRenderer> terrainRenderers[] = { terrainRenderer.get() };
+	DrawView lightView(*scene.light.lightCam);
 
-	treeRenderer1->renderBranchsShadow(Gscene);
-	treeRenderer2->renderBranchsShadow(Gscene);
-	treeRenderer1->renderLeavesShadow(Gscene);
-	treeRenderer2->renderLeavesShadow(Gscene);
-	renderer.endShadowPass(view);
+	Renderer::getRenderer().updateCameraUBO(view);
+	Renderer::getRenderer().updateLightUBO(scene);
 
-	treeRenderer1->renderTree(view, renderBody, renderLeaves, Gscene);
-	treeRenderer2->renderTree(view, renderBody, renderLeaves, Gscene);
+	Renderer::getRenderer().startShadowPass();
 
-	if (appData.showShadowGrid) {
+	TreeRenderer::renderTreeShadows(treeRenderers, lightView, true, true);
+	TerrainRenderer::renderTerrainShadows(terrainRenderers, lightView);
+
+	Renderer::getRenderer().endShadowPass();
+
+	Renderer::getRenderer().beginSwapchain();
+	
+
+	Renderer::getRenderer().renderTest(view);
+
+	TreeRenderer::renderTrees(treeRenderers, view, scene, true, true);
+	
+	/*if (appData.showShadowGrid) {
 		//world->calculateShadows();
 		if (!appData.shadowOnOnlyBuds) {
 			std::vector<vec4> cells
@@ -362,7 +411,7 @@ void TreeApplication::drawScene()
 			buds = tree2->AsNodeVector(true);
 			renderer.renderShadowsOnBuds(view, *shadowPointShader, *world, buds);
 		}
-	}
+	}*/
 	if (appData.showVigor) {
 		treeRenderer1->renderVigor(view);
 		treeRenderer2->renderVigor(view);
@@ -372,12 +421,14 @@ void TreeApplication::drawScene()
 		treeRenderer2->renderOptimalDirection(view);
 	}
 
-	renderer.renderBBoxLines(view, *lineShader, world->getBBox(), vec3(1.0f));
+	Renderer::getRenderer().renderBBoxLines(view, *lineShader, world->getBBox(), vec3(1.0f));
 
-	terrainRenderer->render(view, Gscene);
 
-	renderer.renderSkybox(view);
-	renderer.endDraw(true);
+	TerrainRenderer::renderTerrains(terrainRenderers, view, scene);
+
+	Renderer::getRenderer().renderSkybox(view);
+	Renderer::getRenderer().endSwapchain();
+
 }
 
 void TreeApplication::endFrame()
@@ -403,7 +454,6 @@ void TreeApplication::endFrame()
 	glfwSwapBuffers(window);
 
 	Input::GetInstance().Reset();
-	renderer.endFrame();
 	framesRendered++;
 	lastFrame = currentFrame;
 }
@@ -419,14 +469,14 @@ void TreeApplication::processInputs()
 	if (input.didMouseMove())
 		mouseInput(input.getMouseOffset());
 	if (input.didScroll())
-		mouseInput(input.getScrollOffset());
+		scrollInput(input.getScrollOffset());
 }
 
 void TreeApplication::keyInput()
 {
 	if (ImGui::IsKeyDown(ImGuiKey_Escape))
 		glfwSetWindowShouldClose(window, true);
-	vec3 camPos = cam.getCameraPosition();
+	vec3 camPos = cam.cameraPosition;
 	const float cameraSpeed = appData.cameraSpeed * deltaTime;
 
 	if (ImGui::IsKeyDown(ImGuiKey_W))
@@ -468,7 +518,7 @@ void TreeApplication::keyInput()
 		cursorDisabled = !cursorDisabled;
 	}
 
-	cam.setCameraPosition(camPos);
+	cam.cameraPosition = camPos;
 }
 
 
@@ -483,7 +533,7 @@ void TreeApplication::mouseInput(const vec2& offset) {
 	cam.setYaw(cam.getYaw() + appData.mouseSensitivity * offset.x);
 	cam.setPitch(cam.getPitch() + appData.mouseSensitivity * offset.y);
 
-	appData.yaw = cam.getYaw();;
+	appData.yaw = cam.getYaw();
 	appData.pitch = cam.getPitch();
 }
 
@@ -493,3 +543,4 @@ void TreeApplication::scrollInput(const vec2& offset) {
 	appData.fov = cam.getFov();
 }
 #pragma endregion Inputs
+}

@@ -2,7 +2,17 @@
 
 out vec3 color;
 
-uniform mat4 VP;
+struct Camera {
+    mat4 vp;
+    vec4 pos_near;
+    vec4 dir_far;
+    vec4 ortho;
+    vec2 aspectRatio_projection;
+};
+
+layout(std140, binding=0) uniform Cam {
+    Camera cam;
+};
 
 struct Bud {
 	vec4 pos;
@@ -17,7 +27,7 @@ layout(std430, binding=0) buffer leaf_data {
 void main()
 {
 	Bud bud = buds[gl_InstanceID];
-	gl_Position = VP * vec4(bud.pos.xyz, 1.0f);
+	gl_Position = cam.vp * vec4(bud.pos.xyz, 1.0f);
 	gl_PointSize = max(bud.color.w, 1.0) * 3.0;
 	color = bud.color.xyz;
 }

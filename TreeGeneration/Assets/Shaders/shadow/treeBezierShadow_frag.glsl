@@ -4,6 +4,21 @@ in vec3 fragPos;
 
 flat in int instanceID;
 flat in int inside;
+
+struct Camera {
+    mat4 vp;
+    vec4 pos_near;
+    vec4 dir_far;
+    vec4 ortho;
+    vec2 aspectRatio_projection;
+};
+
+layout(std140, binding=1) uniform Light {
+    vec4 lightColor; 
+    vec4 ambientColor;
+    Camera lightCam;
+};
+
 #define SHOW_BBOX 0
 
 
@@ -52,10 +67,6 @@ layout(std430, binding=0) buffer branch_data {
     BranchData branchs[];
 };
 
-uniform vec3 camPos;
-uniform vec3 viewDir;
-uniform float farPlane, nearPlane;
-uniform mat4 VP;
 struct Hit {
 	float t;
     bool hit;
@@ -124,82 +135,6 @@ vec3 bezier_dx( in Bezier bez, float t )
 
 float dot2( in vec3 v ) { return dot(v,v); }
 
-#if 0
-vec2 sdBezier(vec3 pos, Bezier bezier)
-{    
-    vec3 A = bezier.start;
-    vec3 B = bezier.mid;
-    vec3 C = bezier.end;
-    vec3 a = B - A;
-    vec3 b = A - 2.0*B + C;
-    vec3 c = a * 2.0;
-    vec3 d = A - pos;
-
-    float kk = 1.0 / dot(b,b);
-    float kx = kk * dot(a,b);
-    float ky = kk * (2.0*dot(a,a)+dot(d,b)) / 3.0;
-    float kz = kk * dot(d,a);      
-
-    vec2 res;
-
-    float p = ky - kx*kx;
-    float p3 = p*p*p;
-    float q = kx*(2.0*kx*kx - 3.0*ky) + kz;
-    float q2 = q*q;
-    float h = q2 + 4.0*p3;
-
-    if(h >= 0.0) 
-    { 
-        h = sqrt(h);
-        vec2 x = (vec2(h, -h) - q) / 2.0;
-        
-        #if 1
-        // When p≈0 and p<0, h-q has catastrophic cancelation. So, we do
-        // h=√(q²+4p³)=q·√(1+4p³/q²)=q·√(1+w) instead. Now we approximate
-        // √ by a linear Taylor expansion into h≈q(1+½w) so that the q's
-        // cancel each other in h-q. Expanding and simplifying further we
-        // get x=vec2(p³/q,-p³/q-q). And using a second degree Taylor
-        // expansion instead: x=vec2(k,-k-q) with k=(1-p³/q²)·p³/q
-        if( abs(p)<0.001 )
-        {
-          //float k = p3/q;              // linear approx
-            float k = (1.0-p3/q2)*p3/q;  // quadratic approx 
-            x = vec2(k,-k-q);  
-        }
-        #endif
-        
-        vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));
-        float t = uv.x+uv.y-kx;
-
-        float clampedT = clamp(t, 0.0, 1.0);
-
-        // 1 root
-        res = vec2(dot2(d+(c+b*clampedT)*clampedT),t);
-
-    }
-    else
-    {
-        float z = sqrt(-p);
-        float v = acos( q/(p*z*2.0) ) / 3.0;
-        float m = cos(v);
-        float n = sin(v)*1.732050808;
-        vec3 t = vec3(m+m,-n-m,n-m)*z-kx;
-        
-        vec3 clampedT = clamp(t, 0.0, 1.0);
-
-        // 3 roots, but only need two
-        float dis = dot2(d+(c+b*clampedT.x)*clampedT.x);
-        res = vec2(dis,t.x);
-
-        dis = dot2(d+(c+b*clampedT.y)*clampedT.y);
-        if( dis<res.x ) res = vec2(dis,t.y );
-    }
-    
-    res.x = sqrt(res.x);
-    return res;
-}
-#else
-
 vec2 solveCubic(float a, float b, float c) {
     float p = b - a*a / 3.0, p3 = p*p*p;
     float q = a * (2.0*a*a - 9.0*b) / 27.0 + c;
@@ -249,8 +184,6 @@ vec2 sdBezier(vec3 p, Bezier bezier)
     return vec2(dis, tt);
 }
 
-#endif
-
 float branchRadius(in float t, in  float lowRadius, in float highRadius) {
 
     t = ease(t);
@@ -271,6 +204,8 @@ Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
     Bezier curve = toBezier(branch);
 	bool onSphere = false;
     bool hit = false;
+
+    float farPlane = lightCam.dir_far.w;
     for(float i = 0; i < MAX_STEPS; i++) {
 		vec3 curPos = pos + rayDir * t;
         vec2 dst = dist(curPos, curve);
@@ -290,7 +225,7 @@ Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
 
 void main()
 {
-    vec3 rayDir = normalize(-viewDir);
+    vec3 rayDir = normalize(-lightCam.dir_far.xyz);
 
     BranchData bData = branchs[instanceID];
 
@@ -316,7 +251,7 @@ void main()
 
     vec3 pos = fragPos + rayDir * hit.t;
 
-    vec4 posLightSpace = VP * vec4(pos, 1.0);
+    vec4 posLightSpace = lightCam.vp * vec4(pos, 1.0);
 
     vec3 projCoords = posLightSpace.xyz / posLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5; 

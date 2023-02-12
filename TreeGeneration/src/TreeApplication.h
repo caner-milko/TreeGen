@@ -1,15 +1,21 @@
 #pragma once
 
-#include "Definitions.h"
+#include "Common.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "./TreeGenerator.h"
-#include "./TreeWorld.h"
-#include "./opengl/Renderer.h"
-#include "./opengl/Texture.h"
-#include "./opengl/Shader.h"
-#include "./opengl/TreeRenderer.h"
-#include "./opengl//terrain/TerrainRenderer.h"
+#include "TreeGenerator.h"
+#include "TreeWorld.h"
+#include "graphics/Renderer.h"
+#include "graphics/TreeRenderer.h"
+#include "graphics/terrain/TerrainRenderer.h"
+namespace tgen::app {
+//shouldn't be included by anything
+using namespace tgen::graphics;
+using namespace tgen::gen;
+
+using namespace tgen::graphics::gl;
+using namespace tgen::graphics::terrain;
+using namespace tgen::util;
 struct TreeApplicationData {
 	uint32 width = 1600, height = 900;
 	float mouseSensitivity = 0.1f;
@@ -61,7 +67,6 @@ private:
 	Tree* tree2;
 	std::unique_ptr<TreeRenderer> treeRenderer1;
 	std::unique_ptr<TreeRenderer> treeRenderer2;
-	TreeRendererResources resources;
 
 	std::unique_ptr<Terrain> terrain;
 	std::unique_ptr<TerrainRenderer> terrainRenderer;
@@ -69,8 +74,6 @@ private:
 	std::unique_ptr<Tree> previewTree;
 
 	TreeGrowthData growthData{ .baseLength = 0.02f };
-
-	Renderer renderer;
 
 	bool treeSettingsEdited = false;
 	bool treePreviewChanged = false;
@@ -84,28 +87,30 @@ private:
 	bool renderLeaves = true;
 
 
-	sp<Shader> treeBezierShader{};
-	sp<Shader> leafShader{};
-	sp<Shader> shadowPointShader{};
-	sp<Shader> skyboxShader{};
-	sp<Shader> planeShader{};
-	sp<Shader> lineShader{};
-	sp<Shader> budPointShader{};
-	sp<Shader> coloredLineShader{};
-	sp<Shader> terrainShader{};
-	sp<Shader> branchShadowShader{};
-	sp<Shader> leavesShadowShader{};
+	rc<gl::Shader> treeBezierShader{};
+	rc<Shader> leafShader{};
+	rc<Shader> shadowPointShader{};
+	rc<Shader> skyboxShader{};
+	rc<Shader> planeShader{};
+	rc<Shader> lineShader{};
+	rc<Shader> budPointShader{};
+	rc<Shader> coloredLineShader{};
+	rc<Shader> terrainShader{};
+	rc<Shader> terrainShadowShader{};
+	rc<Shader> branchShadowShader{};
+	rc<Shader> leavesShadowShader{};
+	rc<Texture> barkTex{};
+	rc<Texture> leafTex{};
+	rc<Texture> grassTex{};
 
-	sp<Texture> barkTex{};
-	sp<Texture> leafTex{};
-	sp<Texture> grassTex{};
+	rc<Image> heightMapImage;
 
-	sp<Image> heightMapImage;
-
-	sp<CubemapTexture> skyboxTex{};
+	rc<CubemapTexture> skyboxTex{};
 
 
 	void startFrame();
+
+	void updateScene();
 
 	void drawGUI();
 
@@ -120,4 +125,5 @@ private:
 	void mouseInput(const vec2& offset);
 
 	void scrollInput(const vec2& offset);
-};
+}; 
+}

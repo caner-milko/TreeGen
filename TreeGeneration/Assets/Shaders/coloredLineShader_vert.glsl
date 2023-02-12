@@ -2,7 +2,17 @@
 
 out vec3 color;
 
-uniform mat4 VP;
+struct Camera {
+    mat4 vp;
+    vec4 pos_near;
+    vec4 dir_far;
+    vec4 ortho;
+    vec2 aspectRatio_projection;
+};
+
+layout(std140, binding=0) uniform Cam {
+    Camera cam;
+};
 
 struct ColoredLine {
 	vec4 pos1;
@@ -21,9 +31,9 @@ void main()
 	ColoredLine line = lines[gl_InstanceID];
 	vec4 pos;
 	if(gl_VertexID == 0) {
-		pos = VP * vec4(line.pos1.xyz, 1.0);
+		pos = cam.vp * vec4(line.pos1.xyz, 1.0);
 	} else {
-		pos = VP * vec4(line.pos2.xyz, 1.0);
+		pos = cam.vp * vec4(line.pos2.xyz, 1.0);
 	}
 	gl_Position = pos;
 	color = line.color.xyz;

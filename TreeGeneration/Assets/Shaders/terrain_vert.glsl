@@ -6,9 +6,28 @@ out vec3 fragPos;
 out vec3 normal;
 out vec2 uv;
 
-uniform mat4 VP;
+struct Camera {
+    mat4 vp;
+    vec4 pos_near;
+    vec4 dir_far;
+    vec4 ortho;
+    vec2 aspectRatio_projection;
+};
+
+layout(std140, binding=0) uniform Cam {
+    Camera cam;
+};
+
+layout(std140, binding=1) uniform Light {
+    vec4 lightColor; 
+    vec4 ambientColor;
+    Camera lightCam;
+};
+
 uniform mat4 model;
 uniform mat4 ITmodel;
+
+
 
 void main()
 {
@@ -16,7 +35,7 @@ void main()
     pos.xz -= vec2(0.5);
     vec4 transformed = model * vec4(pos, 1.0);
     fragPos = transformed.xyz;
-    gl_Position = VP * transformed;
+    gl_Position = cam.vp * transformed;
     uv = aPos.xz * 3.0f;
     normal = normalize(mat3(transpose(inverse(model))) * aNormal);
     //normal = aNormal;

@@ -5,16 +5,27 @@ in vec3 fragPos;
 in vec3 normal;
 in vec2 uv;
 
+struct Camera {
+    mat4 vp;
+    vec4 pos_near;
+    vec4 dir_far;
+    vec4 ortho;
+    vec2 aspectRatio_projection;
+};
+
+layout(std140, binding=0) uniform Cam {
+    Camera cam;
+};
+
+layout(std140, binding=1) uniform Light {
+    vec4 lightColor; 
+    vec4 ambientColor;
+    Camera lightCam;
+};
+
 uniform sampler2D grassTex;
 
-uniform vec3 camPos;
-
-uniform vec3 lightDir;
-uniform vec3 lightColor;
-uniform vec3 ambientColor;
-
 uniform sampler2D shadowMap;
-uniform mat4 lightVP;
 
 float diffuse(vec3 norm, vec3 lightDir) {
     return max(dot(norm, -lightDir), 0.0);
@@ -28,10 +39,10 @@ float specular(vec3 norm, vec3 viewDir, vec3 lightDir, float specularStrength, i
 }
 
 vec3 calcLight(vec3 viewDir, vec3 norm, vec3 col) {
-    float diff = diffuse(norm, lightDir);
+    float diff = diffuse(norm, lightCam.dir_far.xyz);
 
-    float spec = specular(norm, viewDir, lightDir, 0.0, 32);
-    vec3 light = clamp((spec + diff), 0.0, 1.0) * lightColor + ambientColor;
+    float spec = specular(norm, viewDir, lightCam.dir_far.xyz, 0.0, 32);
+    vec3 light = clamp((spec + diff), 0.0, 1.0) * lightColor.xyz + ambientColor.xyz;
 
     vec3 color = light * col;
     
@@ -46,7 +57,7 @@ float calcShadow(vec3 pos) {
         vec2( -0.094184101, -0.92938870 ),
         vec2( 0.34495938, 0.29387760 )
     );
-    vec4 posLightSpace = lightVP * vec4(pos, 1.0);
+    vec4 posLightSpace = lightCam.vp * vec4(pos, 1.0);
 
     vec3 projCoords = posLightSpace.xyz / posLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5; 
@@ -64,6 +75,6 @@ void main()
 {
     vec3 norm = normalize(normal);
     vec3 col = texture(grassTex, uv * 5.0).xyz;
-    FragColor = vec4(calcLight(normalize(camPos - fragPos), norm, col) * calcShadow(fragPos), 1.0);
+    FragColor = vec4(calcLight(normalize(cam.pos_near.xyz - fragPos), norm, col) * calcShadow(fragPos), 1.0);
     //FragColor = vec4(norm, 1.0);
 } 

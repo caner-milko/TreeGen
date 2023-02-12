@@ -18,28 +18,28 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\TreeGenerator.cpp">
+    <ClCompile Include="src\generation\TreeGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Tree.cpp">
+    <ClCompile Include="src\generation\Tree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\TreeWorld.cpp">
+    <ClCompile Include="src\generation\TreeWorld.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\opengl\Shader.cpp">
+    <ClCompile Include="src\graphics\opengl\types\Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\opengl\ResourceManager.cpp">
+    <ClCompile Include="src\graphics\ResourceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\opengl\Camera.cpp">
+    <ClCompile Include="src\graphics\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\opengl\Renderer.cpp">
+    <ClCompile Include="src\graphics\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\opengl\GLVertexArray.cpp">
+    <ClCompile Include="src\graphics\opengl\types\VertexArray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dependencies\include\glad\glad.c">
@@ -66,90 +66,96 @@
     <ClCompile Include="dependencies\include\imgui\backends\imgui_impl_glfw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Util.cpp">
+    <ClCompile Include="src\util\Util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\opengl\Texture.cpp">
+    <ClCompile Include="src\graphics\opengl\types\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Branch.cpp">
+    <ClCompile Include="src\generation\Branch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\TreeApplication.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\opengl\CubemapTexture.cpp">
+    <ClCompile Include="src\graphics\opengl\types\CubemapTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Leaf.cpp">
+    <ClCompile Include="src\generation\Leaf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\opengl\TreeRenderer.cpp">
+    <ClCompile Include="src\graphics\TreeRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\opengl\terrain\Terrain.cpp">
+    <ClCompile Include="src\graphics\terrain\Terrain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\opengl\terrain\TerrainRenderer.cpp">
+    <ClCompile Include="src\graphics\terrain\TerrainRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\opengl\Image.cpp">
+    <ClCompile Include="src\graphics\Image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dependencies\include\stb_image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\opengl\FrameBuffer.cpp">
+    <ClCompile Include="src\graphics\opengl\types\FrameBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\opengl\ApiToEnum.cpp">
+    <ClCompile Include="src\graphics\opengl\ApiToEnum.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\opengl\Rendering.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\MeshTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\TreeNode.h">
+    <ClInclude Include="src\generation\TreeNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Definitions.h">
+    <ClInclude Include="src\Common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\TreeGenerator.h">
+    <ClInclude Include="src\generation\TreeGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Tree.h">
+    <ClInclude Include="src\generation\Tree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\TreeWorld.h">
+    <ClInclude Include="src\generation\TreeWorld.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Util.hpp">
+    <ClInclude Include="src\util\Util.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\Shader.h">
+    <ClInclude Include="src\graphics\opengl\types\Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\ResourceManager.h">
+    <ClInclude Include="src\graphics\ResourceManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\Camera.h">
+    <ClInclude Include="src\graphics\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\Renderer.h">
+    <ClInclude Include="src\graphics\Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\DrawView.h">
+    <ClInclude Include="src\graphics\DrawView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\GLVertexArray.h">
+    <ClInclude Include="src\graphics\opengl\types\VertexArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_opengl3_loader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Branch.h">
+    <ClInclude Include="src\generation\Branch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\Texture.h">
+    <ClInclude Include="src\graphics\opengl\types\Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\TreeApplication.h">
@@ -158,40 +164,55 @@
     <ClInclude Include="src\Input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\CubemapTexture.h">
+    <ClInclude Include="src\graphics\opengl\types\CubemapTexture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Leaf.h">
+    <ClInclude Include="src\generation\Leaf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\BBox.h">
+    <ClInclude Include="src\util\BBox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\GLBuffer.hpp">
+    <ClInclude Include="src\graphics\opengl\types\Buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\TreeRenderer.h">
+    <ClInclude Include="src\graphics\TreeRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\terrain\TerrainRenderer.h">
+    <ClInclude Include="src\graphics\terrain\TerrainRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\terrain\Terrain.h">
+    <ClInclude Include="src\graphics\terrain\Terrain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\Image.h">
+    <ClInclude Include="src\graphics\Image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\Scene.h">
+    <ClInclude Include="src\graphics\DrawScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\FrameBuffer.h">
+    <ClInclude Include="src\graphics\opengl\types\FrameBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\BasicTypes.h">
+    <ClInclude Include="src\graphics\opengl\BasicTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\opengl\ApiToEnum.h">
+    <ClInclude Include="src\graphics\opengl\ApiToEnum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\opengl\Rendering.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\opengl\Pipeline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\opengl\types\Sampler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,9 +4,19 @@ layout (location = 0) in vec3 aPos;
 out vec3 fragPos;
 flat out int instanceID;
 
-uniform mat4 VP;
+struct Camera {
+    mat4 vp;
+    vec4 pos_near;
+    vec4 dir_far;
+    vec4 ortho;
+    vec2 aspectRatio_projection;
+};
 
-uniform vec3 camPos;
+layout(std140, binding=1) uniform Light {
+    vec4 lightColor; 
+    vec4 ambientColor;
+    Camera lightCam;
+};
 
 struct BranchData {
     mat4 model;
@@ -35,7 +45,7 @@ void main()
 
     vec4 calcP = model * vec4(aPos, 1.0);
 
-    gl_Position = VP * calcP;
+    gl_Position = lightCam.vp * calcP;
     fragPos = calcP.xyz;
 
     instanceID = gl_InstanceID;
