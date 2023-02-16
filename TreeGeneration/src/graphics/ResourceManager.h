@@ -20,7 +20,7 @@ public:
 	ru<Image> readImageFile(std::string_view path) const;
 
 	ru<gl::Shader> createShader(std::string_view vertexPath, std::string_view fragmentPath) const;
-	ru<gl::Texture> createTexture(std::string_view imagePath, gl::Texture::TextureCreateData createData = {}, bool dataFromImage = true) const;
+	ru<gl::Texture> createTexture(std::string_view imagePath, gl::Texture::TextureCreateData createData = {}, bool sizeFromImage = true, bool formatFromImage = true, bool SRGB = true) const;
 	ru<gl::CubemapTexture> createCubemapTexture(
 		std::array<std::string_view, 6> facePaths,
 		gl::Texture::TextureCreateData createData = {},

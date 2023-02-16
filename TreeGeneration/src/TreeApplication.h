@@ -99,7 +99,9 @@ private:
 	rc<Shader> terrainShadowShader{};
 	rc<Shader> branchShadowShader{};
 	rc<Shader> leavesShadowShader{};
-	rc<Texture> barkTex{};
+
+	graphics::TreeMaterial treeMaterial{};
+
 	rc<Texture> leafTex{};
 	rc<Texture> grassTex{};
 

@@ -138,9 +138,10 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 			SHADERS_FOLDER + "point_vert.glsl",
 			SHADERS_FOLDER + "point_frag.glsl");
 
-		barkTex = rm.createTexture("./Assets/Textures/bark.jpg", {});
-		leafTex = rm.createTexture("./Assets/Textures/leaf3.png", { .wrapping = AddressMode::CLAMP_TO_EDGE });
-		grassTex = rm.createTexture("./Assets/Textures/grass.jpg", {});
+		treeMaterial.colorTexture = rm.createTexture("./Assets/Textures/tree/color.jpg", {});
+		treeMaterial.normalTexture = rm.createTexture("./Assets/Textures/tree/normal.jpg", {}, true, true, false);
+		leafTex = rm.createTexture("./Assets/Textures/tree/leaf3.png", { .wrapping = AddressMode::CLAMP_TO_EDGE });
+		grassTex = rm.createTexture("./Assets/Textures/terrain/grass.jpg", {});
 
 		skyboxTex = rm.createCubemapTexture({ "./Assets/Textures/skybox/posx.jpg", "./Assets/Textures/skybox/negx.jpg",
 			"./Assets/Textures/skybox/posy.jpg", "./Assets/Textures/skybox/negy.jpg",
@@ -149,7 +150,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 
 		Renderer::getRenderer().setupSkybox(skyboxTex, skyboxShader);
 
-		heightMapImage = ResourceManager::getInstance().readImageFile("./Assets/Textures/noiseTexture.png");
+		heightMapImage = ResourceManager::getInstance().readImageFile("./Assets/Textures/terrain/noiseTexture.png");
 
 		TerrainData terrainData = {};
 		terrainData.heightMap = heightMapImage;
@@ -157,15 +158,16 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 
 		terrain = std::make_unique<Terrain>(terrainData);
 		terrainRenderer = std::make_unique<TerrainRenderer>(*terrain);
-		TerrainRenderer::resources = TerrainRenderer::TerrainRendererResources{
-			.terrainShader = terrainShader,
-			.terrainShadowShader = terrainShadowShader,
-			.grassTexture = grassTex,
-			.lineShader = lineShader,
-			.lineVAO = &Renderer::getRenderer().getLineMesh() ,
-			.camUBO = &Renderer::getRenderer().getCamUBO(),
-			.lightUBO = &Renderer::getRenderer().getLightUBO()
-		};
+		{
+			auto& res = TerrainRenderer::resources;
+			res.terrainShader = terrainShader;
+			res.terrainShadowShader = terrainShadowShader;
+			res.grassTexture = grassTex;
+			res.lineShader = lineShader;
+			res.lineVAO = &Renderer::getRenderer().getLineMesh();
+			res.camUBO = &Renderer::getRenderer().getCamUBO();
+			res.lightUBO = &Renderer::getRenderer().getLightUBO();
+		}
 		terrainRenderer->update();
 	}
 #pragma endregion Load_Resources
@@ -186,24 +188,23 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	tree = generator->createTree(*world, vec3(0.0f, terrain->heightAtWorldPos(vec3(0.0f)), 0.0), growthData);
 	tree2 = generator->createTree(*world, vec3(0.2f, terrain->heightAtWorldPos(vec3(0.2f, 0.0f, 0.0f)), 0.0f), growthData);
 
-
-	TreeRenderer::resources = {
-		.quadMesh = &Renderer::getRenderer().getQuadMesh(),
-		.cubeMesh = &Renderer::getRenderer().getCubeMesh(),
-		.pointMesh = &Renderer::getRenderer().getPointMesh(),
-		.lineMesh = &Renderer::getRenderer().getLineMesh(),
-		.branchShader = treeBezierShader,
-		.leafShader = leafShader,
-		.budPointShader = budPointShader,
-		.coloredLineShader = coloredLineShader,
-		.branchShadowShader = branchShadowShader,
-		.leavesShadowShader = leavesShadowShader,
-		.leafTexture = leafTex,
-		.barkTexture = barkTex,
-		.camUBO = &Renderer::getRenderer().getCamUBO(),
-		.lightUBO = &Renderer::getRenderer().getLightUBO()
-	};
-
+	{
+		auto& res = TreeRenderer::resources;
+		res.quadMesh = &Renderer::getRenderer().getQuadMesh();
+		res.cubeMesh = &Renderer::getRenderer().getCubeMesh();
+		res.pointMesh = &Renderer::getRenderer().getPointMesh();
+		res.lineMesh = &Renderer::getRenderer().getLineMesh();
+		res.branchShader = treeBezierShader;
+		res.leafShader = leafShader;
+		res.budPointShader = budPointShader;
+		res.coloredLineShader = coloredLineShader;
+		res.branchShadowShader = branchShadowShader;
+		res.leavesShadowShader = leavesShadowShader;
+		res.leafTexture = leafTex;
+		res.material = treeMaterial;
+		res.camUBO = &Renderer::getRenderer().getCamUBO();
+		res.lightUBO = &Renderer::getRenderer().getLightUBO();
+	}
 	treeRenderer1 = std::make_unique<TreeRenderer>(*tree);
 	treeRenderer2 = std::make_unique<TreeRenderer>(*tree2);
 	treeRenderer1->updateRenderer();

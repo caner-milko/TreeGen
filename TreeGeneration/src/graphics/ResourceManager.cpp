@@ -80,13 +80,13 @@ ru<Shader> ResourceManager::createShader(std::string_view vertexPath, std::strin
 	return shader;
 }
 
-ru<Texture> ResourceManager::createTexture(std::string_view imagePath, Texture::TextureCreateData createData, bool dataFromImage) const
+ru<Texture> ResourceManager::createTexture(std::string_view imagePath, Texture::TextureCreateData createData, bool sizeFromImage, bool formatFromImage, bool SRGB) const
 {
 	auto img = readImageFile(imagePath);
-	if (dataFromImage) {
+	if (sizeFromImage)
 		createData.size = ivec3(img->width, img->height, 0);
-		createData.textureFormat = img->nrChannels == 4 ? Format::R8G8B8A8_SRGB : Format::R8G8B8_SRGB;
-	}
+	if (formatFromImage)
+		createData.textureFormat = img->nrChannels == 4 ? (SRGB ? Format::R8G8B8A8_SRGB : Format::R8G8B8A8_UNORM) : (SRGB ? Format::R8G8B8_SRGB : Format::R8G8B8_UNORM);
 	auto tex = std::make_unique<Texture>();
 	tex->init(createData);
 	Texture::TextureUploadData uploadData = {};

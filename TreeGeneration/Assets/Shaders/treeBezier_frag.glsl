@@ -77,7 +77,12 @@ uniform vec3 treeColor;
 
 uniform sampler2D shadowMap;
 
-uniform sampler2D barkTexture;
+struct Material {
+    sampler2D colorTexture;
+    sampler2D normalTexture;
+};
+
+uniform Material treeMaterial;
 
 struct Hit {
 	float t;
@@ -305,33 +310,43 @@ vec2 calc_uv(Branch branch, float clampedT, vec3 curPos, float v) {
 
 Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
 	float t = 0.0;
-	vec3 norm = vec3(-2.0);
+	vec3 norm = vec3(-3.0);
     vec2 uv = vec2(0.0);
-    float splineT = 0.0;
     Bezier curve = toBezier(branch);
 	bool onSphere = false;
     float farPlane = cam.dir_far.w;
+    float splineT = -100.0;
     for(float i = 0; i < MAX_STEPS; i++) {
 		vec3 curPos = pos + rayDir * t;
         vec2 dst = dist(curPos, curve);
         t += dst.x;
 		if(dst.x < MIN_DIST) {
+            norm = vec3(-2.0);
             curPos = pos + rayDir * t;
-            float clampedT = clamp(dst.y, 0.0, 1.0);
-            splineT = clampedT;
-            uv = calc_uv(branch, clampedT, curPos, dst.y);
-
-			norm = normal(curPos, curve);
-
-            norm = calcNorm(curPos, clampedT, NORMAL_T, norm, curve);
-            
-            onSphere = dst.y > 1.0 || dst.y < 0.0;
+            splineT = dst.y;
 			break;
 		}
 		if(t > farPlane) {
 			break;
 		}
 	}
+
+    if(splineT != -100.0) {
+		vec3 curPos = pos + rayDir * t;
+        float clampedT = clamp(splineT, 0.0, 1.0);
+        uv = calc_uv(branch, clampedT, curPos, splineT);
+        
+        //this works too
+        //norm = normalize(cross(dFdx(curPos), dFdy(curPos)));
+        
+        norm = normal(curPos, curve);
+
+        norm = calcNorm(curPos, clampedT, NORMAL_T, norm, curve);
+            
+        onSphere = splineT > 1.0 || splineT < 0.0;
+        splineT = clampedT;
+    }
+
 	return Hit(t, uv, splineT, norm, onSphere);
 }
 
@@ -351,8 +366,7 @@ vec3 calcLight(vec3 viewDir, vec3 normal, vec3 col) {
     vec3 lightDir = lightCam.dir_far.xyz;
     float diff = diffuse(normal, lightDir);
 
-    float spec = specular(normal, viewDir, lightDir, 1.0, 32);
-    
+    float spec = specular(normal, viewDir, lightDir, 3.0, 64);
     vec3 light = (spec + diff) * lightColor.xyz + ambientColor.xyz;
 
     vec3 color = light * col;
@@ -382,6 +396,12 @@ float calcShadow(vec3 pos) {
 
     return visibility;
 }
+
+vec3 bezNorm(float splineT, vec3 pos, Bezier curve) {
+    vec3 bezPos = bezier(curve, splineT);
+    return normalize(pos - bezPos);
+}
+
 
 void main()
 {
@@ -427,13 +447,29 @@ void main()
     float nextOrder = easeOutQuad(min(float(branch.order+1), 100.0)/100.0);
 
     float mixedOrder = mix(0.2, 1.0, mix(order, nextOrder, hit.splineT));
-    vec3 col = texture(barkTexture, hit.uv).xyz * mixedOrder;
+    vec3 col = texture(treeMaterial.colorTexture, hit.uv).xyz * mixedOrder;
+    
 
-    vec3 color = calcLight(-rayDir, hit.normal, col) * calcShadow(pos);
+    Bezier curve = toBezier(branch);
+    
+    vec3 N = hit.normal;//bezNorm(hit.splineT, pos, curve);
+    vec3 B = normalize(bezier_dx(curve, hit.splineT));
+    B = normalize(B - dot(B, N) * N);
+    vec3 T = -normalize(cross(B, N));
+
+    mat3 TBN = mat3(T, B, N);
+
+    vec3 bumpMap = 2.0 * texture(treeMaterial.normalTexture, hit.uv).xyz - vec3(1.0, 1.0, 1.0);
+
+    bumpMap.z /= 5.0;
+
+    vec3 norm = normalize(TBN * bumpMap);
+
+    vec3 color = calcLight(-rayDir, norm, col) * calcShadow(pos);
     //vec3 color = vec3(calcShadow(pos));
 
     FragColor = vec4(color, 1.0);
-    //FragColor = vec4(hit.normal, 1.0);
+    //FragColor = vec4(norm, 1.0);
     //FragColor = vec4(floor(hit.uv.x*4.0)/4.0, 0.0, 0.0, 1.0);
     return;
 } 

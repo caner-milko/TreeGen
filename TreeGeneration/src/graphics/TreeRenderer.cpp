@@ -35,7 +35,8 @@ void TreeRenderer::renderBranchs(std::span<rb<TreeRenderer>> renderers,
 	Cmd::ScopedGraphicsPipeline _(BranchRenderPipeline);
 	Cmd::util::BindMesh(*resources.cubeMesh);
 
-	glBindTextureUnit(Cmd::GetShader().getTextureIndex("barkTexture"), resources.barkTexture->getHandle());
+	glBindTextureUnit(Cmd::GetShader().getTextureIndex("treeMaterial.colorTexture"), resources.material.colorTexture->getHandle());
+	glBindTextureUnit(Cmd::GetShader().getTextureIndex("treeMaterial.normalTexture"), resources.material.normalTexture->getHandle());
 	glBindTextureUnit(Cmd::GetShader().getTextureIndex("shadowMap"), scene.light.shadowMap->getHandle());
 	vec3 camPos = view.camera.cameraPosition;
 	vec3 camDir = view.camera.getCameraDirection();

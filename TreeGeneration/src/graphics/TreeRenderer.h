@@ -8,8 +8,10 @@
 #include "DrawScene.h"
 #include "Mesh.h"
 namespace tgen::graphics {
-;
 
+struct TreeMaterial {
+	rc<gl::Texture> colorTexture{}, normalTexture{};
+};
 
 class TreeRenderer {
 	struct BudPoint {
@@ -36,8 +38,8 @@ public:
 			branchShadowShader = nullptr,
 			leavesShadowShader = nullptr;
 
-		rc<gl::Texture> leafTexture = nullptr,
-			barkTexture = nullptr;
+		rc<gl::Texture> leafTexture = nullptr;
+		TreeMaterial material{};
 
 		rb<const gl::UBO<CameraUniform>> camUBO = nullptr;
 		rb<const gl::UBO<DirLightUniform>> lightUBO = nullptr;
