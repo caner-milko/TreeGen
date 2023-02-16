@@ -8,7 +8,7 @@
 #include <span>
 #include <optional>
 #include <variant>
-namespace tgen::graphics::gl 
+namespace tgen::graphics::gl
 {
 struct ClearDepthStencilValue
 {
@@ -67,21 +67,21 @@ extern void BeginSwapchainRendering(const SwapchainRenderInfo& renderInfo);
 extern void BeginRendering(const RenderInfo& renderInfo);
 extern void EndRendering();
 namespace Cmd {
-	extern void Draw(uint32_t vertexCount,
-        uint32_t instanceCount = 1,
-        uint32_t firstVertex = 0,
-        uint32_t firstInstance = 0);
+extern void Draw(uint32_t vertexCount,
+	uint32_t instanceCount = 1,
+	uint32_t firstVertex = 0,
+	uint32_t firstInstance = 0);
 
-	extern void DrawIndexed(uint32_t indexCount,
-        uint32_t instanceCount = 1,
-        uint32_t firstIndex = 0,
-        int32_t vertexOffset = 0,
-        uint32_t firstInstance = 0);
+extern void DrawIndexed(uint32_t indexCount,
+	uint32_t instanceCount = 1,
+	uint32_t firstIndex = 0,
+	int32_t vertexOffset = 0,
+	uint32_t firstInstance = 0);
 
-	extern void SetViewport(const Viewport& viewport);
+extern void SetViewport(const Viewport& viewport);
 
-	extern void BindGraphicsPipeline(const GraphicsPipeline& pipeline);
-	extern void UnbindGraphicsPipeline();
+extern void BindGraphicsPipeline(const GraphicsPipeline& pipeline);
+extern void UnbindGraphicsPipeline();
 
 struct ScopedGraphicsPipeline {
 
@@ -103,23 +103,23 @@ private:
 	bool isValid = false;
 };
 
-	extern void BindVBO(uint32 index, const gl::Buffer<BufferType::VBO>& buffer, uint64 offset, uint64 stride);
-	extern void BindEBO(const gl::Buffer<BufferType::EBO>& buffer, IndexType indexType);
-	extern void BindSSBO(uint32 index, const gl::Buffer<BufferType::SSBO>& buffer, uint64 offset, uint64 size);
-	extern void BindUBO(uint32 index, const gl::Buffer<BufferType::UBO>& buffer, uint64 offset, uint64 size);
-	extern void BindSampledImage(uint32 index, const Texture& texture, const Sampler& sampler);
+extern void BindVBO(uint32 index, const gl::Buffer<BufferType::VBO>& buffer, uint64 offset, uint64 stride);
+extern void BindEBO(const gl::Buffer<BufferType::EBO>& buffer, IndexType indexType);
+extern void BindSSBO(uint32 index, const gl::Buffer<BufferType::SSBO>& buffer, uint64 offset, uint64 size);
+extern void BindUBO(uint32 index, const gl::Buffer<BufferType::UBO>& buffer, uint64 offset, uint64 size);
+extern void BindSampledImage(uint32 index, const Texture& texture, const Sampler& sampler);
 
-	extern Shader& GetShader();
-	template<typename T>
-	static void SetUniform(std::string_view uniformName, const T& val) {
-		assert(context.isRendering);
-		GetShader().setUniform(uniformName, val);
-	}
-	template<typename T>
-	static void SetUniform(uint32 uniformLoc, const T& val) {
-		assert(context.isRendering);
-		GetShader().setUniform(uniformLoc, val);
-	}
+extern Shader& GetShader();
+template<typename T>
+static void SetUniform(std::string_view uniformName, const T& val) {
+	assert(context.isRendering);
+	GetShader().setUniform(uniformName, val);
+}
+template<typename T>
+static void SetUniform(uint32 uniformLoc, const T& val) {
+	assert(context.isRendering);
+	GetShader().setUniform(uniformLoc, val);
+}
 
 
 }

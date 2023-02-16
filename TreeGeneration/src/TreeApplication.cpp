@@ -89,7 +89,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 		std::string vertex = ResourceManager::getInstance().readTextFile(SHADERS_FOLDER + "shadowPoint_vert.glsl");
 		std::string fragment = ResourceManager::getInstance().readTextFile(SHADERS_FOLDER + "shadowPoint_frag.glsl");
 		shadowPointShader = rm.createShader(
-			SHADERS_FOLDER + "shadowPoint_vert.glsl", 
+			SHADERS_FOLDER + "shadowPoint_vert.glsl",
 			SHADERS_FOLDER + "shadowPoint_frag.glsl");
 
 		treeBezierShader = rm.createShader(
@@ -158,10 +158,10 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 		terrain = std::make_unique<Terrain>(terrainData);
 		terrainRenderer = std::make_unique<TerrainRenderer>(*terrain);
 		TerrainRenderer::resources = TerrainRenderer::TerrainRendererResources{
-			.terrainShader = terrainShader, 
+			.terrainShader = terrainShader,
 			.terrainShadowShader = terrainShadowShader,
-			.grassTexture = grassTex, 
-			.lineShader = lineShader, 
+			.grassTexture = grassTex,
+			.lineShader = lineShader,
 			.lineVAO = &Renderer::getRenderer().getLineMesh() ,
 			.camUBO = &Renderer::getRenderer().getCamUBO(),
 			.lightUBO = &Renderer::getRenderer().getLightUBO()
@@ -188,17 +188,17 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 
 
 	TreeRenderer::resources = {
-		.quadMesh = &Renderer::getRenderer().getQuadMesh(), 
-		.cubeMesh = &Renderer::getRenderer().getCubeMesh(), 
+		.quadMesh = &Renderer::getRenderer().getQuadMesh(),
+		.cubeMesh = &Renderer::getRenderer().getCubeMesh(),
 		.pointMesh = &Renderer::getRenderer().getPointMesh(),
-		.lineMesh = &Renderer::getRenderer().getLineMesh(), 
-		.branchShader = treeBezierShader, 
+		.lineMesh = &Renderer::getRenderer().getLineMesh(),
+		.branchShader = treeBezierShader,
 		.leafShader = leafShader,
-		.budPointShader = budPointShader, 
+		.budPointShader = budPointShader,
 		.coloredLineShader = coloredLineShader,
-		.branchShadowShader = branchShadowShader, 
+		.branchShadowShader = branchShadowShader,
 		.leavesShadowShader = leavesShadowShader,
-		.leafTexture = leafTex, 
+		.leafTexture = leafTex,
 		.barkTexture = barkTex,
 		.camUBO = &Renderer::getRenderer().getCamUBO(),
 		.lightUBO = &Renderer::getRenderer().getLightUBO()
@@ -376,7 +376,7 @@ void TreeApplication::drawScene()
 		}
 	}
 
-	rb<TreeRenderer> treeRenderers[] = { treeRenderer1.get(), treeRenderer2.get()};
+	rb<TreeRenderer> treeRenderers[] = { treeRenderer1.get(), treeRenderer2.get() };
 	rb<TerrainRenderer> terrainRenderers[] = { terrainRenderer.get() };
 	DrawView lightView(*scene.light.lightCam);
 
@@ -391,12 +391,12 @@ void TreeApplication::drawScene()
 	Renderer::getRenderer().endShadowPass();
 
 	Renderer::getRenderer().beginSwapchain();
-	
+
 
 	Renderer::getRenderer().renderTest(view);
 
 	TreeRenderer::renderTrees(treeRenderers, view, scene, true, true);
-	
+
 	/*if (appData.showShadowGrid) {
 		//world->calculateShadows();
 		if (!appData.shadowOnOnlyBuds) {

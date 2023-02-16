@@ -5,7 +5,7 @@
 #include "Leaf.h"
 #include <vector>
 namespace tgen::gen {
-	//TODO move this to TreeRenderer
+//TODO move this to TreeRenderer
 struct BranchShaderData {
 	mat4 model;
 	vec4 A;

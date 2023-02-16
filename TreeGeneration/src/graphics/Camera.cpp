@@ -6,7 +6,7 @@ namespace tgen::graphics {
 vec3 Camera::getCameraDirection() const {
 	if (dir)
 		return glm::normalize(*dir);
-	
+
 	return { glm::cos(glm::radians(yaw)) * glm::cos(glm::radians(pitch)),
 			glm::sin(glm::radians(pitch)),
 			glm::sin(glm::radians(yaw)) * glm::cos(glm::radians(pitch)) };

@@ -1,6 +1,6 @@
 #pragma once
 #include "Common.h"
-namespace tgen::gen{
+namespace tgen::gen {
 struct TreeNode
 {
 	enum NodeStatus {

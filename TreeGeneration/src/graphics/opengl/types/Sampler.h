@@ -5,13 +5,14 @@ namespace tgen::graphics::gl {
 using SamplerHandle = uint32;
 class Sampler {
 public:
-	Sampler() = default; 
+	Sampler() = default;
 	void init(bool reinit = true) {
 		if (handle != 0 && reinit) {
 			this->~Sampler();
 		}
 		assert(handle == 0);
-		glCreateSamplers(1, &handle); }
+		glCreateSamplers(1, &handle);
+	}
 	Sampler(Sampler&& other) noexcept : handle(std::exchange(handle, 0)) {}
 	~Sampler() {
 		destroy();

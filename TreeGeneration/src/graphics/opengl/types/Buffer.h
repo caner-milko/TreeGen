@@ -15,8 +15,8 @@ class Buffer {
 public:
 	Buffer() = default;
 	bool init(std::span<uint8> data,
-				BufferStorageFlags storageFlags = BufferStorageFlag::NONE,
-				BufferMapFlags mapFlags = BufferMapFlag::NONE, bool reinit = true) {
+		BufferStorageFlags storageFlags = BufferStorageFlag::NONE,
+		BufferMapFlags mapFlags = BufferMapFlag::NONE, bool reinit = true) {
 		if (handle != 0 && reinit) {
 			this->~Buffer();
 		}
@@ -34,7 +34,7 @@ public:
 	BufferHandle getHandle() const {
 		return handle;
 	}
-	Buffer(Buffer<E>&& other) noexcept 
+	Buffer(Buffer<E>&& other) noexcept
 		: handle(std::exchange(other.handle, 0)), size(std::exchange(other.size, 0)) {
 	}
 
@@ -49,7 +49,7 @@ public:
 		assert(size == 0 || size >= (data.size() + offset));
 		glNamedBufferSubData(handle, offset, data.size(), data.data());
 	}
-	
+
 private:
 	void destroy() { glDeleteBuffers(1, &handle); handle = 0; size = 0; }
 	BufferHandle handle = 0;
@@ -69,7 +69,7 @@ public:
 		BufferMapFlags mapFlags = BufferMapFlag::NONE, bool reinit = true) {
 		return init(std::span<T>((T*)nullptr, 1), storageFlags, mapFlags, reinit);
 	}
-	
+
 	bool init(size_t size, BufferStorageFlags storageFlags = BufferStorageFlag::NONE,
 		BufferMapFlags mapFlags = BufferMapFlag::NONE, bool reinit = true) {
 		return init(std::span<T>((T*)nullptr, size), storageFlags, mapFlags, reinit);

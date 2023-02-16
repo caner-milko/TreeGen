@@ -7,9 +7,9 @@ using namespace gl;
 TerrainRenderer::TerrainRendererResources TerrainRenderer::resources = {};
 constexpr gl::VertexInputBindingDescription TerrainMeshInput[] = {
 	{.location = 0, .binding = 0,
-	.format= gl::Format::R32G32B32_FLOAT, .offset = offsetof(TerrainVertex, pos)}
+	.format = gl::Format::R32G32B32_FLOAT, .offset = offsetof(TerrainVertex, pos)}
 	,{.location = 1, .binding = 0,
-	.format = gl::Format::R32G32B32_FLOAT, .offset = offsetof(TerrainVertex, normal)}};
+	.format = gl::Format::R32G32B32_FLOAT, .offset = offsetof(TerrainVertex, normal)} };
 
 
 TerrainRenderer::TerrainRenderer(Terrain& terrain) : terrain(terrain)
@@ -29,12 +29,12 @@ void TerrainRenderer::renderTerrains(std::span<rb<TerrainRenderer>> renderers, c
 {
 	const mat4& vp = view.VP;
 	static gl::GraphicsPipeline TerrainPipeline =
-	[]()->gl::GraphicsPipeline {
+		[]()->gl::GraphicsPipeline {
 		gl::GraphicsPipeline pipeline("Render Terrain", *resources.terrainShader);
 		pipeline.vertexInputState = { TerrainMeshInput };
 		return pipeline;
 	}();
-	
+
 	Cmd::ScopedGraphicsPipeline scoped(TerrainPipeline);
 
 

@@ -13,7 +13,8 @@ public:
 		if (handle != 0 && reinit) {
 			this->~VertexArray();
 		}
-		assert(handle == 0); glCreateVertexArrays(1, &handle); return handle; }
+		assert(handle == 0); glCreateVertexArrays(1, &handle); return handle;
+	}
 	~VertexArray() { destroy(); };
 	VertexArrayHandle getHandle() const { return handle; }
 	VertexArray(VertexArray&& other) noexcept : handle(std::exchange(other.handle, 0)) {}
@@ -21,7 +22,7 @@ public:
 	DELETE_COPY_CONSTRUCTORS(VertexArray);
 	GL_OPERATOR_BOOL(handle);
 
-	
+
 	void enableAttribute(uint32 location, uint64 binding, Format format, uint64 offset);
 
 	void bindVBO(uint32 index, const Buffer<BufferType::VBO>& buffer, uint64 offset, uint64 stride);

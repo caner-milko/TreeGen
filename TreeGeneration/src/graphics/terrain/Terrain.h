@@ -21,7 +21,7 @@ struct TerrainData {
 class Terrain {
 public:
 	TerrainData data;
-	
+
 	Terrain(const TerrainData& data);
 	void generateMesh(std::vector<TerrainVertex>* vertices, std::vector<uint32>* indices) const;
 

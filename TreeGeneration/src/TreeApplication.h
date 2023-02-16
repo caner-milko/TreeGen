@@ -125,5 +125,5 @@ private:
 	void mouseInput(const vec2& offset);
 
 	void scrollInput(const vec2& offset);
-}; 
+};
 }

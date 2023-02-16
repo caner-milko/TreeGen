@@ -17,7 +17,7 @@ public:
 	void renderShadows(const DrawView& view) const;
 	static void renderTerrains(std::span<rb<TerrainRenderer>> renderers, const DrawView& view, const DrawScene& scene);
 	static void renderTerrainShadows(std::span<rb<TerrainRenderer>> renderers, const DrawView& view);
-	struct TerrainRendererResources{
+	struct TerrainRendererResources {
 		rc<gl::Shader> terrainShader;
 		rc<gl::Shader> terrainShadowShader;
 		rc<gl::Texture> grassTexture;

@@ -39,16 +39,16 @@ GLenum DepthRangeToGL(ClipDepthRange depthRange);
 // arguments for glVertexArrayAttrib*Format
 enum class GlFormatClass
 {
-    FLOAT,
-    INT,
-    LONG
+	FLOAT,
+	INT,
+	LONG
 };
 struct GlVertexFormat
 {
-    GLenum type;               // GL_FLOAT, etc.
-    GLint size;                // 1, 2, 3, 4
-    GLboolean normalized;      // GL_TRUE, GL_FALSE
-    GlFormatClass formatClass; // whether to call Format, IFormat, or LFormat
+	GLenum type;               // GL_FLOAT, etc.
+	GLint size;                // 1, 2, 3, 4
+	GLboolean normalized;      // GL_TRUE, GL_FALSE
+	GlFormatClass formatClass; // whether to call Format, IFormat, or LFormat
 };
 GLenum FormatToTypeGL(Format format);
 GLint FormatToSizeGL(Format format);
@@ -58,9 +58,9 @@ GlFormatClass FormatToFormatClass(Format format);
 // for clearing color textures, we need to know which of these the texture holds
 enum class GlBaseTypeClass
 {
-    FLOAT,
-    SINT,
-    UINT
+	FLOAT,
+	SINT,
+	UINT
 };
 GlBaseTypeClass FormatToBaseTypeClass(Format format);
 

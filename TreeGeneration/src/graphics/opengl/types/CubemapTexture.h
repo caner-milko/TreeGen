@@ -8,7 +8,7 @@ public:
 	bool init(TextureCreateData data = {}, bool reinit = true);
 	CubemapTexture(CubemapTexture&& other) noexcept : Texture(std::move(other)) {}
 	MOVE_OPERATOR(CubemapTexture)
-	DELETE_COPY_CONSTRUCTORS(CubemapTexture);
+		DELETE_COPY_CONSTRUCTORS(CubemapTexture);
 	GL_OPERATOR_BOOL(getHandle());
 
 	void uploadFaces(const std::array<const void*, 6> faces, TextureUploadData uploadData = {});

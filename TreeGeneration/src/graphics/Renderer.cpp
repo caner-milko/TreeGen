@@ -10,10 +10,10 @@ using namespace util;
 using namespace gen;
 
 constexpr gl::VertexInputBindingDescription cubeDesc[] =
-{{.location = 0, .binding = 0,.format = gl::Format::R32G32B32_FLOAT, .offset = 0} };
+{ {.location = 0, .binding = 0,.format = gl::Format::R32G32B32_FLOAT, .offset = 0} };
 
 constexpr gl::VertexInputBindingDescription quadDesc[] =
-{{.location = 0, .binding = 0, .format = gl::Format::R32G32_FLOAT, .offset = 0} };
+{ {.location = 0, .binding = 0, .format = gl::Format::R32G32_FLOAT, .offset = 0} };
 
 DirectionalLight DirectionalLight::GDirLight = {};
 
@@ -34,7 +34,7 @@ void setupDirLight() {
 	tcd.maxFiltering = Filter::LINEAR;
 	tcd.wrapping = AddressMode::CLAMP_TO_EDGE;
 	DirectionalLight::GDirLight.shadowMap = std::make_shared<Texture>();
-	
+
 
 	auto& dirLight = DirectionalLight::GDirLight;
 	dirLight.shadowMap->init(tcd);
@@ -99,15 +99,15 @@ void Renderer::init()
 	};
 
 	cubeMesh.vbo.init(cubeVertices);
-	
-	cubeMesh.inputState = {.vertexBindingDescriptions = cubeDesc};
+
+	cubeMesh.inputState = { .vertexBindingDescriptions = cubeDesc };
 
 	vec2 quadVertices[] = {
 		// positions
 		{-0.5f,  1.0f},
 		{-0.5f,  0.0f},
 		{ 0.5f,  0.0f},
-		
+
 		{ 0.5f,  0.0f},
 		{ 0.5f,  1.0f},
 		{-0.5f,  1.0f},
@@ -154,12 +154,12 @@ void Renderer::updateCameraUBO(const DrawView& view) {
 }
 
 void Renderer::startDraw(bool SRGB) {
-	if(SRGB)
+	if (SRGB)
 		glEnable(GL_FRAMEBUFFER_SRGB);
 }
 
 void Renderer::endDraw(bool SRGB) {
-	if(SRGB)
+	if (SRGB)
 		glDisable(GL_FRAMEBUFFER_SRGB);
 }
 
@@ -240,34 +240,34 @@ void Renderer::renderShadowPoints(const DrawView& view, Shader& shader, const st
 
 void Renderer::renderShadowsOnBuds(const DrawView& view, Shader& shader, const TreeWorld& world, const std::vector<TreeNode>& nodes)
 {
-/*	glEnable(GL_PROGRAM_POINT_SIZE);
-	mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
-	shader.bind();
-	pointVAO->bind();
-	shader.setUniform("VP", vp);
-	std::vector<vec4> points;
-	for (auto& node : nodes) {
-		if (node.nodeStatus == TreeNode::BUD) {
-			ivec3 cell = world.coordinateToCell(node.startPos);
-			for (int i = 0; i < 10; i++) {
-				if (cell.y + i >= world.worldSize.y)
-					break;
-				ShadowCell shadowCell = world.getCellAt(cell + ivec3(0, i, 0));
-				points.emplace_back(vec4(node.startPos + vec3(0, world.cellSize * float(i), 0), shadowCell.shadow));
+	/*	glEnable(GL_PROGRAM_POINT_SIZE);
+		mat4 vp = view.camera.getProjectionMatrix() * view.camera.getViewMatrix();
+		shader.bind();
+		pointVAO->bind();
+		shader.setUniform("VP", vp);
+		std::vector<vec4> points;
+		for (auto& node : nodes) {
+			if (node.nodeStatus == TreeNode::BUD) {
+				ivec3 cell = world.coordinateToCell(node.startPos);
+				for (int i = 0; i < 10; i++) {
+					if (cell.y + i >= world.worldSize.y)
+						break;
+					ShadowCell shadowCell = world.getCellAt(cell + ivec3(0, i, 0));
+					points.emplace_back(vec4(node.startPos + vec3(0, world.cellSize * float(i), 0), shadowCell.shadow));
+				}
 			}
 		}
-	}
 
-	uint32 ssbo;
-	glCreateBuffers(1, &ssbo);
-	glNamedBufferStorage(ssbo, sizeof(vec4) * points.size(), points.data(), GL_MAP_READ_BIT);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
+		uint32 ssbo;
+		glCreateBuffers(1, &ssbo);
+		glNamedBufferStorage(ssbo, sizeof(vec4) * points.size(), points.data(), GL_MAP_READ_BIT);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
 
-	glDrawArraysInstanced(GL_POINTS, 0, 1, points.size());
+		glDrawArraysInstanced(GL_POINTS, 0, 1, points.size());
 
-	glDeleteBuffers(1, &ssbo);
-	glDisable(GL_PROGRAM_POINT_SIZE);
-	*/
+		glDeleteBuffers(1, &ssbo);
+		glDisable(GL_PROGRAM_POINT_SIZE);
+		*/
 }
 
 void Renderer::renderBBoxLines(const DrawView& view, Shader& shader, const BBox& bbox, const vec3& color)
@@ -276,7 +276,7 @@ void Renderer::renderBBoxLines(const DrawView& view, Shader& shader, const BBox&
 	pipeline.inputAssemblyState.topology = PrimitiveTopology::LINE_LIST;
 
 	Cmd::ScopedGraphicsPipeline _(pipeline);
-	
+
 	Cmd::util::BindMesh(lineMesh);
 	Cmd::SetUniform("VP", view.VP);
 	Cmd::SetUniform("color", color);
@@ -366,7 +366,7 @@ void Renderer::setupSkybox(const rc<CubemapTexture>& skyboxTexture, const rc<Sha
 
 void Renderer::renderSkybox(const DrawView& view)
 {
-	static GraphicsPipeline pipeline = []() ->GraphicsPipeline{
+	static GraphicsPipeline pipeline = []() ->GraphicsPipeline {
 		GraphicsPipeline pipeline("Skybox Pipeline", *Renderer::getRenderer().skyboxShader);
 		pipeline.rasterizationState.cullMode = CullMode::NONE;
 		pipeline.depthState.depthCompareOp = CompareOp::LESS_OR_EQUAL;
@@ -382,7 +382,7 @@ void Renderer::renderSkybox(const DrawView& view)
 }
 
 void Renderer::renderTest(const DrawView& view) {
-	
+
 	static GraphicsPipeline pipeline = []() -> GraphicsPipeline {
 		GraphicsPipeline pipeline("Test Pipeline", *Renderer::getRenderer().pointShader);
 		pipeline.inputAssemblyState.topology = PrimitiveTopology::POINT_LIST;
@@ -399,11 +399,11 @@ void Renderer::renderTest(const DrawView& view) {
 
 void Renderer::startShadowPass()
 {
-	static gl::RenderDepthStencilAttachment attachment = 
-	{.texture = DirectionalLight::GDirLight.shadowMap, 
-		.clearOnLoad = true, 
+	static gl::RenderDepthStencilAttachment attachment =
+	{ .texture = DirectionalLight::GDirLight.shadowMap,
+		.clearOnLoad = true,
 		.clearValue = 1.0f, };
-	static RenderInfo renderInfo {.name = "Shadow pass", .depthAttachment = &attachment};
+	static RenderInfo renderInfo{ .name = "Shadow pass", .depthAttachment = &attachment };
 
 	BeginRendering(renderInfo);
 }

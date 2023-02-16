@@ -43,7 +43,7 @@ void TreeRenderer::renderBranchs(std::span<rb<TreeRenderer>> renderers,
 	Cmd::SetUniform("treeColor", vec3(166.0f / 255.0f, 123.0f / 255.0f, 81.0f / 255.0f));
 	Cmd::BindUBO(0, *resources.camUBO, 0, resources.camUBO->getRawSize());
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
-	for(auto renderer : renderers) {
+	for (auto renderer : renderers) {
 		Cmd::BindSSBO(0, renderer->branchSSBO, 0, renderer->branchSSBO.getRawSize());
 		Cmd::Draw(36, renderer->branchSSBO.getSize(), 0, 0);
 	}
@@ -65,11 +65,11 @@ void TreeRenderer::renderLeaves(std::span<rb<TreeRenderer>> renderers,
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
 
 	glBindTextureUnit(resources.leafShader->getTextureIndex("leafTex"), resources.leafTexture->getHandle());
-	for(auto& renderer : renderers) {
+	for (auto& renderer : renderers) {
 		Cmd::BindSSBO(0, renderer->leafSSBO, 0, renderer->leafSSBO.getRawSize());
 		Cmd::Draw(6, renderer->leafSSBO.getSize());
 	}
-	
+
 }
 
 void TreeRenderer::renderTreeShadows(std::span<rb<TreeRenderer>> renderers, const DrawView& view, bool renderBranches, bool renderLeaves) {
@@ -93,7 +93,7 @@ void TreeRenderer::renderBranchShadows(std::span<rb<TreeRenderer>> renderers, co
 	Cmd::BindUBO(0, *resources.camUBO, 0, resources.camUBO->getRawSize());
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
 
-	for(auto renderer : renderers) {
+	for (auto renderer : renderers) {
 		Cmd::BindSSBO(0, renderer->branchSSBO, 0, renderer->branchSSBO.getRawSize());
 		Cmd::Draw(36, renderer->branchSSBO.getSize());
 	}
@@ -112,11 +112,11 @@ void TreeRenderer::renderLeafShadows(std::span<rb<TreeRenderer>> renderers, cons
 
 	Cmd::BindUBO(0, *resources.camUBO, 0, resources.camUBO->getRawSize());
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
-	
+
 	glBindTextureUnit(resources.leafShader->getTextureIndex("leafTex"), resources.leafTexture->getHandle());
-	
-	for(auto renderer : renderers) {
-		Cmd::BindSSBO(0, renderer->leafSSBO,0, renderer->leafSSBO.getRawSize());
+
+	for (auto renderer : renderers) {
+		Cmd::BindSSBO(0, renderer->leafSSBO, 0, renderer->leafSSBO.getRawSize());
 		Cmd::Draw(6, renderer->leafSSBO.getSize());
 	}
 }

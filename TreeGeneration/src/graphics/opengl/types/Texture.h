@@ -11,7 +11,7 @@ class Texture {
 public:
 	struct TextureCreateData {
 		ImageType imageType = ImageType::TEX_2D;
-		ivec3 size = {1920, 1080, 1};
+		ivec3 size = { 1920, 1080, 1 };
 		int32 mipLevels = -1;
 		AddressMode wrapping = AddressMode::REPEAT;
 		Filter minFiltering = Filter::LINEAR_MIPMAP_LINEAR;
@@ -34,7 +34,7 @@ public:
 	Texture(Texture&& other) noexcept : handle(std::exchange(other.handle, 0)), data(std::exchange(other.data, {})) {}
 	MOVE_OPERATOR(Texture);
 	DELETE_COPY_CONSTRUCTORS(Texture)
-	GL_OPERATOR_BOOL(handle);
+		GL_OPERATOR_BOOL(handle);
 
 	virtual void subImage(TextureUploadData uploadData = {});
 	void genMipMaps();

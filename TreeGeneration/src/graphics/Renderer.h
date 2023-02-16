@@ -17,10 +17,10 @@ class Renderer {
 
 public:
 
-	
+
 
 	static Renderer& getRenderer() {
-		
+
 		static Renderer* renderer = []() -> Renderer* {
 			Renderer* rend = new Renderer();
 			rend->init();
@@ -54,9 +54,9 @@ public:
 
 	void startShadowPass();
 	void endShadowPass();
-	
+
 	const ArrayMesh<vec3>& getCubeMesh();
-	const ArrayMesh<vec2>&  getQuadMesh();
+	const ArrayMesh<vec2>& getQuadMesh();
 	const IndexedMesh<gl::IndexType::UNSIGNED_INT>& getLineMesh();
 	const IndexedMesh<gl::IndexType::UNSIGNED_INT>& getPointMesh();
 
@@ -70,7 +70,7 @@ private:
 	~Renderer() = default;
 	Renderer(Renderer&&) = delete;
 	DELETE_COPY_CONSTRUCTORS(Renderer)
-	void init();
+		void init();
 
 	rc<gl::CubemapTexture> skyboxTexture = nullptr;
 	rc<gl::Shader> skyboxShader = nullptr;

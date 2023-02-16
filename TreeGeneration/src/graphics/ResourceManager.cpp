@@ -8,7 +8,7 @@
 #include "util/Util.h"
 #include <optional>
 namespace tgen::graphics {
-	using namespace gl;
+using namespace gl;
 std::string ResourceManager::readTextFile(std::string_view path) const
 {
 	try
@@ -105,7 +105,7 @@ ru<CubemapTexture> ResourceManager::createCubemapTexture(std::array<std::string_
 	Texture::TextureUploadData uploadData = {};
 	for (int i = 0; i < 6; i++) {
 		auto img = readImageFile(facePaths[i]);
-		if(i == 0) {
+		if (i == 0) {
 			if (dataFromImage) {
 				createData.size = ivec3(img->width, img->height, 0);
 				createData.textureFormat = img->nrChannels == 4 ? Format::R8G8B8A8_SRGB : Format::R8G8B8_SRGB;

@@ -8,7 +8,7 @@
 #include "opengl/types/Texture.h"
 #include "opengl/types/CubemapTexture.h"
 #include "Image.h"
-namespace tgen::graphics{
+namespace tgen::graphics {
 
 class ResourceManager {
 public:

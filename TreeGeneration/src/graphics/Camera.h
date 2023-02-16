@@ -25,7 +25,7 @@ public:
 	void setFov(float fov);
 
 
-	std::variant<float, vec4> projection = 16.0f/9.0f;
+	std::variant<float, vec4> projection = 16.0f / 9.0f;
 	glm::vec3 cameraPosition{ 0.0f };
 	float nearPlane = 0.01f, farPlane = 10.0f;
 	std::optional<vec3> dir;
