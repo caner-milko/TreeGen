@@ -154,6 +154,8 @@ void TreeRenderer::renderOptimalDirection(const DrawView& view) {
 
 void TreeRenderer::updateRenderer()
 {
+	if (tree.age <= 0)
+		return;
 	const std::vector<Branch>& branchs = tree.getBranchs();
 	std::vector<BranchShaderData> branchData;
 
