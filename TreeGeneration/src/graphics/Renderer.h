@@ -16,9 +16,6 @@ namespace tgen::graphics {
 class Renderer {
 
 public:
-
-
-
 	static Renderer& getRenderer() {
 
 		static Renderer* renderer = []() -> Renderer* {

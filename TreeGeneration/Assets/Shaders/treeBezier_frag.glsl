@@ -308,6 +308,11 @@ vec2 calc_uv(Branch branch, float clampedT, vec3 curPos, float v) {
     return uv;
 }
 
+vec3 bezNorm(float splineT, vec3 pos, Bezier curve) {
+    vec3 bezPos = bezier(curve, splineT);
+    return normalize(pos - bezPos);
+}
+
 Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
 	float t = 0.0;
 	vec3 norm = vec3(-3.0);
@@ -336,10 +341,10 @@ Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
         float clampedT = clamp(splineT, 0.0, 1.0);
         uv = calc_uv(branch, clampedT, curPos, splineT);
         
-        //this works too
+        //all works
         //norm = normalize(cross(dFdx(curPos), dFdy(curPos)));
-        
-        norm = normal(curPos, curve);
+        //norm = normal(curPos, curve);
+        norm = bezNorm(clampedT, curPos, curve);
 
         norm = calcNorm(curPos, clampedT, NORMAL_T, norm, curve);
             
@@ -397,9 +402,21 @@ float calcShadow(vec3 pos) {
     return visibility;
 }
 
-vec3 bezNorm(float splineT, vec3 pos, Bezier curve) {
-    vec3 bezPos = bezier(curve, splineT);
-    return normalize(pos - bezPos);
+vec3 bumpMap(in Bezier curve, vec3 normTexture, in vec3 curNorm, in vec3 pos, in float splineT, in float strength) {
+    vec3 N = curNorm;
+    vec3 B = normalize(bezier_dx(curve, splineT));
+    B = normalize(B - dot(B, N) * N);
+    vec3 T = -normalize(cross(B, N));
+
+    mat3 TBN = mat3(T, B, N);
+
+    vec3 bumpMap = 2.0 * normTexture - vec3(1.0, 1.0, 1.0);
+
+    bumpMap.z /= strength;
+
+    vec3 norm = normalize(TBN * bumpMap);
+
+    return norm;
 }
 
 
@@ -449,21 +466,9 @@ void main()
     float mixedOrder = mix(0.2, 1.0, mix(order, nextOrder, hit.splineT));
     vec3 col = texture(treeMaterial.colorTexture, hit.uv).xyz * mixedOrder;
     
-
     Bezier curve = toBezier(branch);
     
-    vec3 N = hit.normal;//bezNorm(hit.splineT, pos, curve);
-    vec3 B = normalize(bezier_dx(curve, hit.splineT));
-    B = normalize(B - dot(B, N) * N);
-    vec3 T = -normalize(cross(B, N));
-
-    mat3 TBN = mat3(T, B, N);
-
-    vec3 bumpMap = 2.0 * texture(treeMaterial.normalTexture, hit.uv).xyz - vec3(1.0, 1.0, 1.0);
-
-    bumpMap.z /= 5.0;
-
-    vec3 norm = normalize(TBN * bumpMap);
+    vec3 norm = bumpMap(curve, texture(treeMaterial.normalTexture, hit.uv).xyz, hit.normal, pos, hit.splineT, 5.0);
 
     vec3 color = calcLight(-rayDir, norm, col) * calcShadow(pos);
     //vec3 color = vec3(calcShadow(pos));

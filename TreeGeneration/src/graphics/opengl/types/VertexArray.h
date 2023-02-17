@@ -13,7 +13,9 @@ public:
 		if (handle != 0 && reinit) {
 			this->~VertexArray();
 		}
-		assert(handle == 0); glCreateVertexArrays(1, &handle); return handle;
+		assert(handle == 0); 
+		glCreateVertexArrays(1, &handle); 
+		return handle;
 	}
 	~VertexArray() { destroy(); };
 	VertexArrayHandle getHandle() const { return handle; }
