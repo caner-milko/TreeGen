@@ -51,12 +51,8 @@ void main()
     vec4 al = textureLod(leafTex, uv, 0);
     if(al.a < 0.5)
         discard;
-    
     vec3 norm = normalize(normal);
     vec3 viewDir = normalize(cam.pos_near.xyz - fragPos);
-
-    norm *= 2.0 * (float(gl_FrontFacing) - 0.5);
-
     float multiplier = 1.5;
 
     FragColor = vec4(clamp(calcLight(viewDir, norm, col.xyz) * multiplier, 0.0, 1.0), al.a);

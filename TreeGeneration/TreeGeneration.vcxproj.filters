@@ -96,7 +96,7 @@
     <ClCompile Include="src\graphics\Image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dependencies\include\stb_image.cpp">
+    <ClCompile Include="dependencies\include\header_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\opengl\types\FrameBuffer.cpp">

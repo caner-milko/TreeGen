@@ -1,5 +1,7 @@
 #version 460 core
-layout (location = 0) in vec2 aPos;
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec2 texCoords;
+layout (location = 2) in vec3 aNormal;
 
 out vec3 fragPos;
 out vec3 normal;
@@ -30,9 +32,9 @@ layout(std430, binding=0) buffer leaf_data {
 void main()
 {
     mat4 model = models[gl_InstanceID];
-
-    fragPos = (model * vec4(aPos, 0.0, 1.0)).xyz;
-    gl_Position = cam.vp * model * vec4(aPos, 0.0, 1.0);
-    uv = vec2(aPos.x, aPos.y) + vec2(0.5, 0.0);
-    normal = mat3(model) * vec3(0.0, 0.0, 1.0);
+    vec4 worldPos = model * vec4(aPos, 1.0);
+    fragPos = worldPos.xyz;
+    gl_Position = cam.vp * worldPos;
+    uv = texCoords;
+    normal = mat3(model) * aNormal;
 }  

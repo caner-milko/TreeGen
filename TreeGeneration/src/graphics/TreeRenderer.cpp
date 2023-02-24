@@ -46,7 +46,7 @@ void TreeRenderer::renderBranchs(std::span<rb<TreeRenderer>> renderers,
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
 	for (auto renderer : renderers) {
 		Cmd::BindSSBO(0, renderer->branchSSBO, 0, renderer->branchSSBO.getRawSize());
-		Cmd::Draw(36, renderer->branchSSBO.getSize(), 0, 0);
+		Cmd::Draw(resources.cubeMesh->vbo.getSize(), renderer->branchSSBO.getSize(), 0, 0);
 	}
 }
 
@@ -56,11 +56,11 @@ void TreeRenderer::renderLeaves(std::span<rb<TreeRenderer>> renderers,
 	const GraphicsPipeline pipeline = []() ->GraphicsPipeline {
 		GraphicsPipeline pipeline("Leaves", *TreeRenderer::resources.leafShader);
 		pipeline.rasterizationState.cullMode = CullMode::NONE;
-		pipeline.vertexInputState = TreeRenderer::resources.quadMesh->inputState;
+		pipeline.vertexInputState = TreeRenderer::resources.leafMesh->inputState;
 		return pipeline;
 	}();
 	Cmd::ScopedGraphicsPipeline _(pipeline);
-	Cmd::util::BindMesh(*resources.quadMesh);
+	Cmd::util::BindMesh(*resources.leafMesh);
 
 	Cmd::BindUBO(0, *resources.camUBO, 0, resources.camUBO->getRawSize());
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
@@ -68,7 +68,7 @@ void TreeRenderer::renderLeaves(std::span<rb<TreeRenderer>> renderers,
 	glBindTextureUnit(resources.leafShader->getTextureIndex("leafTex"), resources.leafTexture->getHandle());
 	for (auto& renderer : renderers) {
 		Cmd::BindSSBO(0, renderer->leafSSBO, 0, renderer->leafSSBO.getRawSize());
-		Cmd::Draw(6, renderer->leafSSBO.getSize());
+		Cmd::Draw(resources.leafMesh->vbo.getSize(), renderer->leafSSBO.getSize());
 	}
 
 }
@@ -96,7 +96,7 @@ void TreeRenderer::renderBranchShadows(std::span<rb<TreeRenderer>> renderers, co
 
 	for (auto renderer : renderers) {
 		Cmd::BindSSBO(0, renderer->branchSSBO, 0, renderer->branchSSBO.getRawSize());
-		Cmd::Draw(36, renderer->branchSSBO.getSize());
+		Cmd::Draw(resources.cubeMesh->vbo.getSize(), renderer->branchSSBO.getSize());
 	}
 }
 
@@ -105,11 +105,11 @@ void TreeRenderer::renderLeafShadows(std::span<rb<TreeRenderer>> renderers, cons
 	const GraphicsPipeline pipeline = []() ->GraphicsPipeline {
 		GraphicsPipeline pipeline("Leaf Shadows", *TreeRenderer::resources.leavesShadowShader);
 		pipeline.rasterizationState.cullMode = CullMode::NONE;
-		pipeline.vertexInputState = TreeRenderer::resources.quadMesh->inputState;
+		pipeline.vertexInputState = TreeRenderer::resources.leafMesh->inputState;
 		return pipeline;
 	}();
 	Cmd::ScopedGraphicsPipeline _(pipeline);
-	Cmd::util::BindMesh(*resources.quadMesh);
+	Cmd::util::BindMesh(*resources.leafMesh);
 
 	Cmd::BindUBO(0, *resources.camUBO, 0, resources.camUBO->getRawSize());
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
@@ -118,7 +118,7 @@ void TreeRenderer::renderLeafShadows(std::span<rb<TreeRenderer>> renderers, cons
 
 	for (auto renderer : renderers) {
 		Cmd::BindSSBO(0, renderer->leafSSBO, 0, renderer->leafSSBO.getRawSize());
-		Cmd::Draw(6, renderer->leafSSBO.getSize());
+		Cmd::Draw(resources.leafMesh->vbo.getSize(), renderer->leafSSBO.getSize());
 	}
 }
 

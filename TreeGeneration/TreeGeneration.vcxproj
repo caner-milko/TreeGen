@@ -148,7 +148,7 @@
     <ClCompile Include="dependencies\include\imgui\imgui_draw.cpp" />
     <ClCompile Include="dependencies\include\imgui\imgui_tables.cpp" />
     <ClCompile Include="dependencies\include\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="dependencies\include\stb_image.cpp" />
+    <ClCompile Include="dependencies\include\header_impl.cpp" />
     <ClCompile Include="src\generation\Branch.cpp" />
     <ClCompile Include="src\generation\Leaf.cpp" />
     <ClCompile Include="src\graphics\MeshTest.cpp" />

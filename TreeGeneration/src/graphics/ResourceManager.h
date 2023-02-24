@@ -7,7 +7,9 @@
 #include "opengl/types/Shader.h"
 #include "opengl/types/Texture.h"
 #include "opengl/types/CubemapTexture.h"
+#include "Mesh.h"
 #include "Image.h"
+#include <tiny_obj_loader.h>
 namespace tgen::graphics {
 
 class ResourceManager {
@@ -25,5 +27,6 @@ public:
 		std::array<std::string_view, 6> facePaths,
 		gl::Texture::TextureCreateData createData = {},
 		bool dataFromImage = true);
+	ru<ArrayMesh<Vertex>> objToMesh(const char* modelPath) const;
 };
 }

@@ -3,6 +3,19 @@
 #include "types/Buffer.h"
 #include "Rendering.h"
 namespace tgen::graphics {
+struct Vertex {
+	vec3 pos;
+	vec2 texCoords;
+	vec3 normal;
+	static constexpr gl::VertexInputBindingDescription bindingDescription[] = {
+		{.location = 0, .binding = 0,
+		.format = gl::Format::R32G32B32_FLOAT, .offset = 0},
+		{.location = 1, .binding = 0,
+		.format = gl::Format::R32G32_FLOAT, .offset = sizeof(vec3)},
+		{.location = 2, .binding = 0,
+		.format = gl::Format::R32G32B32_FLOAT, .offset = sizeof(vec3) + sizeof(vec2)},
+	};
+};
 template<typename T>
 struct ArrayMesh {
 	gl::VBO<T> vbo;

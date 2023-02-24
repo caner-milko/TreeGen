@@ -26,7 +26,7 @@ class TreeRenderer {
 public:
 	bool debug = false;
 	static struct TreeRendererResources {
-		rb<const ArrayMesh<vec2>> quadMesh = nullptr;
+		rc<ArrayMesh<Vertex>> leafMesh = nullptr;
 		rb<const ArrayMesh<vec3>> cubeMesh = nullptr;
 		rb<const IndexedMesh<gl::IndexType::UNSIGNED_INT>> pointMesh = nullptr,
 			lineMesh = nullptr;

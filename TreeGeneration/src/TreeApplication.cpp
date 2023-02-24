@@ -84,6 +84,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 
 #pragma region Load_Resources
 	{
+		leafMesh = ResourceManager::getInstance().objToMesh("./Assets/leafMesh.wobj");
 		const std::string SHADERS_FOLDER = "./Assets/Shaders/";
 		auto& rm = ResourceManager::getInstance();
 		std::string vertex = ResourceManager::getInstance().readTextFile(SHADERS_FOLDER + "shadowPoint_vert.glsl");
@@ -190,7 +191,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 
 	{
 		auto& res = TreeRenderer::resources;
-		res.quadMesh = &Renderer::getRenderer().getQuadMesh();
+		res.leafMesh = leafMesh;
 		res.cubeMesh = &Renderer::getRenderer().getCubeMesh();
 		res.pointMesh = &Renderer::getRenderer().getPointMesh();
 		res.lineMesh = &Renderer::getRenderer().getLineMesh();
@@ -298,7 +299,7 @@ void TreeApplication::drawGUI()
 
 		leafSettingsEdited |= ImGui::SliderInt("Leaf Max Child Count", &growthData.leafMaxChildCount, 0, 30);
 		leafSettingsEdited |= ImGui::SliderInt("Leaf Min Order", &growthData.leafMinOrder, 0, 20);
-		leafSettingsEdited |= ImGui::SliderFloat("Leaf Density", &growthData.leafDensity, 0.5f, 30.0f);
+		leafSettingsEdited |= ImGui::SliderFloat("Leaf Density", &growthData.leafDensity, 0.5f, 50.0f);
 		leafSettingsEdited |= ImGui::SliderFloat("Leaf Size Multiplier", &growthData.leafSizeMultiplier, 0.05f, 3.0f);
 		leafSettingsEdited |= ImGui::SliderAngle("Leaf Angle", &Leaf::pertubateAngle);
 
@@ -312,6 +313,7 @@ void TreeApplication::drawGUI()
 	if (ImGui::CollapsingHeader("Render Options")) {
 
 		treeSettingsEdited |= treePreviewChanged = ImGui::Checkbox("Render Tree Preview", &appData.renderPreviewTree);
+		ImGui::Checkbox("Render Terrain", &renderTerrain);
 		ImGui::Checkbox("Show Shadow Grid", &appData.showShadowGrid);
 		ImGui::Checkbox("Show Shadow On Only Buds", &appData.shadowOnOnlyBuds);
 		ImGui::Checkbox("Show Vigor", &appData.showVigor);
@@ -387,7 +389,8 @@ void TreeApplication::drawScene()
 	Renderer::getRenderer().startShadowPass();
 
 	TreeRenderer::renderTreeShadows(treeRenderers, lightView, true, true);
-	TerrainRenderer::renderTerrainShadows(terrainRenderers, lightView);
+	if (renderTerrain) 
+		TerrainRenderer::renderTerrainShadows(terrainRenderers, lightView);
 
 	Renderer::getRenderer().endShadowPass();
 
@@ -424,9 +427,9 @@ void TreeApplication::drawScene()
 
 	Renderer::getRenderer().renderBBoxLines(view, *lineShader, world->getBBox(), vec3(1.0f));
 
-
-	TerrainRenderer::renderTerrains(terrainRenderers, view, scene);
-
+	if(renderTerrain) {
+		TerrainRenderer::renderTerrains(terrainRenderers, view, scene);
+	}
 	Renderer::getRenderer().renderSkybox(view);
 	Renderer::getRenderer().endSwapchain();
 

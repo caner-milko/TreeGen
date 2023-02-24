@@ -1,5 +1,7 @@
 #version 460 core
-layout (location = 0) in vec2 aPos;
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec2 texCoords;
+layout (location = 2) in vec3 aNormal;
 
 out vec2 uv;
 
@@ -25,6 +27,6 @@ void main()
 {
     mat4 model = models[gl_InstanceID];
 
-    gl_Position = lightCam.vp * model * vec4(aPos, 0.0, 1.0);
-    uv = vec2(aPos.x, aPos.y) + vec2(0.5, 0.0);
+    gl_Position = lightCam.vp * model * vec4(aPos, 1.0);
+    uv = texCoords;
 }  

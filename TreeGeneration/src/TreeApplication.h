@@ -83,11 +83,14 @@ private:
 	bool growTree1 = true;
 	bool growTree2 = true;
 
+	bool renderTerrain = true;
+
 	bool renderBody = true;
 	bool renderLeaves = true;
 
+	rc<ArrayMesh<Vertex>> leafMesh{};
 
-	rc<gl::Shader> treeBezierShader{};
+	rc<Shader> treeBezierShader{};
 	rc<Shader> leafShader{};
 	rc<Shader> shadowPointShader{};
 	rc<Shader> skyboxShader{};

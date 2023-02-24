@@ -121,4 +121,43 @@ ru<CubemapTexture> ResourceManager::createCubemapTexture(std::array<std::string_
 	tex->uploadFaces(datas, uploadData);
 	return tex;
 }
+ru<ArrayMesh<Vertex>> ResourceManager::objToMesh(const char* modelPath) const
+{
+	tinyobj::attrib_t attrib;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string err;
+	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, modelPath)) {
+		std::cout << err << std::endl;
+		return nullptr;
+	}
+	std::vector<Vertex> vertices;
+	for (const auto& index : shapes[0].mesh.indices) {
+		auto& vertex = vertices.emplace_back();
+
+		vertex.pos = {
+			attrib.vertices[3 * index.vertex_index + 0],
+			attrib.vertices[3 * index.vertex_index + 1],
+			attrib.vertices[3 * index.vertex_index + 2]
+		};
+
+		vertex.texCoords = {
+			attrib.texcoords[2 * index.texcoord_index + 0],
+			attrib.texcoords[2 * index.texcoord_index + 1]
+		};
+
+		vertex.normal = {
+			attrib.normals[3 * index.normal_index + 0],
+			attrib.normals[3 * index.normal_index + 1],
+			attrib.normals[3 * index.normal_index + 2]
+		};
+	}
+
+	ru<ArrayMesh<Vertex>> mesh = std::make_unique<ArrayMesh<Vertex>>();
+
+	mesh->vbo.init(vertices);
+	mesh->inputState.vertexBindingDescriptions = Vertex::bindingDescription;
+
+	return mesh;
+}
 }
