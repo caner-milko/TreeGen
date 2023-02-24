@@ -2,8 +2,8 @@
 out vec4 FragColor;
 
 in vec3 fragPos;
-in vec3 normal;
 in vec2 uv;
+in mat3 TBN;
 
 struct Camera {
     mat4 vp;
@@ -23,7 +23,15 @@ layout(std140, binding=1) uniform Light {
     Camera lightCam;
 };
 
-uniform sampler2D grassTex;
+struct TerrainMaterial {
+    sampler2D grassTex;
+    float grassColorMultiplier;
+    sampler2D normalMap;
+    float normalMapStrength;
+    float uvScale;
+};
+
+uniform TerrainMaterial material;
 
 uniform sampler2D shadowMap;
 
@@ -73,8 +81,15 @@ float calcShadow(vec3 pos) {
 
 void main()
 {
-    vec3 norm = normalize(normal);
-    vec3 col = texture(grassTex, uv * 5.0).xyz;
+
+    vec3 normalTex = texture(material.normalMap, uv).xyz * 2.0 - 1.0;
+
+    normalTex.z /= material.normalMapStrength;
+
+    vec3 norm = normalize(TBN * normalTex);
+
+    vec3 col = texture(material.grassTex, uv).xyz * 1.5;
+
     FragColor = vec4(calcLight(normalize(cam.pos_near.xyz - fragPos), norm, col) * calcShadow(fragPos), 1.0);
     //FragColor = vec4(norm, 1.0);
 } 

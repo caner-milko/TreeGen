@@ -42,16 +42,23 @@ void TerrainRenderer::renderTerrains(std::span<rb<TerrainRenderer>> renderers, c
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
 	Cmd::SetUniform("color", vec3(0.0, 1.0, 0.0));
 	auto& shader = Cmd::GetShader();
-	glBindTextureUnit(shader.getTextureIndex("grassTex"), resources.grassTexture->getHandle());
+
+	{
+		glBindTextureUnit(shader.getTextureIndex("material.grassTex"), resources.material.grassTexture->getHandle());
+		glBindTextureUnit(shader.getTextureIndex("material.normalMap"), resources.material.normalMap->getHandle());
+		Cmd::SetUniform("material.grassColorMultiplier", resources.material.grassColorMultiplier);
+		Cmd::SetUniform("material.normalMapStrength", resources.material.normalMapStrength);
+		Cmd::SetUniform("material.uvScale", resources.material.uvScale);
+	}
 	glBindTextureUnit(shader.getTextureIndex("shadowMap"), scene.light.shadowMap->getHandle());
 	for (auto& renderer : renderers) {
 		Cmd::util::BindMesh(renderer->mesh);
 
 		mat4 model = glm::scale(glm::translate(mat4(1.0), renderer->terrain.data.center + vec3(0.0f, renderer->terrain.data.minHeight, 0.0f))
 			, vec3(renderer->terrain.data.size.x, renderer->terrain.data.maxHeight - renderer->terrain.data.minHeight, renderer->terrain.data.size.y));
-
+		mat3 ITmodel = glm::inverse(glm::transpose(mat3(model)));
 		Cmd::SetUniform("model", model);
-
+		Cmd::SetUniform("ITmodel", ITmodel);
 		Cmd::DrawIndexed(renderer->mesh.ebo.getSize());
 
 	}

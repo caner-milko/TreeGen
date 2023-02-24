@@ -63,6 +63,13 @@ Shader& Shader::setUniform(const uint32 location, const mat4& val)
 	glProgramUniformMatrix4fv(handle, location, 1, GL_FALSE, glm::value_ptr(val));
 	return *this;
 }
+template<>
+Shader& Shader::setUniform(const uint32 location, const mat3& val)
+{
+	assert(handle);
+	glProgramUniformMatrix3fv(handle, location, 1, GL_FALSE, glm::value_ptr(val));
+	return *this;
+}
 #pragma endregion SetUniforms
 bool Shader::init(std::string_view vertexSrc, std::string_view fragmentSrc, bool reinit)
 {

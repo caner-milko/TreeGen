@@ -22,7 +22,7 @@ constexpr float lightFarPlane = 10.0f, lightNearPlane = 1.0f;
 constexpr vec4 lightOrtho = vec4(-3.0f, 3.0f, -3.0f, 3.0f);
 const vec3 lightDir = glm::normalize(vec3(0.4, -0.6, -0.4));
 constexpr vec3 lightAmbientCol = 0.5f * vec3(0.2f, 0.2f, 0.15f);
-constexpr vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);
+constexpr vec3 lightColor = vec3(1.0f, 1.0f, 1.0f) * 3.0f;
 constexpr ivec2 shadowSize = ivec2(2048);
 void setupDirLight() {
 	Texture::TextureCreateData tcd;

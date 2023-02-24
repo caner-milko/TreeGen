@@ -142,7 +142,8 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 		treeMaterial.colorTexture = rm.createTexture("./Assets/Textures/tree/color.jpg", {});
 		treeMaterial.normalTexture = rm.createTexture("./Assets/Textures/tree/normal.jpg", {}, true, true, false);
 		leafTex = rm.createTexture("./Assets/Textures/tree/leaf3.png", { .wrapping = AddressMode::CLAMP_TO_EDGE });
-		grassTex = rm.createTexture("./Assets/Textures/terrain/grass.jpg", {});
+		terrainMaterial.grassTexture = rm.createTexture("./Assets/Textures/terrain/patchy-meadow1_albedo.png", {});
+		terrainMaterial.normalMap = rm.createTexture("./Assets/Textures/terrain/patchy-meadow1_normal-ogl.png", {}, true, true, false);
 
 		skyboxTex = rm.createCubemapTexture({ "./Assets/Textures/skybox/posx.jpg", "./Assets/Textures/skybox/negx.jpg",
 			"./Assets/Textures/skybox/posy.jpg", "./Assets/Textures/skybox/negy.jpg",
@@ -163,7 +164,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 			auto& res = TerrainRenderer::resources;
 			res.terrainShader = terrainShader;
 			res.terrainShadowShader = terrainShadowShader;
-			res.grassTexture = grassTex;
+			res.material = terrainMaterial;
 			res.lineShader = lineShader;
 			res.lineVAO = &Renderer::getRenderer().getLineMesh();
 			res.camUBO = &Renderer::getRenderer().getCamUBO();

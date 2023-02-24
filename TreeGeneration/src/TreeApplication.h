@@ -106,7 +106,8 @@ private:
 	graphics::TreeMaterial treeMaterial{};
 
 	rc<Texture> leafTex{};
-	rc<Texture> grassTex{};
+
+	graphics::terrain::TerrainRenderer::TerrainMaterial terrainMaterial{};
 
 	rc<Image> heightMapImage;
 

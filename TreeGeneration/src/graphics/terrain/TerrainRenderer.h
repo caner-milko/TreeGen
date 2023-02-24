@@ -11,6 +11,13 @@
 namespace tgen::graphics::terrain {
 class TerrainRenderer {
 public:
+	struct TerrainMaterial {
+		rc<gl::Texture> grassTexture;
+		float grassColorMultiplier = 1.5f;
+		rc<gl::Texture> normalMap;
+		float normalMapStrength = 3.0f;
+		float uvScale = 20.0f;
+	};
 	TerrainRenderer(Terrain& terrain);
 	DELETE_COPY_CONSTRUCTORS(TerrainRenderer);
 	void update();
@@ -20,7 +27,7 @@ public:
 	struct TerrainRendererResources {
 		rc<gl::Shader> terrainShader;
 		rc<gl::Shader> terrainShadowShader;
-		rc<gl::Texture> grassTexture;
+		TerrainMaterial material;
 		rc<gl::Shader> lineShader;
 		rb<const IndexedMesh<gl::IndexType::UNSIGNED_INT>> lineVAO;
 		rb<const gl::UBO<CameraUniform>> camUBO;
