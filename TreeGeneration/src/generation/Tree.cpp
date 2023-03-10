@@ -5,13 +5,14 @@
 #include <queue>
 #include <stack>
 namespace tgen::gen {
-Tree::Tree(TreeWorld& world, uint32 id, vec3 position, TreeGrowthData growthData, uint32 seed) : world(world), id(id), growthData(growthData),
+Tree::Tree(rb<TreeWorld> world, uint32 id, vec3 position, TreeGrowthData growthData, uint32 seed) : world(world), id(id), growthData(growthData),
 root(new TreeNode(nullptr, 0, position, vec3(0.0f, 1.0f, 0.0f))), seed(seed)
 {
 	addShadows(*root);
 }
 
-Tree::Tree(const Tree& from) : world(from.world), id(from.id), growthData(from.growthData), age(from.age), seed(from.seed), metamerCount(from.metamerCount), budCount(from.budCount)
+Tree::Tree(const Tree& from) 
+	: world(from.world), id(from.id), growthData(from.growthData), age(from.age), seed(from.seed), metamerCount(from.metamerCount), budCount(from.budCount)
 {
 	root = new TreeNode(*from.root);
 	std::queue<TreeNode*> queue({ root });
@@ -36,7 +37,7 @@ void Tree::budToMetamer(TreeNode& bud)
 {
 	bud.mainChild = new TreeNode(&bud, lastNodeId, bud.endPos(), bud.direction);
 	lastNodeId++;
-	vec3 lateralDir = util::randomPerturbateVector(glm::normalize(bud.direction), growthData.lateralAngle, world.seed + seed + age + bud.id * 2 + 2);
+	vec3 lateralDir = util::randomPerturbateVector(glm::normalize(bud.direction), growthData.lateralAngle, world->getWorldInfo().seed + seed + age + bud.id * 2 + 2);
 	bud.lateralChild = new TreeNode(&bud, lastNodeId, bud.endPos(), lateralDir);
 	budCount++;
 	lastNodeId++;
@@ -68,7 +69,7 @@ void Tree::distributeVigor()
 
 float Tree::lightAtBud(TreeNode& bud)
 {
-	return world.getLightAt(bud.startPos, growthData.a, growthData.fullExposure);
+	return world->getLightAt(bud.startPos, growthData.a, growthData.fullExposure);
 }
 
 void Tree::addNewShoots()
@@ -79,6 +80,58 @@ void Tree::addNewShoots()
 void Tree::shedBranchs()
 {
 	shedBranchsRecursive(*root);
+}
+
+void Tree::removeNode(TreeNode& node)
+{
+	if (node.nodeStatus != TreeNode::ALIVE)
+		return;
+
+	node.nodeStatus = TreeNode::DEAD;
+	
+	bool shouldRemove = node.order != 0 && node.parent->mainChild->id == node.id;
+
+	if (node.parent)
+	{
+		if (node.parent->mainChild->id == node.id)
+		{
+			node.parent->mainChild = nullptr;
+		}
+		else if(node.parent->lateralChild->id == node.id)
+		{
+			node.parent->lateralChild = nullptr;
+		}
+		else
+		{
+			assert(0);
+		}
+	}
+	else if(root->id == node.id)
+	{
+		root = nullptr;
+	}
+
+	std::queue<std::pair<TreeNode*, bool>> query({ std::make_pair(&node, shouldRemove) });
+	while (!query.empty())
+	{
+		auto& [sel, shouldRem] = query.front();
+		if (node.nodeStatus == TreeNode::ALIVE)
+		{
+			if(sel->mainChild)
+				query.emplace(std::make_pair(sel->mainChild, true));
+			if(sel->lateralChild)
+				query.emplace(std::make_pair(sel->lateralChild, false));
+			if (shouldRemove)
+			{
+				removeShadows(node);
+			}
+		}
+		query.pop();
+		delete& node;
+	}
+	
+
+
 }
 
 void Tree::calculateChildCount()
@@ -187,6 +240,9 @@ void Tree::generateLeaves()
 
 Tree::~Tree()
 {
+	OnDestroy.dispatch({});
+	if (!root)
+		return;
 	std::queue<TreeNode*> queue({ root });
 	while (!queue.empty()) {
 		TreeNode* selected = queue.front();
@@ -197,7 +253,6 @@ Tree::~Tree()
 		}
 		delete selected;
 	}
-
 }
 
 bool Tree::operator==(const Tree& other) const
@@ -209,7 +264,7 @@ float Tree::accumulateLightRecursive(TreeNode& node)
 {
 	if (node.nodeStatus == TreeNode::BUD)
 	{
-		if (!world.isOutOfBounds(node.startPos)) {
+		if (!world->isOutOfBounds(node.startPos)) {
 			node.light = lightAtBud(node);
 		}
 		else {
@@ -265,10 +320,10 @@ void Tree::addShootsRecursive(TreeNode& node)
 
 	float metamerLength = growthData.baseLength * vigor / glm::floor(vigor);
 
-	if (world.isOutOfBounds(node.startPos))
+	if (world->isOutOfBounds(node.startPos))
 		return;
 
-	vec3 optimal = world.getOptimalDirection(node.startPos);
+	vec3 optimal = world->getOptimalDirection(node.startPos);
 
 	vec3 direction = node.direction;
 
@@ -276,7 +331,7 @@ void Tree::addShootsRecursive(TreeNode& node)
 
 
 	for (int i = 0; i < vigorFloored; i++) {
-		if (world.isOutOfBounds(current->startPos))
+		if (world->isOutOfBounds(current->startPos))
 			break;
 
 		direction = glm::normalize(direction + growthData.directionWeights.x * optimal + growthData.directionWeights.y * growthData.tropism);
@@ -353,9 +408,9 @@ float Tree::calculateChildCountRecursive(TreeNode& node)
 }*/
 
 void Tree::removeShadows(const TreeNode& node) const {
-	world.castShadows(node.startPos, growthData.pyramidHeight, growthData.a, growthData.b, false);
+	world->castShadows(node.startPos, growthData.pyramidHeight, growthData.a, growthData.b, false);
 }
 void Tree::addShadows(TreeNode& node) {
-	world.castShadows(node.startPos, growthData.pyramidHeight, growthData.a, growthData.b, true);
+	world->castShadows(node.startPos, growthData.pyramidHeight, growthData.a, growthData.b, true);
 }
 }

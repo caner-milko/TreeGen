@@ -151,6 +151,7 @@
     <ClCompile Include="dependencies\include\header_impl.cpp" />
     <ClCompile Include="src\generation\Branch.cpp" />
     <ClCompile Include="src\generation\Leaf.cpp" />
+    <ClCompile Include="src\generation\PreviewWorld.cpp" />
     <ClCompile Include="src\graphics\MeshTest.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\graphics\opengl\ApiToEnum.cpp" />
@@ -173,6 +174,7 @@
     <ClCompile Include="src\generation\TreeWorld.cpp" />
     <ClCompile Include="src\util\Util.cpp" />
     <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="src\generation\PreviewWorld.h" />
     <ClInclude Include="src\graphics\Mesh.h" />
     <ClInclude Include="src\util\BBox.h" />
     <ClInclude Include="src\generation\Branch.h" />
@@ -200,6 +202,7 @@
     <ClInclude Include="src\graphics\opengl\types\Texture.h" />
     <ClInclude Include="src\graphics\TreeRenderer.h" />
     <ClInclude Include="src\TreeApplication.h" />
+    <ClInclude Include="src\util\Event.h" />
     <ClInclude Include="src\util\Util.h" />
   </ItemGroup>
   <ItemGroup>

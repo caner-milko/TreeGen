@@ -5,12 +5,17 @@
 #include <unordered_map>
 #include <glm/gtc/constants.hpp>
 
+#include "util/Event.h"
+
 #include <string>
+#include <functional>
 namespace tgen::gen {
-struct TreeWorld;
+class TreeWorld;
 
 struct TreeGrowthData
 {
+	bool grow = true;
+
 	float apicalControl = 0.5f;
 	float vigorMultiplier = 2.0f;
 	float baseLength = .02f;
@@ -48,7 +53,7 @@ struct TreeGrowthData
 struct Tree
 {
 public:
-	TreeWorld& world;
+	TreeWorld* world;
 	TreeGrowthData growthData{};
 	uint32 age = 0;
 	uint32 id;
@@ -60,7 +65,7 @@ public:
 	uint32 metamerCount = 0;
 	uint32 budCount = 0;
 
-	Tree(TreeWorld& world, uint32 id, vec3 position, TreeGrowthData growthData, uint32 seed);
+	Tree(rb<TreeWorld> world, uint32 id, vec3 position, TreeGrowthData growthData, uint32 seed);
 	Tree(const Tree& from);
 
 	void budToMetamer(TreeNode& bud);
@@ -76,6 +81,7 @@ public:
 	void addNewShoots();
 
 	void shedBranchs();
+	void removeNode(TreeNode& node);
 
 	void calculateChildCount();
 
@@ -87,8 +93,6 @@ public:
 
 	std::vector<TreeNode> AsNodeVector(bool includeBuds) const;
 
-
-
 	const std::vector<Branch>& getBranchs();
 
 	const std::vector<Branch>& recalculateBranchs();
@@ -96,7 +100,9 @@ public:
 	void generateLeaves();
 
 	~Tree();
-
+	struct TreeEventData : public EventData {};
+	Event<TreeEventData> OnGrow{};
+	Event<TreeEventData> OnDestroy{};
 	bool operator==(const Tree& other) const;
 
 private:

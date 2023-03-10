@@ -45,9 +45,9 @@ public:
 		rb<const gl::UBO<DirLightUniform>> lightUBO = nullptr;
 	} resources;
 
-	TreeRenderer(gen::Tree& tree);
-	void renderBranchsShadow(const DrawView& lightView);
-	void renderLeavesShadow(const DrawView& lightView);
+	TreeRenderer(rb<gen::Tree> tree);
+	void clear();
+	DELETE_COPY_CONSTRUCTORS(TreeRenderer)
 	void renderVigor(const DrawView& view);
 	void renderOptimalDirection(const DrawView& view);
 	void updateRenderer();
@@ -64,7 +64,8 @@ public:
 	static void renderLeaves(std::span<rb<TreeRenderer>> renderers, const DrawView& view, const DrawScene& scene);
 	static void renderTrees(std::span<rb<TreeRenderer>> renderers, const DrawView& view, const DrawScene& scene, bool renderBranchs, bool renderLeaves);
 private:
-	gen::Tree& tree;
+	rb<gen::Tree> tree;
+	std::unique_ptr<EventSubscriber<gen::Tree::TreeEventData>> onGrowSubsriber{}, OnDestroySubscriber{};
 	gl::SSBO<gen::BranchShaderData> branchSSBO{};
 	gl::SSBO<mat4> leafSSBO{};
 	gl::SSBO<BudPoint> budSSBO{};

@@ -1,5 +1,5 @@
 #include "TreeRenderer.h"
-#include "util/util.h"
+#include "util/Util.h"
 #include "generation/TreeWorld.h"
 #include "Rendering.h"
 #include "Renderer.h"
@@ -7,11 +7,24 @@ namespace tgen::graphics {
 using namespace gl;
 using namespace gen;
 TreeRenderer::TreeRendererResources TreeRenderer::resources = {};
-TreeRenderer::TreeRenderer(Tree& tree) : tree(tree)
+TreeRenderer::TreeRenderer(rb<Tree> tree) : tree(tree)
 {
+	onGrowSubsriber = tree->OnGrow.subscribe(this, "Renderer", [this](const Tree::TreeEventData& eventData)
+		{
+			updateRenderer();
+		});
+	OnDestroySubscriber = tree->OnDestroy.subscribe(this, "Renderer", [this](const Tree::TreeEventData& eventData)
+		{
+			this->clear();
+		});
 }
 
-
+void TreeRenderer::clear()
+{
+	tree = nullptr;
+	onGrowSubsriber->event = nullptr;
+	OnDestroySubscriber->event = nullptr;
+}
 
 void TreeRenderer::renderTrees(std::span<rb<TreeRenderer>> renderers,
 	const DrawView& view, const DrawScene& scene, bool branchs, bool leaves)
@@ -154,9 +167,9 @@ void TreeRenderer::renderOptimalDirection(const DrawView& view) {
 
 void TreeRenderer::updateRenderer()
 {
-	if (tree.age <= 0)
+	if (tree->age <= 0)
 		return;
-	const std::vector<Branch>& branchs = tree.getBranchs();
+	const std::vector<Branch>& branchs = tree->getBranchs();
 	std::vector<BranchShaderData> branchData;
 
 	branchData.reserve(branchs.size());
@@ -182,11 +195,11 @@ void TreeRenderer::updateRenderer()
 
 	//tree.world.calculateShadows();
 
-	tree.accumulateLight();
-	tree.root->vigor = tree.root->light;
-	tree.distributeVigor();
+	tree->accumulateLight();
+	tree->root->vigor = tree->root->light;
+	tree->distributeVigor();
 
-	const auto& nodes = tree.AsNodeVector(true);
+	const auto& nodes = tree->AsNodeVector(true);
 	std::vector<BudPoint> points;
 	std::vector<ColoredLine> lines;
 	for (auto& node : nodes)
@@ -201,7 +214,7 @@ void TreeRenderer::updateRenderer()
 
 		points.emplace_back(vec4(node.startPos, 0.0f), color);
 
-		vec3 dir = 0.1f * tree.world.getOptimalDirection(node.startPos);
+		vec3 dir = 0.1f * tree->world->getOptimalDirection(node.startPos);
 		lines.emplace_back(vec4(node.startPos, 0.0f), vec4(node.startPos + dir, 0.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
 	}
 	budSSBO.init(std::span<BudPoint>(points));

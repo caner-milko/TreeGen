@@ -18,6 +18,8 @@ public:
 		Filter maxFiltering = Filter::LINEAR;
 		Format textureFormat = Format::R8G8B8_SRGB;
 		SampleCount sampleCount = SampleCount::SAMPLES_1;
+		bool compareEnable = false;
+		CompareOp compareOp = CompareOp::NEVER;
 	};
 	struct TextureUploadData {
 		UploadDimension dimensions = UploadDimension::TWO;

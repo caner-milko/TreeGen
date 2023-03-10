@@ -33,7 +33,7 @@ struct TerrainMaterial {
 
 uniform TerrainMaterial material;
 
-uniform sampler2D shadowMap;
+uniform sampler2DShadow shadowMap;
 
 float diffuse(vec3 norm, vec3 lightDir) {
     return max(dot(norm, -lightDir), 0.0);
@@ -58,7 +58,7 @@ vec3 calcLight(vec3 viewDir, vec3 norm, vec3 col) {
 
 }
 
-float calcShadow(vec3 pos) {
+float calcShadow(vec3 pos, out vec3 projCoords) {
     vec2 poissonDisk[4] = vec2[](
         vec2( -0.94201624, -0.39906216 ),
         vec2( 0.94558609, -0.76890725 ),
@@ -67,15 +67,20 @@ float calcShadow(vec3 pos) {
     );
     vec4 posLightSpace = lightCam.vp * vec4(pos, 1.0);
 
-    vec3 projCoords = posLightSpace.xyz / posLightSpace.w;
+    projCoords = posLightSpace.xyz / posLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5; 
+
+    //if(projCoords.x >= 1.0 || projCoords.x <= 0.0 || projCoords.y >= 1.0 ||projCoords.y <= 0.0)
+    //    return 1.0;
 
     float bias = 0.001;
     float visibility = 1.0;
     for (int i=0;i<4;i++){
-            visibility -= 0.2 * float((projCoords.z - bias)  > texture(shadowMap, projCoords.xy + poissonDisk[i]/700.0).r);
+        vec2 newUv = projCoords.xy + poissonDisk[i]/1400.0;
+        if(newUv.x < 1.0 && newUv.y < 1.0 && newUv.x > 0.0 && newUv.y > 0.0)
+            visibility -= 0.2 * (1.0 - texture(shadowMap, vec3(newUv, projCoords.z - bias)));
+            //visibility -= 0.2 * float(projCoords.z - bias > texture(shadowMap, newUv).r);
     }
-
     return visibility;
 }
 
@@ -88,8 +93,10 @@ void main()
 
     vec3 norm = normalize(TBN * normalTex);
 
-    vec3 col = texture(material.grassTex, uv).xyz * 1.5;
-
-    FragColor = vec4(calcLight(normalize(cam.pos_near.xyz - fragPos), norm, col) * calcShadow(fragPos), 1.0);
+    vec3 col = texture(material.grassTex, uv).xyz * material.grassColorMultiplier;
+    vec3 projCoords;
+    float shadow = calcShadow(fragPos, projCoords);
+    FragColor = vec4(calcLight(normalize(cam.pos_near.xyz - fragPos), norm, col) * calcShadow(fragPos, projCoords), 1.0);
+    //FragColor = vec4(vec3(shadow) * vec3(projCoords.xy, 0), 1);
     //FragColor = vec4(norm, 1.0);
 } 

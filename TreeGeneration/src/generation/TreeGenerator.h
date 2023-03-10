@@ -6,7 +6,8 @@ namespace tgen::gen {
 class TreeGenerator
 {
 public:
-	Tree* createTree(TreeWorld& world, vec3 position, TreeGrowthData growthData = {});
+	Tree& createTree(TreeWorld& world, vec3 position, TreeGrowthData growthData = {});
+	void iterateWorld(TreeWorld& world, int count = 1);
 	void growTree(Tree& tree);
 };
 }

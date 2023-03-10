@@ -26,7 +26,7 @@ layout(std140, binding=1) uniform Light {
 uniform sampler2D leafTex;
 
 float diffuse(vec3 norm, vec3 lightDir) {
-    return clamp(dot(norm, -lightDir), 0.5, 1.0);
+    return max(dot(norm, -lightDir), 0.0);
 }
 
 float specular(vec3 norm, vec3 viewDir, vec3 lightDir, float specularStrength, int shininess) {
@@ -38,7 +38,7 @@ float specular(vec3 norm, vec3 viewDir, vec3 lightDir, float specularStrength, i
 
 vec3 calcLight(vec3 viewDir, vec3 norm, vec3 diffCol) {
     float diff = diffuse(norm, lightCam.dir_far.xyz);
-    float spec = specular(norm, viewDir, lightCam.dir_far.xyz, 0.7, 32);
+    float spec = specular(norm, viewDir, lightCam.dir_far.xyz, 3.0, 64);
     
     vec3 light = (spec + diff) * lightColor.xyz + ambientColor.xyz;
 
@@ -53,7 +53,6 @@ void main()
         discard;
     vec3 norm = normalize(normal);
     vec3 viewDir = normalize(cam.pos_near.xyz - fragPos);
-    float multiplier = 1.5;
 
-    FragColor = vec4(clamp(calcLight(viewDir, norm, col.xyz) * multiplier, 0.0, 1.0), al.a);
+    FragColor = vec4(calcLight(viewDir, norm, col.xyz), al.a);
 }

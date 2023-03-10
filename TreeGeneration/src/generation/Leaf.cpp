@@ -2,7 +2,7 @@
 #include "Branch.h"
 #include "util/util.h"
 namespace tgen::gen {
-float Leaf::pertubateAngle = PI / 4.0f;
+float Leaf::pertubateAngle = PI / 2.0f;
 Leaf::Leaf(Branch& branch, float branchT, float size, float randomAngle) : attachedTo(branch), branchT(branchT)
 {
 	vec3 dir = branch.evaluateDir(branchT);

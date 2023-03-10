@@ -8,6 +8,7 @@
 #include "graphics/Renderer.h"
 #include "graphics/TreeRenderer.h"
 #include "graphics/terrain/TerrainRenderer.h"
+#include "PreviewWorld.h"
 namespace tgen::app {
 //shouldn't be included by anything
 using namespace tgen::graphics;
@@ -25,7 +26,8 @@ struct TreeApplicationData {
 	float yaw = 0.0f, pitch = 0.0f;
 	float fov = 45.0f;
 
-	bool renderPreviewTree = false;
+	bool previewWorld = false;
+	uint32 previewAge = 1;
 	bool showShadowGrid = false;
 	bool shadowOnOnlyBuds = false;
 	float shadowCellVisibilityRadius = 10.0f;
@@ -47,7 +49,7 @@ public:
 	void execute();
 
 	~TreeApplication() = default;
-private:
+
 	TreeApplicationData appData;
 	uint32 framesRendered = 0;
 
@@ -61,22 +63,25 @@ private:
 
 	Camera cam;
 
-	std::unique_ptr<TreeWorld> world;
-	std::unique_ptr<TreeGenerator> generator;
-	Tree* tree;
-	Tree* tree2;
-	std::unique_ptr<TreeRenderer> treeRenderer1;
-	std::unique_ptr<TreeRenderer> treeRenderer2;
+	ru<TreeWorld> world;
+	ru<PreviewWorld> previewWorld;
+	ru<TreeGenerator> generator;
+	
 
-	std::unique_ptr<Terrain> terrain;
-	std::unique_ptr<TerrainRenderer> terrainRenderer;
+	std::vector<rb<Tree>> trees;
+	std::vector<ru<TreeRenderer>> treeRenderers;
 
-	std::unique_ptr<Tree> previewTree;
+	struct TerrainObject
+	{
+		ru<Terrain> terrain;
+		ru<TerrainRenderer> terrainRenderer;
+
+	} terrainObject;
 
 	TreeGrowthData growthData{ .baseLength = 0.02f };
 
 	bool treeSettingsEdited = false;
-	bool treePreviewChanged = false;
+	bool previewWorldChanged = false;
 	bool radiusSettingsEdited = false;
 	bool leafSettingsEdited = false;
 

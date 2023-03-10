@@ -20,6 +20,9 @@ bool Texture::init(TextureCreateData data, bool reinit)
 	glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, FilterToGL(data.minFiltering));
 	glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, FilterToGL(data.maxFiltering));
 
+	glTextureParameteri(handle, GL_TEXTURE_COMPARE_MODE, data.compareEnable ? GL_COMPARE_REF_TO_TEXTURE : GL_NONE);
+	//glTextureParameteri(handle, GL_TEXTURE_COMPARE_FUNC, CompareOpToGL(data.compareOp));
+
 	switch (data.imageType)
 	{
 	case ImageType::TEX_1D:

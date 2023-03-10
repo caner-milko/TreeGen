@@ -75,7 +75,7 @@ layout(std430, binding=0) buffer branch_data {
 
 uniform vec3 treeColor;
 
-uniform sampler2D shadowMap;
+uniform sampler2DShadow shadowMap;
 
 struct Material {
     sampler2D colorTexture;
@@ -374,9 +374,7 @@ vec3 calcLight(vec3 viewDir, vec3 normal, vec3 col) {
     float spec = specular(normal, viewDir, lightDir, 3.0, 64);
     vec3 light = (spec + diff) * lightColor.xyz + ambientColor.xyz;
 
-    vec3 color = light * col;
-
-    return color;
+    return light * col;
 }
 
 
@@ -396,9 +394,8 @@ float calcShadow(vec3 pos) {
     float bias = 0.001;
     float visibility = 1.0;
     for (int i=0;i<4;i++){
-            visibility -= 0.2 * float((projCoords.z - bias)  > texture(shadowMap, projCoords.xy + poissonDisk[i]/700.0).r);
+            visibility -= 0.2 * (1.0 - texture(shadowMap, vec3(projCoords.xy + poissonDisk[i]/1400.0, projCoords.z - bias)));
     }
-
     return visibility;
 }
 

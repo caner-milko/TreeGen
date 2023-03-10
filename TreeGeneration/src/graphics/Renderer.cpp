@@ -9,6 +9,7 @@ using namespace gl;
 using namespace util;
 using namespace gen;
 
+
 constexpr gl::VertexInputBindingDescription cubeDesc[] =
 { {.location = 0, .binding = 0,.format = gl::Format::R32G32B32_FLOAT, .offset = 0} };
 
@@ -19,7 +20,7 @@ DirectionalLight DirectionalLight::GDirLight = {};
 
 constexpr vec3 lightPos = 0.5f * vec3(-4.0f, 8.0f, 4.0f);
 constexpr float lightFarPlane = 10.0f, lightNearPlane = 1.0f;
-constexpr vec4 lightOrtho = vec4(-3.0f, 3.0f, -3.0f, 3.0f);
+constexpr vec4 lightOrtho = vec4(-1.0f, 1.0f, -1.0f, 1.0f);
 const vec3 lightDir = glm::normalize(vec3(0.4, -0.6, -0.4));
 constexpr vec3 lightAmbientCol = 0.5f * vec3(0.2f, 0.2f, 0.15f);
 constexpr vec3 lightColor = vec3(1.0f, 1.0f, 1.0f) * 3.0f;
@@ -32,7 +33,9 @@ void setupDirLight() {
 	tcd.textureFormat = Format::D16_UNORM;
 	tcd.minFiltering = Filter::LINEAR;
 	tcd.maxFiltering = Filter::LINEAR;
-	tcd.wrapping = AddressMode::CLAMP_TO_EDGE;
+	tcd.compareEnable = true;
+	tcd.compareOp = CompareOp::LESS_OR_EQUAL;
+	tcd.wrapping = AddressMode::CLAMP_TO_BORDER;
 	DirectionalLight::GDirLight.shadowMap = std::make_shared<Texture>();
 
 
@@ -64,7 +67,7 @@ void message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GL
 		case GL_DEBUG_SOURCE_THIRD_PARTY: return "THIRD PARTY";
 		case GL_DEBUG_SOURCE_APPLICATION: return "APPLICATION";
 		case GL_DEBUG_SOURCE_OTHER: return "OTHER";
-		default: assert(false);
+		default: assert(false); return "";
 		}
 	}();
 
@@ -80,7 +83,7 @@ void message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GL
 		case GL_DEBUG_TYPE_PUSH_GROUP: return "PUSH GROUP";
 		case GL_DEBUG_TYPE_POP_GROUP: return "POP GROUP";
 		case GL_DEBUG_TYPE_OTHER: return "OTHER";
-		default: assert(false);
+		default: assert(false); return "";
 		}
 	}();
 
