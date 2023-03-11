@@ -22,6 +22,8 @@ public:
 		}
 		assert(handle == 0);
 		this->size = data.size();
+		if (size == 0)
+			return false;
 		glCreateBuffers(1, &handle);
 		GLbitfield field = detail::BufferStorageFlagsToGL(storageFlags) | detail::BufferMapFlagsToGL(mapFlags);
 		glNamedBufferStorage(handle, data.size(), data.data(), field);
@@ -46,7 +48,7 @@ public:
 
 	void bufferData(std::span<uint8> data, size_t offset) {
 		assert(handle);
-		assert(size == 0 || size >= (data.size() + offset));
+		assert(size > 0 && size >= (data.size() + offset));
 		glNamedBufferSubData(handle, offset, data.size(), data.data());
 	}
 

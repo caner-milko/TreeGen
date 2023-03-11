@@ -58,6 +58,8 @@ void TreeRenderer::renderBranchs(std::span<rb<TreeRenderer>> renderers,
 	Cmd::BindUBO(0, *resources.camUBO, 0, resources.camUBO->getRawSize());
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
 	for (auto renderer : renderers) {
+		if (renderer->branchSSBO.getRawSize() == 0)
+			continue;
 		Cmd::BindSSBO(0, renderer->branchSSBO, 0, renderer->branchSSBO.getRawSize());
 		Cmd::Draw(resources.cubeMesh->vbo.getSize(), renderer->branchSSBO.getSize(), 0, 0);
 	}
@@ -80,6 +82,8 @@ void TreeRenderer::renderLeaves(std::span<rb<TreeRenderer>> renderers,
 
 	glBindTextureUnit(resources.leafShader->getTextureIndex("leafTex"), resources.leafTexture->getHandle());
 	for (auto& renderer : renderers) {
+		if (renderer->leafSSBO.getRawSize() == 0)
+			continue;
 		Cmd::BindSSBO(0, renderer->leafSSBO, 0, renderer->leafSSBO.getRawSize());
 		Cmd::Draw(resources.leafMesh->vbo.getSize(), renderer->leafSSBO.getSize());
 	}
@@ -108,6 +112,8 @@ void TreeRenderer::renderBranchShadows(std::span<rb<TreeRenderer>> renderers, co
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
 
 	for (auto renderer : renderers) {
+		if (renderer->branchSSBO.getRawSize() == 0)
+			continue;
 		Cmd::BindSSBO(0, renderer->branchSSBO, 0, renderer->branchSSBO.getRawSize());
 		Cmd::Draw(resources.cubeMesh->vbo.getSize(), renderer->branchSSBO.getSize());
 	}
@@ -130,6 +136,8 @@ void TreeRenderer::renderLeafShadows(std::span<rb<TreeRenderer>> renderers, cons
 	glBindTextureUnit(resources.leafShader->getTextureIndex("leafTex"), resources.leafTexture->getHandle());
 
 	for (auto renderer : renderers) {
+		if (renderer->leafSSBO.getRawSize() == 0)
+			continue;
 		Cmd::BindSSBO(0, renderer->leafSSBO, 0, renderer->leafSSBO.getRawSize());
 		Cmd::Draw(resources.leafMesh->vbo.getSize(), renderer->leafSSBO.getSize());
 	}

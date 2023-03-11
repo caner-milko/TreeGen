@@ -45,8 +45,8 @@ struct TreeGrowthData
 	//leaf params
 	int32 leafMaxChildCount = 5;
 	int32 leafMinOrder = 4;
-	float leafDensity = 20.0f;
-	float leafSizeMultiplier = 0.2f;
+	float leafDensity = 60.0f;
+	float leafSizeMultiplier = 0.4f;
 
 };
 

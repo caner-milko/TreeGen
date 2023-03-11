@@ -435,7 +435,7 @@ void TreeApplication::drawScene()
 
 	Renderer::getRenderer().renderTest(view);
 
-	//TreeRenderer::renderTrees(renderers, view, scene, true, true);
+	TreeRenderer::renderTrees(renderers, view, scene, true, true);
 
 	/*if (appData.showShadowGrid) {
 		//world->calculateShadows();
