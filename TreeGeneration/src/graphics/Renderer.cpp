@@ -20,7 +20,7 @@ DirectionalLight DirectionalLight::GDirLight = {};
 
 constexpr vec3 lightPos = 0.5f * vec3(-4.0f, 8.0f, 4.0f);
 constexpr float lightFarPlane = 10.0f, lightNearPlane = 1.0f;
-constexpr vec4 lightOrtho = vec4(-1.0f, 1.0f, -1.0f, 1.0f);
+constexpr vec4 lightOrtho = 2.0f * vec4(-1.0f, 1.0f, -1.0f, 1.0f);
 const vec3 lightDir = glm::normalize(vec3(0.4, -0.6, -0.4));
 constexpr vec3 lightAmbientCol = 0.5f * vec3(0.2f, 0.2f, 0.15f);
 constexpr vec3 lightColor = vec3(1.0f, 1.0f, 1.0f) * 3.0f;

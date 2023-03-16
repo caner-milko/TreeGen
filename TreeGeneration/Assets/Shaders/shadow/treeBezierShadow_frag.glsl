@@ -21,9 +21,9 @@ layout(std140, binding=1) uniform Light {
 
 #define SHOW_BBOX 0
 
-
-#define MAX_STEPS 50.0
-#define MIN_DIST 0.001
+//these can be adjusted based on distance to camera
+#define MAX_STEPS 5.0
+#define MIN_DIST 0.005
 #define PI 3.14159265359
 
 struct Bezier {

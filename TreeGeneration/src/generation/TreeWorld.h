@@ -54,6 +54,15 @@ public:
 	const ShadowCell& getCellAt(const ivec3& cell) const;
 	void addShadowTo(const ivec3& cell, float amount);
 	TreeWorldInfo getWorldInfo() { return info; }
+
+	void clear()
+	{
+		resizeShadowGrid();
+		trees.clear();
+		age = 0;
+		treeCount = 0;
+	}
+
 	uint32 age = 0;
 protected:
 	TreeWorldInfo info;

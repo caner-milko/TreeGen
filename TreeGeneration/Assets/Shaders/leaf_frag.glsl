@@ -47,13 +47,12 @@ vec3 calcLight(vec3 viewDir, vec3 norm, vec3 diffCol) {
 
 void main()
 {    
-    vec4 col = texture(leafTex, uv);
-    vec4 al = textureLod(leafTex, uv, 0);
-    if(al.a < 0.5)
+    vec4 col = texture(leafTex, uv, -0.5);
+    if(col.a < 0.5)
         discard;
     vec3 norm = normalize(normal);
     vec3 viewDir = normalize(cam.pos_near.xyz - fragPos);
 
-    //FragColor = vec4(calcLight(viewDir, norm, col.xyz), al.a);
-    FragColor = vec4(norm, 1.0);
+    FragColor = vec4(calcLight(viewDir, norm, col.xyz), 1.0);
+    //FragColor = vec4(norm, 1.0);
 }

@@ -6,7 +6,7 @@ uniform sampler2D leafTex;
 
 void main()
 {    
-    vec4 al = textureLod(leafTex, uv, 0);
+    vec4 al = texture(leafTex, uv, -1.0);
     if(al.a < 0.5)
         discard;
 }

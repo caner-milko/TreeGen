@@ -7,8 +7,8 @@ flat in int instanceID;
 flat in int inside;
 #define SHOW_BBOX 0
 
-
-#define MAX_STEPS 50.0
+//these can be adjusted based on distance to camera
+#define MAX_STEPS 15.0
 #define MIN_DIST 0.0001
 #define PI 3.14159265359
 
@@ -329,8 +329,8 @@ Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
             norm = vec3(-2.0);
             curPos = pos + rayDir * t;
             splineT = dst.y;
-			break;
-		}
+		    break;
+        }
 		if(t > farPlane) {
 			break;
 		}
@@ -454,7 +454,7 @@ void main()
 
     gl_FragDepth =((gl_DepthRange.diff * ndcDepth) 
 		+ gl_DepthRange.near + gl_DepthRange.far) / 2.0;
-
+    
     vec3 pos = cam.pos_near.xyz + rayDir * hit.t;
     
     float order = easeOutQuad(min(float(branch.order), 100.0)/100.0);

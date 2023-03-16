@@ -22,9 +22,14 @@ struct TreeApplicationData {
 	float mouseSensitivity = 0.1f;
 	float cameraSpeed = 0.5f;
 
-	vec3 camPos = vec3(-1.0f, 0.0f, 0.0f);
-	float yaw = 0.0f, pitch = 0.0f;
+	//vec3 camPos = vec3(-1.0f, 0.0f, 0.0f);
+	//float yaw = 0.0f, pitch = 0.0f;
+	//float fov = 45.0f;
+	// 
+	vec3 camPos = vec3(-2.0f, 1.0f, 2.0f);
+	float yaw = -45.0f, pitch = 0.0f;
 	float fov = 45.0f;
+
 
 	bool previewWorld = false;
 	uint32 previewAge = 1;
@@ -37,6 +42,14 @@ struct TreeApplicationData {
 
 	BBox worldBbox = BBox(vec3(-2.0f, -0.1f, -2.0f), vec3(2.0f, 4.0f, 2.0f));
 
+	int treeDistributionSeed = 0;
+	int treeCount = 10;
+
+	bool renderTerrain = true;
+	bool renderBody = true;
+	bool renderLeaves = true;
+	bool renderBodyShadow = true;
+	bool renderLeafShadow = true;
 };
 
 
@@ -85,14 +98,6 @@ public:
 	bool radiusSettingsEdited = false;
 	bool leafSettingsEdited = false;
 
-	bool growTree1 = true;
-	bool growTree2 = true;
-
-	bool renderTerrain = true;
-
-	bool renderBody = true;
-	bool renderLeaves = true;
-
 	rc<ArrayMesh<Vertex>> leafMesh{};
 
 	rc<Shader> treeBezierShader{};
@@ -136,5 +141,7 @@ public:
 	void mouseInput(const vec2& offset);
 
 	void scrollInput(const vec2& offset);
+
+	void redistributeTrees();
 };
 }

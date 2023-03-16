@@ -11,6 +11,7 @@
 #include "ResourceManager.h"
 #include "Leaf.h"
 #include <algorithm>
+#include "util/Util.h"
 namespace tgen::app {
 
 std::vector<ru<TreeRenderer>> CreateRenderers(const std::vector<ru<Tree>>& trees, bool updateRenderer)
@@ -23,15 +24,6 @@ std::vector<ru<TreeRenderer>> CreateRenderers(const std::vector<ru<Tree>>& trees
 			newRenderer->updateRenderer();
 	}
 	return renderers;
-}
-
-void CreateTrees(TreeApplication& app)
-{
-	app.trees.clear();
-	app.treeRenderers.clear();
-	app.trees.emplace_back(&app.generator->createTree(*app.world, vec3(0.0f, app.terrainObject.terrain->heightAtWorldPos(vec3(0.0f)), 0.0), app.growthData));
-	app.trees.emplace_back(&app.generator->createTree(*app.world, vec3(0.2f, app.terrainObject.terrain->heightAtWorldPos(vec3(0.2f, 0.0f, 0.0f)), 0.0f), app.growthData));
-	app.treeRenderers = std::move(CreateRenderers(app.world->getTrees(), true));
 }
 
 TreeApplication::TreeApplication(const TreeApplicationData& appData)
@@ -230,7 +222,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 			res.camUBO = &Renderer::getRenderer().getCamUBO();
 			res.lightUBO = &Renderer::getRenderer().getLightUBO();
 		}
-		CreateTrees(*this);
+		redistributeTrees();
 	}
 #pragma endregion Setup_TreeGen
 }
@@ -246,7 +238,6 @@ void TreeApplication::execute()
 		endFrame();
 	}
 }
-
 
 #pragma region Frame
 void TreeApplication::startFrame()
@@ -324,12 +315,6 @@ void TreeApplication::drawGUI()
 		leafSettingsEdited |= ImGui::SliderFloat("Leaf Density", &growthData.leafDensity, 0.5f, 150.0f);
 		leafSettingsEdited |= ImGui::SliderFloat("Leaf Size Multiplier", &growthData.leafSizeMultiplier, 0.05f, 3.0f);
 		leafSettingsEdited |= ImGui::SliderAngle("Leaf Angle", &Leaf::pertubateAngle);
-
-		ImGui::Checkbox("Render Body", &renderBody);
-		ImGui::Checkbox("Render Leaves", &renderLeaves);
-
-		trees[0]->growthData = growthData;
-		trees[1]->growthData = growthData;
 	}
 
 	if (ImGui::CollapsingHeader("Render Options")) {
@@ -337,25 +322,49 @@ void TreeApplication::drawGUI()
 		treeSettingsEdited |= previewWorldChanged = ImGui::Checkbox("Render Tree Preview", &appData.previewWorld);
 		if (appData.previewWorld)
 			ImGui::SliderInt("Preview Iterations", (int*) & appData.previewAge, 1, 15);
-		ImGui::Checkbox("Render Terrain", &renderTerrain);
+
+		ImGui::Checkbox("Render Body", &appData.renderBody);
+		ImGui::Checkbox("Render Leaves", &appData.renderLeaves);
+		ImGui::Checkbox("Render Body Shadow", &appData.renderBodyShadow);
+		ImGui::Checkbox("Render Leaf Shadow", &appData.renderLeafShadow);
+		ImGui::Checkbox("Render Terrain", &appData.renderTerrain);
 		ImGui::Checkbox("Show Shadow Grid", &appData.showShadowGrid);
 		ImGui::Checkbox("Show Shadow On Only Buds", &appData.shadowOnOnlyBuds);
 		ImGui::Checkbox("Show Vigor", &appData.showVigor);
 		ImGui::Checkbox("Show Optimal Dirs", &appData.showOptimalDirs);
 		ImGui::SliderFloat("Shadow Cell Visibility Radius", &appData.shadowCellVisibilityRadius, 0.5f, 20.0f);
 	}
-	ImGui::Text("Frame time: %.3f", ImGui::GetIO().Framerate);
-	ImGui::Text("Tree1 Branch Count: %u, Bud Count: %u, Leaf Count: %u, Max Order: %u", 
-		treeRenderers[0]->getBranchCount(), treeRenderers[0]->getBudCount(), treeRenderers[0]->getLeafCount(), trees[0]->maxOrder);
-	ImGui::Checkbox("Grow Tree 1", &growTree1);
-	ImGui::Checkbox("Grow Tree 2", &growTree2);
+	ImGui::Text("Frame Rate: %.3f, Frame Time: %.3f ms", ImGui::GetIO().Framerate, 1.0 / ImGui::GetIO().Framerate * 1000.0);
+
+	if (ImGui::CollapsingHeader("Trees"))
+	{
+		ImGui::SliderInt("Tree Count", &appData.treeCount, 1, 100);
+		ImGui::SliderInt("Tree Distribution Seed", &appData.treeDistributionSeed, 0, 100);
+		int i = 0;
+		int totBranch = 0, totBud = 0, totLeaf = 0;
+		uint32 maxOrder = 0;
+		for (auto& renderer : treeRenderers)
+		{
+			totBranch += renderer->getBranchCount();
+			totBud += renderer->getBudCount();
+			totLeaf += renderer->getLeafCount();
+			maxOrder = glm::max(maxOrder, trees[i]->maxOrder);
+			ImGui::Text("Tree:%i Branch Count: %u, Bud Count: %u, Leaf Count: %u, Max Order: %u", 
+				i, renderer->getBranchCount(), renderer->getBudCount(), renderer->getLeafCount(), trees[i]->maxOrder);
+			i++;
+		}
+		ImGui::Text("Total Branch Count: %u, Total Bud Count: %u, Total Leaf Count: %u, Max Order: %u",
+			totBranch, totBud, totLeaf, maxOrder);
+	}
+
+
 
 	if (ImGui::Button("Reset Trees")) {
 		world->age = 0;
 		world->removeTree(*trees[0]);
 		world->removeTree(*trees[1]);
 		world->resizeShadowGrid();
-		CreateTrees(*this);
+		redistributeTrees();
 	}
 
 	ImGui::End();
@@ -424,7 +433,7 @@ void TreeApplication::drawScene()
 
 	Renderer::getRenderer().startShadowPass();
 
-	TreeRenderer::renderTreeShadows(renderers, lightView, true, true);
+	TreeRenderer::renderTreeShadows(renderers, lightView, appData.renderBodyShadow, appData.renderLeafShadow);
 	/*if (renderTerrain)
 		TerrainRenderer::renderTerrainShadows(terrainRenderers, lightView);*/
 
@@ -435,7 +444,7 @@ void TreeApplication::drawScene()
 
 	Renderer::getRenderer().renderTest(view);
 
-	TreeRenderer::renderTrees(renderers, view, scene, true, true);
+	TreeRenderer::renderTrees(renderers, view, scene, appData.renderBody, appData.renderLeaves);
 
 	/*if (appData.showShadowGrid) {
 		//world->calculateShadows();
@@ -463,7 +472,7 @@ void TreeApplication::drawScene()
 
 	Renderer::getRenderer().renderBBoxLines(view, *lineShader, world->getBBox(), vec3(1.0f));
 
-	if(renderTerrain) {
+	if(appData.renderTerrain) {
 		TerrainRenderer::renderTerrains(terrainRenderers, view, scene);
 	}
 	Renderer::getRenderer().renderSkybox(view);
@@ -499,6 +508,24 @@ void TreeApplication::endFrame()
 }
 #pragma endregion Frame
 
+
+void TreeApplication::redistributeTrees()
+{
+	trees.clear();
+	treeRenderers.clear();
+	world->clear();
+	auto points = util::DistributePoints(appData.treeDistributionSeed, appData.treeCount, 
+		{ appData.worldBbox.min.x, appData.worldBbox.min.z, appData.worldBbox.max.x, appData.worldBbox.max.z });
+	for (auto& point : points)
+	{
+		trees.emplace_back(&generator->createTree(*world, vec3(point.x, terrainObject.terrain->heightAtWorldPos(vec3(point.x, 0.0f, point.y)), point.y), growthData));
+	}
+	//trees.emplace_back(&generator->createTree(*app.world, vec3(0.0f, app.terrainObject.terrain->heightAtWorldPos(vec3(0.0f)), 0.0), app.growthData));
+	//trees.emplace_back(&app.generator->createTree(*app.world, vec3(0.2f, app.terrainObject.terrain->heightAtWorldPos(vec3(0.2f, 0.0f, 0.0f)), 0.0f), app.growthData));
+	previewWorld = nullptr;
+	treeRenderers = std::move(CreateRenderers(world->getTrees(), true));
+
+}
 
 #pragma region Inputs
 
@@ -553,7 +580,6 @@ void TreeApplication::keyInput()
 
 	cam.cameraPosition = camPos;
 }
-
 
 void TreeApplication::mouseInput(const vec2& offset) {
 	if (framesRendered == 0) // initially set to true

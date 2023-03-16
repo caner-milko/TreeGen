@@ -10,11 +10,11 @@ uint32 util::hash(uint32 a) {
 	return a;
 }
 
-double util::IntNoise2D(int x, int y)
+double util::IntNoise2D(int x, int y, double min, double max)
 {
 	int n = x + y * 57;
 	n = (n << 13) ^ n;
-	return (double)(1.0 - ((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0);
+	return (max-min) * ((1.0 - ((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0) * 0.5 + 0.5) + min;
 }
 
 
@@ -54,4 +54,16 @@ bool util::startsWith(std::string_view str, std::string_view prefix)
 {
 	return str.size() >= prefix.size() && 0 == str.compare(0, prefix.size(), prefix);
 }
+
+std::vector<glm::vec2> util::DistributePoints(int seed, int points, glm::vec4 bounds)
+{
+	std::vector<glm::vec2> pointsVec;
+	pointsVec.reserve(points);
+	for (int i = 0; i < points; i++)
+	{
+		pointsVec.push_back({ IntNoise2D(seed, i, bounds.x, bounds.z), IntNoise2D(seed + 1, i, bounds.y, bounds.w)});
+	}
+	return pointsVec;
+}
+
 }
