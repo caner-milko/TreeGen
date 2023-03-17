@@ -12,7 +12,8 @@
 #include "Leaf.h"
 #include <algorithm>
 #include "util/Util.h"
-namespace tgen::app {
+namespace tgen::app
+{
 
 std::vector<ru<TreeRenderer>> CreateRenderers(const std::vector<ru<Tree>>& trees, bool updateRenderer)
 {
@@ -47,11 +48,13 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) {
-		Input::GetInstance().mouse_callback(window, xpos, ypos);
+	glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos)
+		{
+			Input::GetInstance().mouse_callback(window, xpos, ypos);
 		});
-	glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
-		Input::GetInstance().scroll_callback(window, xoffset, yoffset);
+	glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset)
+		{
+			Input::GetInstance().scroll_callback(window, xoffset, yoffset);
 		});
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -229,7 +232,8 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 
 void TreeApplication::execute()
 {
-	while (!glfwWindowShouldClose(window)) {
+	while (!glfwWindowShouldClose(window))
+	{
 		startFrame();
 		processInputs();
 		updateScene();
@@ -258,7 +262,8 @@ void TreeApplication::startFrame()
 	deltaTime = currentFrame - lastFrame;
 }
 
-void TreeApplication::updateScene() {
+void TreeApplication::updateScene()
+{
 
 	float sinDeltaTime = glm::sin(currentFrame);
 	float cosDeltaTime = glm::cos(currentFrame);
@@ -272,7 +277,8 @@ void TreeApplication::drawGUI()
 {
 	ImGui::Begin("Tree Generator");
 
-	if (ImGui::CollapsingHeader("Tree Growth Data")) {
+	if (ImGui::CollapsingHeader("Tree Growth Data"))
+	{
 		//shadows
 		float fullExposure = 3.0f;
 		int pyramidHeight = 5;
@@ -317,11 +323,12 @@ void TreeApplication::drawGUI()
 		leafSettingsEdited |= ImGui::SliderAngle("Leaf Angle", &Leaf::pertubateAngle);
 	}
 
-	if (ImGui::CollapsingHeader("Render Options")) {
+	if (ImGui::CollapsingHeader("Render Options"))
+	{
 
 		treeSettingsEdited |= previewWorldChanged = ImGui::Checkbox("Render Tree Preview", &appData.previewWorld);
 		if (appData.previewWorld)
-			ImGui::SliderInt("Preview Iterations", (int*) & appData.previewAge, 1, 15);
+			ImGui::SliderInt("Preview Iterations", (int*)&appData.previewAge, 1, 15);
 
 		ImGui::Checkbox("Render Body", &appData.renderBody);
 		ImGui::Checkbox("Render Leaves", &appData.renderLeaves);
@@ -349,7 +356,7 @@ void TreeApplication::drawGUI()
 			totBud += renderer->getBudCount();
 			totLeaf += renderer->getLeafCount();
 			maxOrder = glm::max(maxOrder, trees[i]->maxOrder);
-			ImGui::Text("Tree:%i Branch Count: %u, Bud Count: %u, Leaf Count: %u, Max Order: %u", 
+			ImGui::Text("Tree:%i Branch Count: %u, Bud Count: %u, Leaf Count: %u, Max Order: %u",
 				i, renderer->getBranchCount(), renderer->getBudCount(), renderer->getLeafCount(), trees[i]->maxOrder);
 			i++;
 		}
@@ -359,7 +366,8 @@ void TreeApplication::drawGUI()
 
 
 
-	if (ImGui::Button("Reset Trees")) {
+	if (ImGui::Button("Reset Trees"))
+	{
 		world->age = 0;
 		world->removeTree(*trees[0]);
 		world->removeTree(*trees[1]);
@@ -387,12 +395,15 @@ void TreeApplication::drawScene()
 		previewWorld = std::make_unique<PreviewWorld>(*world);
 	}
 
-	if (appData.previewWorld) {
-		if (treeSettingsEdited) {
+	if (appData.previewWorld)
+	{
+		if (treeSettingsEdited)
+		{
 			std::cout << "Tree settings edited" << std::endl;
 			previewWorld->age = 0;
 		}
-		if(previewWorld->age - world->age != appData.previewAge) {
+		if (previewWorld->age - world->age != appData.previewAge)
+		{
 			std::cout << "Recalculate until age" << std::endl;
 			previewWorld->ResetToRealWorld();
 			treeRenderers = std::move(CreateRenderers(previewWorld->getTrees(), false));
@@ -405,16 +416,19 @@ void TreeApplication::drawScene()
 	}
 
 
-	TreeWorld& selWorld= appData.previewWorld ? *previewWorld : *world;
+	TreeWorld& selWorld = appData.previewWorld ? *previewWorld : *world;
 
-	if (radiusSettingsEdited) {
-		for(auto& tree : selWorld.getTrees())
+	if (radiusSettingsEdited)
+	{
+		for (auto& tree : selWorld.getTrees())
 			tree->recalculateBranchs();
-		for(auto& renderer : treeRenderers)
+		for (auto& renderer : treeRenderers)
 			renderer->updateRenderer();
 	}
-	else {
-		if (leafSettingsEdited) {
+	else
+	{
+		if (leafSettingsEdited)
+		{
 			for (auto& tree : selWorld.getTrees())
 				tree->generateLeaves();
 			for (auto& renderer : treeRenderers)
@@ -461,18 +475,21 @@ void TreeApplication::drawScene()
 			renderer.renderShadowsOnBuds(view, *shadowPointShader, *world, buds);
 		}
 	}*/
-	if (appData.showVigor) {
+	if (appData.showVigor)
+	{
 		treeRenderers[0]->renderVigor(view);
 		treeRenderers[1]->renderVigor(view);
 	}
-	if (appData.showOptimalDirs) {
+	if (appData.showOptimalDirs)
+	{
 		treeRenderers[0]->renderOptimalDirection(view);
 		treeRenderers[1]->renderOptimalDirection(view);
 	}
 
 	Renderer::getRenderer().renderBBoxLines(view, *lineShader, world->getBBox(), vec3(1.0f));
 
-	if(appData.renderTerrain) {
+	if (appData.renderTerrain)
+	{
 		TerrainRenderer::renderTerrains(terrainRenderers, view, scene);
 	}
 	Renderer::getRenderer().renderSkybox(view);
@@ -514,7 +531,7 @@ void TreeApplication::redistributeTrees()
 	trees.clear();
 	treeRenderers.clear();
 	world->clear();
-	auto points = util::DistributePoints(appData.treeDistributionSeed, appData.treeCount, 
+	auto points = util::DistributePoints(appData.treeDistributionSeed, appData.treeCount,
 		{ appData.worldBbox.min.x, appData.worldBbox.min.z, appData.worldBbox.max.x, appData.worldBbox.max.z });
 	for (auto& point : points)
 	{
@@ -564,15 +581,19 @@ void TreeApplication::keyInput()
 		light.SetDir(cam.getCameraDirection());
 		light.lightCam->cameraPosition = cam.cameraPosition;
 	}
-	if (ImGui::IsKeyPressed(ImGuiKey_F, false)) {
+	if (ImGui::IsKeyPressed(ImGuiKey_F, false))
+	{
 		generator->iterateWorld(*world);
 	}
 
-	if (ImGui::IsKeyPressed(ImGuiKey_E, false)) {
-		if (cursorDisabled) {
+	if (ImGui::IsKeyPressed(ImGuiKey_E, false))
+	{
+		if (cursorDisabled)
+		{
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
-		else {
+		else
+		{
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		}
 		cursorDisabled = !cursorDisabled;
@@ -581,7 +602,8 @@ void TreeApplication::keyInput()
 	cam.cameraPosition = camPos;
 }
 
-void TreeApplication::mouseInput(const vec2& offset) {
+void TreeApplication::mouseInput(const vec2& offset)
+{
 	if (framesRendered == 0) // initially set to true
 	{
 		return;
@@ -596,7 +618,8 @@ void TreeApplication::mouseInput(const vec2& offset) {
 	appData.pitch = cam.getPitch();
 }
 
-void TreeApplication::scrollInput(const vec2& offset) {
+void TreeApplication::scrollInput(const vec2& offset)
+{
 
 	cam.setFov(cam.getFov() - (float)offset.y);
 	appData.fov = cam.getFov();

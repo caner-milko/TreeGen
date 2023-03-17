@@ -21,9 +21,6 @@ layout(std140, binding=1) uniform Light {
 
 #define SHOW_BBOX 0
 
-//these can be adjusted based on distance to camera
-#define MAX_STEPS 5.0
-#define MIN_DIST 0.005
 #define PI 3.14159265359
 
 struct Bezier {
@@ -184,6 +181,14 @@ vec2 sdBezier(vec3 p, Bezier bezier)
     return vec2(dis, tt);
 }
 
+float calcStepCount(float distToCam, float nearPlane, float farPlane, float maxStepCount, float minStepCount) {
+    return mix(maxStepCount, minStepCount, (distToCam - nearPlane) / (farPlane - nearPlane));
+}
+
+float calcMinDist(float distToCam, float nearPlane, float farPlane, float minMinDist, float maxMinDist) {
+    return mix(minMinDist, maxMinDist, (distToCam - nearPlane) / (farPlane - nearPlane));
+}
+
 float branchRadius(in float t, in  float lowRadius, in float highRadius) {
 
     t = ease(t);
@@ -199,18 +204,18 @@ vec2 dist(in vec3 pos, in Bezier bezier) {
     return vec2(midDist, sdBranch.y);
 }
 
-Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
+Hit intersect(vec3 pos, vec3 rayDir, in Branch branch, float maxStepCount, float minDist) {
 	float t = 0.0;
     Bezier curve = toBezier(branch);
 	bool onSphere = false;
     bool hit = false;
 
     float farPlane = lightCam.dir_far.w;
-    for(float i = 0; i < MAX_STEPS; i++) {
+    for(float i = 0; i < maxStepCount; i++) {
 		vec3 curPos = pos + rayDir * t;
         vec2 dst = dist(curPos, curve);
         t += dst.x;
-		if(dst.x < MIN_DIST) {
+		if(dst.x < minDist) {
             curPos = pos + rayDir * t;
             hit = true;
             onSphere = dst.y > 1.0 || dst.y < 0.0;
@@ -233,7 +238,11 @@ void main()
 
     vec3 start = fragPos;
 
-	Hit hit = intersect(start, rayDir, branch);
+	float distToCam = distance(lightCam.pos_near.xyz, branch.mid);
+    float stepCount = calcStepCount(distToCam, lightCam.pos_near.w, lightCam.dir_far.w, 6.0, 1.5);
+    float minDist = calcMinDist(distToCam, lightCam.pos_near.w, lightCam.dir_far.w, 0.002, 0.05);
+
+	Hit hit = intersect(start, rayDir, branch, stepCount, minDist);
 	if(!hit.hit) {
         #if SHOW_BBOX
 

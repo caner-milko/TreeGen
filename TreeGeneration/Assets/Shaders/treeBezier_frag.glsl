@@ -203,6 +203,14 @@ vec2 sdBezier(vec3 p, Bezier bezier)
     return vec2(dis, tt);
 }
 
+float calcStepCount(float distToCam, float nearPlane, float farPlane, float maxStepCount, float minStepCount) {
+    return mix(maxStepCount, minStepCount, (distToCam - nearPlane) / (farPlane - nearPlane));
+}
+
+float calcMinDist(float distToCam, float nearPlane, float farPlane, float minMinDist, float maxMinDist) {
+    return mix(minMinDist, maxMinDist, (distToCam - nearPlane) / (farPlane - nearPlane));
+}
+
 float branchRadius(in float t, in  float lowRadius, in float highRadius) {
     t = ease(t);
     return ((1.-t)*lowRadius + t * highRadius);
@@ -313,7 +321,7 @@ vec3 bezNorm(float splineT, vec3 pos, Bezier curve) {
     return normalize(pos - bezPos);
 }
 
-Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
+Hit intersect(vec3 pos, vec3 rayDir, in Branch branch, float maxStepCount, float minDist) {
 	float t = 0.0;
 	vec3 norm = vec3(-3.0);
     vec2 uv = vec2(0.0);
@@ -321,11 +329,11 @@ Hit intersect(vec3 pos, vec3 rayDir, in Branch branch) {
 	bool onSphere = false;
     float farPlane = cam.dir_far.w;
     float splineT = -100.0;
-    for(float i = 0; i < MAX_STEPS; i++) {
+    for(float i = 0; i < maxStepCount; i++) {
 		vec3 curPos = pos + rayDir * t;
         vec2 dst = dist(curPos, curve);
         t += dst.x;
-		if(dst.x < MIN_DIST) {
+		if(dst.x < minDist) {
             norm = vec3(-2.0);
             curPos = pos + rayDir * t;
             splineT = dst.y;
@@ -427,7 +435,12 @@ void main()
 
     vec3 start = mix(fragPos, cam.pos_near.xyz, float(inside));
 
-	Hit hit = intersect(start, rayDir, branch);
+    float distToCam = distance(cam.pos_near.xyz, branch.mid);
+    float stepCount = calcStepCount(distToCam, cam.pos_near.w, cam.dir_far.w, 7.0, 1.5);
+    float minDist = calcMinDist(distToCam, cam.pos_near.w, cam.dir_far.w, 0.0001, 0.01);
+    
+	Hit hit = intersect(start, rayDir, branch, stepCount, minDist);
+
 	if(hit.normal.x < -1.5) {
         #if SHOW_BBOX
 
@@ -437,7 +450,7 @@ void main()
         return;
         #else
 		discard;
-        return;
+        //return;
 	    #endif
     }
 
@@ -454,7 +467,7 @@ void main()
 
     gl_FragDepth =((gl_DepthRange.diff * ndcDepth) 
 		+ gl_DepthRange.near + gl_DepthRange.far) / 2.0;
-    
+
     vec3 pos = cam.pos_near.xyz + rayDir * hit.t;
     
     float order = easeOutQuad(min(float(branch.order), 100.0)/100.0);
