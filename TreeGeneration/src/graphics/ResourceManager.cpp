@@ -7,7 +7,23 @@
 #include <stb_image.h>
 #include "util/Util.h"
 #include <optional>
-namespace tgen::graphics {
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
+namespace std
+{
+template<> struct hash<tgen::graphics::Vertex>
+{
+	size_t operator()(tgen::graphics::Vertex const& vertex) const
+	{
+		return ((hash<glm::vec3>()(vertex.pos) ^
+			(hash<glm::vec2>()(vertex.texCoords) << 1)) >> 1) ^
+			(hash<glm::vec3>()(vertex.normal) << 1);
+	}
+};
+}
+namespace tgen::graphics
+{
 using namespace gl;
 std::string ResourceManager::readTextFile(std::string_view path) const
 {
@@ -16,8 +32,7 @@ std::string ResourceManager::readTextFile(std::string_view path) const
 		std::ifstream ifs(path.data());
 		return std::string((std::istreambuf_iterator<char>(ifs)),
 			(std::istreambuf_iterator<char>()));
-	}
-	catch (std::ifstream::failure e)
+	} catch (std::ifstream::failure e)
 	{
 		std::cerr << "Resource Manager: Couldn't read text file at path: " << path << std::endl;
 	}
@@ -103,10 +118,13 @@ ru<CubemapTexture> ResourceManager::createCubemapTexture(std::array<std::string_
 	std::array<ru<Image>, 6> faces;
 	std::array<const void*, 6> datas;
 	Texture::TextureUploadData uploadData = {};
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < 6; i++)
+	{
 		auto img = readImageFile(facePaths[i]);
-		if (i == 0) {
-			if (dataFromImage) {
+		if (i == 0)
+		{
+			if (dataFromImage)
+			{
 				createData.size = ivec3(img->width, img->height, 0);
 				createData.textureFormat = img->nrChannels == 4 ? Format::R8G8B8A8_SRGB : Format::R8G8B8_SRGB;
 			}
@@ -121,19 +139,23 @@ ru<CubemapTexture> ResourceManager::createCubemapTexture(std::array<std::string_
 	tex->uploadFaces(datas, uploadData);
 	return tex;
 }
-ru<ArrayMesh<Vertex>> ResourceManager::objToMesh(const char* modelPath) const
+ru<CompleteMesh<Vertex, IndexType::UNSIGNED_INT>> ResourceManager::objToMesh(const char* modelPath) const
 {
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 	std::string err;
-	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, modelPath)) {
+	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, modelPath))
+	{
 		std::cout << err << std::endl;
 		return nullptr;
 	}
 	std::vector<Vertex> vertices;
-	for (const auto& index : shapes[0].mesh.indices) {
-		auto& vertex = vertices.emplace_back();
+	std::unordered_map<Vertex, uint32> uniqueVertices;
+	std::vector<uint32> indices;
+	for (const auto& index : shapes[0].mesh.indices)
+	{
+		Vertex vertex{};
 
 		vertex.pos = {
 			attrib.vertices[3 * index.vertex_index + 0],
@@ -151,12 +173,29 @@ ru<ArrayMesh<Vertex>> ResourceManager::objToMesh(const char* modelPath) const
 			attrib.normals[3 * index.normal_index + 1],
 			attrib.normals[3 * index.normal_index + 2]
 		};
+
+		uint32 curIndex = 0;
+		if (auto it = uniqueVertices.find(vertex); it != uniqueVertices.end())
+		{
+			if (it->first != vertex)
+			{
+				std::cout << "aaaaaaaa" << std::endl;
+			}
+			curIndex = it->second;
+		}
+		else
+		{
+			curIndex = uniqueVertices.try_emplace(vertex, (uint32)vertices.size()).first->second;
+			vertices.push_back(vertex);
+		}
+		indices.push_back(curIndex);
 	}
 
-	ru<ArrayMesh<Vertex>> mesh = std::make_unique<ArrayMesh<Vertex>>();
+	auto mesh = std::make_unique<CompleteMesh<Vertex, IndexType::UNSIGNED_INT>>();
 
 	mesh->vbo.init(vertices);
 	mesh->inputState.vertexBindingDescriptions = Vertex::bindingDescription;
+	mesh->ebo.init(indices);
 
 	return mesh;
 }

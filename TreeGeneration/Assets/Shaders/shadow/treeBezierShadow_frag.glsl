@@ -240,7 +240,7 @@ void main()
 
 	float distToCam = distance(lightCam.pos_near.xyz, branch.mid);
     float stepCount = calcStepCount(distToCam, lightCam.pos_near.w, lightCam.dir_far.w, 6.0, 1.5);
-    float minDist = calcMinDist(distToCam, lightCam.pos_near.w, lightCam.dir_far.w, 0.002, 0.05);
+    float minDist = calcMinDist(distToCam, lightCam.pos_near.w, lightCam.dir_far.w, 0.001, 0.005);
 
 	Hit hit = intersect(start, rayDir, branch, stepCount, minDist);
 	if(!hit.hit) {

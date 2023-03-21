@@ -9,7 +9,8 @@
 #include "graphics/TreeRenderer.h"
 #include "graphics/terrain/TerrainRenderer.h"
 #include "PreviewWorld.h"
-namespace tgen::app {
+namespace tgen::app
+{
 //shouldn't be included by anything
 using namespace tgen::graphics;
 using namespace tgen::gen;
@@ -17,7 +18,8 @@ using namespace tgen::gen;
 using namespace tgen::graphics::gl;
 using namespace tgen::graphics::terrain;
 using namespace tgen::util;
-struct TreeApplicationData {
+struct TreeApplicationData
+{
 	uint32 width = 1600, height = 900;
 	float mouseSensitivity = 0.1f;
 	float cameraSpeed = 0.5f;
@@ -53,7 +55,8 @@ struct TreeApplicationData {
 };
 
 
-class TreeApplication {
+class TreeApplication
+{
 public:
 	TreeApplication(const TreeApplicationData& appData);
 
@@ -79,7 +82,7 @@ public:
 	ru<TreeWorld> world;
 	ru<PreviewWorld> previewWorld;
 	ru<TreeGenerator> generator;
-	
+
 
 	std::vector<rb<Tree>> trees;
 	std::vector<ru<TreeRenderer>> treeRenderers;
@@ -98,7 +101,8 @@ public:
 	bool radiusSettingsEdited = false;
 	bool leafSettingsEdited = false;
 
-	rc<ArrayMesh<Vertex>> leafMesh{};
+	rc<CompleteMesh<Vertex, IndexType::UNSIGNED_INT>> leafMesh{};
+	rc<CompleteMesh<Vertex, IndexType::UNSIGNED_INT>> leafShadowMesh{};
 
 	rc<Shader> treeBezierShader{};
 	rc<Shader> leafShader{};

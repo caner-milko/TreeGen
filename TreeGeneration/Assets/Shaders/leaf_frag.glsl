@@ -26,7 +26,7 @@ layout(std140, binding=1) uniform Light {
 uniform sampler2D leafTex;
 
 float diffuse(vec3 norm, vec3 lightDir) {
-    return mix(0.3, 0.8, max(dot(norm, -lightDir), 0.0));
+    return mix(0.3, 0.6, max(dot(norm, -lightDir), 0.0));
 }
 
 float specular(vec3 norm, vec3 viewDir, vec3 lightDir, float specularStrength, int shininess) {
@@ -40,7 +40,7 @@ vec3 calcLight(vec3 viewDir, vec3 norm, vec3 diffCol) {
     float diff = diffuse(norm, lightCam.dir_far.xyz);
     float spec = specular(norm, viewDir, lightCam.dir_far.xyz, 1.0, 32);
     
-    vec3 light = (spec * 0.7 + diff * 0.7) * lightColor.xyz + ambientColor.xyz;
+    vec3 light = (spec * 0.4 + diff * 0.6) * lightColor.xyz + ambientColor.xyz;
 
     return light * diffCol;
 }

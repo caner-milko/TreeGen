@@ -7,26 +7,33 @@
 #include "opengl/types/Texture.h"
 #include "DrawScene.h"
 #include "Mesh.h"
-namespace tgen::graphics {
+namespace tgen::graphics
+{
 
-struct TreeMaterial {
+struct TreeMaterial
+{
 	rc<gl::Texture> colorTexture{}, normalTexture{};
 };
 
-class TreeRenderer {
-	struct BudPoint {
+class TreeRenderer
+{
+	struct BudPoint
+	{
 		vec4 pos;
 		vec4 color;
 	};
-	struct ColoredLine {
+	struct ColoredLine
+	{
 		vec4 pos1;
 		vec4 pos2;
 		vec4 color;
 	};
 public:
 	bool debug = false;
-	static struct TreeRendererResources {
-		rc<ArrayMesh<Vertex>> leafMesh = nullptr;
+	static struct TreeRendererResources
+	{
+		rc<CompleteMesh<Vertex, gl::IndexType::UNSIGNED_INT>> leafShadowMesh = nullptr;
+		rc<CompleteMesh<Vertex, gl::IndexType::UNSIGNED_INT>> leafMesh = nullptr;
 		rb<const ArrayMesh<vec3>> cubeMesh = nullptr;
 		rb<const IndexedMesh<gl::IndexType::UNSIGNED_INT>> pointMesh = nullptr,
 			lineMesh = nullptr;
@@ -48,7 +55,7 @@ public:
 	TreeRenderer(rb<gen::Tree> tree);
 	void clear();
 	DELETE_COPY_CONSTRUCTORS(TreeRenderer)
-	void renderVigor(const DrawView& view);
+		void renderVigor(const DrawView& view);
 	void renderOptimalDirection(const DrawView& view);
 	void updateRenderer();
 	uint32 getLeafCount() const;

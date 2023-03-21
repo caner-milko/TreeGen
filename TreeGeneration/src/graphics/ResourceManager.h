@@ -10,11 +10,14 @@
 #include "Mesh.h"
 #include "Image.h"
 #include <tiny_obj_loader.h>
-namespace tgen::graphics {
+namespace tgen::graphics
+{
 
-class ResourceManager {
+class ResourceManager
+{
 public:
-	static ResourceManager& getInstance() {
+	static ResourceManager& getInstance()
+	{
 		static ResourceManager instance;
 		return instance;
 	}
@@ -27,6 +30,6 @@ public:
 		std::array<std::string_view, 6> facePaths,
 		gl::Texture::TextureCreateData createData = {},
 		bool dataFromImage = true);
-	ru<ArrayMesh<Vertex>> objToMesh(const char* modelPath) const;
+	ru<CompleteMesh<Vertex, gl::IndexType::UNSIGNED_INT>> objToMesh(const char* modelPath) const;
 };
 }

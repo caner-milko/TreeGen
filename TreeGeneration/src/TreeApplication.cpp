@@ -103,6 +103,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 #pragma region Load_Resources
 	{
 		leafMesh = ResourceManager::getInstance().objToMesh("./Assets/leafMesh.wobj");
+		leafShadowMesh = ResourceManager::getInstance().objToMesh("./Assets/leaf5Plane.wobj");
 		const std::string SHADERS_FOLDER = "./Assets/Shaders/";
 		auto& rm = ResourceManager::getInstance();
 		std::string vertex = ResourceManager::getInstance().readTextFile(SHADERS_FOLDER + "shadowPoint_vert.glsl");
@@ -211,6 +212,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 		{
 			auto& res = TreeRenderer::resources;
 			res.leafMesh = leafMesh;
+			res.leafShadowMesh = leafShadowMesh;
 			res.cubeMesh = &Renderer::getRenderer().getCubeMesh();
 			res.pointMesh = &Renderer::getRenderer().getPointMesh();
 			res.lineMesh = &Renderer::getRenderer().getLineMesh();
@@ -321,6 +323,14 @@ void TreeApplication::drawGUI()
 		leafSettingsEdited |= ImGui::SliderFloat("Leaf Density", &growthData.leafDensity, 0.5f, 150.0f);
 		leafSettingsEdited |= ImGui::SliderFloat("Leaf Size Multiplier", &growthData.leafSizeMultiplier, 0.05f, 3.0f);
 		leafSettingsEdited |= ImGui::SliderAngle("Leaf Angle", &Leaf::pertubateAngle);
+		for (auto& tree : world->getTrees())
+		{
+			tree->growthData = growthData;
+		}
+		for (auto& tree : trees)
+		{
+			tree->growthData = growthData;
+		}
 	}
 
 	if (ImGui::CollapsingHeader("Render Options"))
@@ -368,10 +378,6 @@ void TreeApplication::drawGUI()
 
 	if (ImGui::Button("Reset Trees"))
 	{
-		world->age = 0;
-		world->removeTree(*trees[0]);
-		world->removeTree(*trees[1]);
-		world->resizeShadowGrid();
 		redistributeTrees();
 	}
 
@@ -533,6 +539,12 @@ void TreeApplication::redistributeTrees()
 	world->clear();
 	auto points = util::DistributePoints(appData.treeDistributionSeed, appData.treeCount,
 		{ appData.worldBbox.min.x, appData.worldBbox.min.z, appData.worldBbox.max.x, appData.worldBbox.max.z });
+	if (appData.treeCount == 2)
+	{
+		points.clear();
+		points.push_back(vec2(0.0));
+		points.push_back(vec2(0.0, 0.2));
+	}
 	for (auto& point : points)
 	{
 		trees.emplace_back(&generator->createTree(*world, vec3(point.x, terrainObject.terrain->heightAtWorldPos(vec3(point.x, 0.0f, point.y)), point.y), growthData));

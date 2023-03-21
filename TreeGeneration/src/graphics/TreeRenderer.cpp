@@ -3,7 +3,8 @@
 #include "generation/TreeWorld.h"
 #include "Rendering.h"
 #include "Renderer.h"
-namespace tgen::graphics {
+namespace tgen::graphics
+{
 using namespace gl;
 using namespace gen;
 TreeRenderer::TreeRendererResources TreeRenderer::resources = {};
@@ -29,10 +30,12 @@ void TreeRenderer::clear()
 void TreeRenderer::renderTrees(std::span<rb<TreeRenderer>> renderers,
 	const DrawView& view, const DrawScene& scene, bool branchs, bool leaves)
 {
-	if (branchs && resources.branchShader) {
+	if (branchs && resources.branchShader)
+	{
 		renderBranchs(renderers, view, scene);
 	}
-	if (leaves && resources.leafShader) {
+	if (leaves && resources.leafShader)
+	{
 		renderLeaves(renderers, view, scene);
 	}
 }
@@ -40,7 +43,8 @@ void TreeRenderer::renderTrees(std::span<rb<TreeRenderer>> renderers,
 void TreeRenderer::renderBranchs(std::span<rb<TreeRenderer>> renderers,
 	const DrawView& view, const DrawScene& scene)
 {
-	static GraphicsPipeline BranchRenderPipeline = []() -> GraphicsPipeline {
+	static GraphicsPipeline BranchRenderPipeline = []() -> GraphicsPipeline
+	{
 		GraphicsPipeline pipeline("Branchs", *resources.branchShader);
 		pipeline.vertexInputState = resources.cubeMesh->inputState;
 		return pipeline;
@@ -57,7 +61,8 @@ void TreeRenderer::renderBranchs(std::span<rb<TreeRenderer>> renderers,
 	Cmd::SetUniform("treeColor", vec3(166.0f / 255.0f, 123.0f / 255.0f, 81.0f / 255.0f));
 	Cmd::BindUBO(0, *resources.camUBO, 0, resources.camUBO->getRawSize());
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
-	for (auto renderer : renderers) {
+	for (auto renderer : renderers)
+	{
 		if (renderer->branchSSBO.getRawSize() == 0)
 			continue;
 		Cmd::BindSSBO(0, renderer->branchSSBO, 0, renderer->branchSSBO.getRawSize());
@@ -68,7 +73,8 @@ void TreeRenderer::renderBranchs(std::span<rb<TreeRenderer>> renderers,
 void TreeRenderer::renderLeaves(std::span<rb<TreeRenderer>> renderers,
 	const DrawView& view, const DrawScene& scene)
 {
-	const GraphicsPipeline pipeline = []() ->GraphicsPipeline {
+	const GraphicsPipeline pipeline = []() ->GraphicsPipeline
+	{
 		GraphicsPipeline pipeline("Leaves", *TreeRenderer::resources.leafShader);
 		pipeline.rasterizationState.cullMode = CullMode::NONE;
 		pipeline.vertexInputState = TreeRenderer::resources.leafMesh->inputState;
@@ -81,16 +87,18 @@ void TreeRenderer::renderLeaves(std::span<rb<TreeRenderer>> renderers,
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
 
 	glBindTextureUnit(resources.leafShader->getTextureIndex("leafTex"), resources.leafTexture->getHandle());
-	for (auto& renderer : renderers) {
+	for (auto& renderer : renderers)
+	{
 		if (renderer->leafSSBO.getRawSize() == 0)
 			continue;
 		Cmd::BindSSBO(0, renderer->leafSSBO, 0, renderer->leafSSBO.getRawSize());
-		Cmd::Draw(resources.leafMesh->vbo.getSize(), renderer->leafSSBO.getSize());
+		Cmd::DrawIndexed(resources.leafMesh->ebo.getSize(), renderer->leafSSBO.getSize());
 	}
 
 }
 
-void TreeRenderer::renderTreeShadows(std::span<rb<TreeRenderer>> renderers, const DrawView& view, bool renderBranches, bool renderLeaves) {
+void TreeRenderer::renderTreeShadows(std::span<rb<TreeRenderer>> renderers, const DrawView& view, bool renderBranches, bool renderLeaves)
+{
 	if (renderBranches)
 		renderBranchShadows(renderers, view);
 	if (renderLeaves)
@@ -99,7 +107,8 @@ void TreeRenderer::renderTreeShadows(std::span<rb<TreeRenderer>> renderers, cons
 
 void TreeRenderer::renderBranchShadows(std::span<rb<TreeRenderer>> renderers, const DrawView& view)
 {
-	static GraphicsPipeline BranchRenderPipeline = []() -> GraphicsPipeline {
+	static GraphicsPipeline BranchRenderPipeline = []() -> GraphicsPipeline
+	{
 		GraphicsPipeline pipeline("Branch Shadows", *resources.branchShadowShader);
 		pipeline.vertexInputState = resources.cubeMesh->inputState;
 		pipeline.rasterizationState.cullMode = CullMode::FRONT;
@@ -111,7 +120,8 @@ void TreeRenderer::renderBranchShadows(std::span<rb<TreeRenderer>> renderers, co
 	Cmd::BindUBO(0, *resources.camUBO, 0, resources.camUBO->getRawSize());
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
 
-	for (auto renderer : renderers) {
+	for (auto renderer : renderers)
+	{
 		if (renderer->branchSSBO.getRawSize() == 0)
 			continue;
 		Cmd::BindSSBO(0, renderer->branchSSBO, 0, renderer->branchSSBO.getRawSize());
@@ -121,31 +131,34 @@ void TreeRenderer::renderBranchShadows(std::span<rb<TreeRenderer>> renderers, co
 
 void TreeRenderer::renderLeafShadows(std::span<rb<TreeRenderer>> renderers, const DrawView& view)
 {
-	const GraphicsPipeline pipeline = []() ->GraphicsPipeline {
+	const GraphicsPipeline pipeline = []() ->GraphicsPipeline
+	{
 		GraphicsPipeline pipeline("Leaf Shadows", *TreeRenderer::resources.leavesShadowShader);
 		pipeline.rasterizationState.cullMode = CullMode::NONE;
 		pipeline.vertexInputState = TreeRenderer::resources.leafMesh->inputState;
 		return pipeline;
 	}();
 	Cmd::ScopedGraphicsPipeline _(pipeline);
-	Cmd::util::BindMesh(*resources.leafMesh);
+	Cmd::util::BindMesh(*resources.leafShadowMesh);
 
 	Cmd::BindUBO(0, *resources.camUBO, 0, resources.camUBO->getRawSize());
 	Cmd::BindUBO(1, *resources.lightUBO, 0, resources.lightUBO->getRawSize());
 
 	glBindTextureUnit(resources.leafShader->getTextureIndex("leafTex"), resources.leafTexture->getHandle());
 
-	for (auto renderer : renderers) {
+	for (auto renderer : renderers)
+	{
 		if (renderer->leafSSBO.getRawSize() == 0)
 			continue;
 		Cmd::BindSSBO(0, renderer->leafSSBO, 0, renderer->leafSSBO.getRawSize());
-		Cmd::Draw(resources.leafMesh->vbo.getSize(), renderer->leafSSBO.getSize());
+		Cmd::DrawIndexed(resources.leafMesh->ebo.getSize(), renderer->leafSSBO.getSize());
 	}
 }
 
 void TreeRenderer::renderVigor(const DrawView& view)
 {
-	static GraphicsPipeline pipeline = []() -> GraphicsPipeline {
+	static GraphicsPipeline pipeline = []() -> GraphicsPipeline
+	{
 		GraphicsPipeline pipeline("Bud Point", *resources.budPointShader);
 		pipeline.rasterizationState.programPointSize = true;
 		pipeline.inputAssemblyState.topology = PrimitiveTopology::POINT_LIST;
@@ -159,8 +172,10 @@ void TreeRenderer::renderVigor(const DrawView& view)
 	Cmd::DrawIndexed(1, budSSBO.getSize());
 }
 
-void TreeRenderer::renderOptimalDirection(const DrawView& view) {
-	static GraphicsPipeline pipeline = []() -> GraphicsPipeline {
+void TreeRenderer::renderOptimalDirection(const DrawView& view)
+{
+	static GraphicsPipeline pipeline = []() -> GraphicsPipeline
+	{
 		GraphicsPipeline pipeline("Bud Point", *resources.coloredLineShader);
 		pipeline.rasterizationState.lineWidth = 2.0f;
 		pipeline.inputAssemblyState.topology = PrimitiveTopology::LINE_LIST;
@@ -182,7 +197,8 @@ void TreeRenderer::updateRenderer()
 
 	branchData.reserve(branchs.size());
 
-	for (auto& branch : branchs) {
+	for (auto& branch : branchs)
+	{
 
 		uint32 colorSelected = branch.from.order;
 		vec3 color = vec3(util::IntNoise2D(colorSelected), util::IntNoise2D(colorSelected, 1), util::IntNoise2D(colorSelected, 2)) * 0.5f + 0.5f;
@@ -194,8 +210,10 @@ void TreeRenderer::updateRenderer()
 
 	std::vector<mat4> models;
 
-	for (auto& branch : branchs) {
-		for (auto& leaf : branch.leaves) {
+	for (auto& branch : branchs)
+	{
+		for (auto& leaf : branch.leaves)
+		{
 			models.emplace_back(leaf.model);
 		}
 	}
@@ -229,15 +247,18 @@ void TreeRenderer::updateRenderer()
 	coloredLineSSBO.init(std::span<ColoredLine>(lines));
 }
 
-uint32 TreeRenderer::getLeafCount() const {
+uint32 TreeRenderer::getLeafCount() const
+{
 	return leafSSBO.getSize();
 }
 
-uint32 TreeRenderer::getBranchCount() const {
+uint32 TreeRenderer::getBranchCount() const
+{
 	return branchSSBO.getSize();
 }
 
-uint32 TreeRenderer::getBudCount() const {
+uint32 TreeRenderer::getBudCount() const
+{
 	return budSSBO.getSize();
 }
 
