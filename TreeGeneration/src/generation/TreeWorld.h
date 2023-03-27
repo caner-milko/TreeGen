@@ -2,8 +2,10 @@
 #include <vector>
 #include "Tree.h"
 #include <span>
-namespace tgen::gen {
-struct ShadowCell {
+namespace tgen::gen
+{
+struct ShadowCell
+{
 	float shadow = 0.0f;
 };
 
@@ -64,6 +66,9 @@ public:
 	}
 
 	uint32 age = 0;
+
+	Event<EventData> OnAfterWorldGrow{};
+
 protected:
 	TreeWorldInfo info;
 	std::vector<std::unique_ptr<Tree>> trees;

@@ -9,7 +9,8 @@
 
 #include <string>
 #include <functional>
-namespace tgen::gen {
+namespace tgen::gen
+{
 class TreeWorld;
 
 struct TreeGrowthData
@@ -101,7 +102,8 @@ public:
 
 	~Tree();
 	struct TreeEventData : public EventData {};
-	Event<TreeEventData> OnGrow{};
+	Event<TreeEventData> OnBeforeGrow{};
+	Event<TreeEventData> OnAfterGrow{};
 	Event<TreeEventData> OnDestroy{};
 	bool operator==(const Tree& other) const;
 

@@ -6,7 +6,7 @@
 #include "TreeGenerator.h"
 #include "TreeWorld.h"
 #include "graphics/Renderer.h"
-#include "graphics/TreeRenderer.h"
+#include "graphics/tree/TreeRendererManager.h"
 #include "graphics/terrain/TerrainRenderer.h"
 #include "PreviewWorld.h"
 namespace tgen::app
@@ -52,6 +52,8 @@ struct TreeApplicationData
 	bool renderLeaves = true;
 	bool renderBodyShadow = true;
 	bool renderLeafShadow = true;
+
+	bool animated = true;
 };
 
 
@@ -86,6 +88,7 @@ public:
 
 	std::vector<rb<Tree>> trees;
 	std::vector<ru<TreeRenderer>> treeRenderers;
+	ru<TreeRendererManager> treeRendererManager;
 
 	struct TerrainObject
 	{
@@ -116,6 +119,8 @@ public:
 	rc<Shader> terrainShadowShader{};
 	rc<Shader> branchShadowShader{};
 	rc<Shader> leavesShadowShader{};
+	rc<Shader> animatedBranchShader{};
+
 
 	graphics::TreeMaterial treeMaterial{};
 
@@ -127,6 +132,9 @@ public:
 
 	rc<CubemapTexture> skyboxTex{};
 
+
+	bool animationRunning = false;
+	std::chrono::steady_clock::time_point lastGrowth;
 
 	void startFrame();
 
@@ -145,6 +153,8 @@ public:
 	void mouseInput(const vec2& offset);
 
 	void scrollInput(const vec2& offset);
+
+	void CreateRenderers(const std::vector<ru<Tree>>& trees, bool updateRenderer);
 
 	void redistributeTrees();
 };

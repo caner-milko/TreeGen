@@ -1,16 +1,17 @@
 #include "Leaf.h"
 #include "Branch.h"
 #include "util/util.h"
-namespace tgen::gen {
-float Leaf::pertubateAngle = PI / 2.0f;
-Leaf::Leaf(Branch& branch, float branchT, float size, float randomAngle) : attachedTo(branch), branchT(branchT)
+namespace tgen::gen
 {
-	vec3 dir = branch.evaluateDir(branchT);
-	vec3 norm = branch.evaluateNormal(branchT);
+float Leaf::pertubateAngle = PI / 2.0f;
+Leaf::Leaf(rb<Branch> branch, float branchT, float size, float randomAngle) : attachedTo(branch), branchT(branchT)
+{
+	vec3 dir = branch->evaluateDir(branchT);
+	vec3 norm = branch->evaluateNormal(branchT);
 
 	norm = glm::normalize(glm::rotate(glm::angleAxis(randomAngle, dir), norm));
 
-	vec3 pos = calculatePos() + norm * branch.evaluateWidth(branchT);
+	vec3 pos = calculatePos() + norm * branch->evaluateWidth(branchT);
 
 	norm = util::randomPerturbateVector(norm, pertubateAngle, util::hash(randomAngle / PI * 180.0f));
 
@@ -23,7 +24,8 @@ Leaf::Leaf(Branch& branch, float branchT, float size, float randomAngle) : attac
 		vec3(size));
 }
 
-vec3 Leaf::calculatePos() const {
-	return attachedTo.evaluatePos(branchT);
+vec3 Leaf::calculatePos() const
+{
+	return attachedTo->evaluatePos(branchT);
 }
 }

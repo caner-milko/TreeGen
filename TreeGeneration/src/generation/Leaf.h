@@ -1,16 +1,17 @@
 #pragma once
 #include "Common.h"
-namespace tgen::gen {
+namespace tgen::gen
+{
 struct Branch;
 
-struct Leaf {
+struct Leaf
+{
 	mat4 model;
-	Branch& attachedTo;
+	rb<Branch> attachedTo;
 	float branchT;
 	static float pertubateAngle;
 
-	Leaf(Branch& branch, float branchT, float size, float randomAngle);
-
+	Leaf(rb<Branch> branch, float branchT, float size, float randomAngle);
 
 	vec3 calculatePos() inline const;
 

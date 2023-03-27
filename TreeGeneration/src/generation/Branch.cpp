@@ -1,34 +1,43 @@
 #include "Branch.h"
 #include "util/Util.h"
-namespace tgen::gen {
-Branch::Branch(const TreeNode& node, float baseRadius, float radiusPow, float curviness, float startLength, const vec3& lastPlaneNormal, float lastOffset) : from(node), startLength(startLength), boundingBox(vec3(0.0f), vec3(0.0f)) {
+namespace tgen::gen
+{
+Branch::Branch(rb<const TreeNode> nodePtr, float baseRadius, float radiusPow, float curviness, float startLength, const vec3& lastPlaneNormal, float lastOffset) : from(nodePtr), startLength(startLength), boundingBox(vec3(0.0f), vec3(0.0f))
+{
+	const TreeNode& node = *nodePtr;
 	lowRadius = glm::pow(node.childCount, 1.0f / radiusPow) * baseRadius;
 
 	TreeNode* dominantChild = node.dominantChild();
 	length = node.length;
-	if (node.order > 0 && node.parent->dominantChild()->id != node.id) {
+	if (node.order > 0 && node.parent->dominantChild()->id != node.id)
+	{
 
 		length += node.parent->length;
 		A = node.parent->startPos;
 		B = node.startPos + node.direction * node.length * 0.5f;
 	}
-	else {
+	else
+	{
 
 		A = node.startPos;
 		vec3 parentPoint(0.0);
 
-		if (node.order == 0) {
+		if (node.order == 0)
+		{
 			parentPoint = node.startPos + node.direction * node.length * 0.5f;
 		}
-		else {
+		else
+		{
 			parentPoint = node.startPos + node.parent->direction * node.length * 0.5f;
 		}
 
 		vec3 childPoint(0.0);
-		if (dominantChild != nullptr) {
+		if (dominantChild != nullptr)
+		{
 			childPoint = node.endPos() - dominantChild->direction * node.length * 0.5f;
 		}
-		else {
+		else
+		{
 			childPoint = node.startPos + node.direction * node.length * 0.5f;
 		}
 
@@ -39,7 +48,8 @@ Branch::Branch(const TreeNode& node, float baseRadius, float radiusPow, float cu
 
 	float dots = glm::dot(glm::normalize(B - A), glm::normalize(C - A));
 
-	if (glm::abs(dots) >= 0.9999f) {
+	if (glm::abs(dots) >= 0.9999f)
+	{
 		vec3 randomDir(1.0f, 0.0f, 0.0f);
 		if (glm::abs(glm::dot(randomDir, glm::normalize(C - A)) >= 0.99))
 			randomDir = vec3(0.0f, 1.0f, 0.0f);
@@ -86,38 +96,43 @@ Branch::Branch(const TreeNode& node, float baseRadius, float radiusPow, float cu
 
 	model = boundingBox.asModel();
 
-	order = from.order;
+	order = node.order;
 }
 
 void Branch::generateLeaves(uint32 maxChildCount, uint32 minOrder, float leafDensity, float sizeMultiplier)
 {
 	leaves.clear();
 
-	if (minOrder > from.order)
+	if (minOrder > from->order)
 		return;
-	TreeNode* dominantChild = from.dominantChild();
+	TreeNode* dominantChild = from->dominantChild();
 	uint32 domChildCount = dominantChild == nullptr ? 0 : dominantChild->childCount;
-	if (dominantChild == nullptr) {
+	if (dominantChild == nullptr)
+	{
 		dominantChild = nullptr;
 	}
 	if (domChildCount >= maxChildCount)
 		return;
 	float startT = 0.0f;
 
-	if (from.childCount > maxChildCount) {
-		startT = float(from.childCount - maxChildCount) / float(from.childCount - domChildCount);
+	if (from->childCount > maxChildCount)
+	{
+		startT = float(from->childCount - maxChildCount) / float(from->childCount - domChildCount);
 	}
 
 	float chance = length * leafDensity;
 
-	int id = from.id;
+	uint32 id = from->id;
 	uint32 hashed = util::hash(id);
-	for (int i = 0; i < glm::max(leafDensity, 5.0f); i++) {
+	for (int i = 0; i < glm::max(leafDensity, 5.0f); i++)
+	{
 		uint32 hashedI = util::hash(i);
-		if ((util::IntNoise2D(hashed, hashedI) * 0.5f + 0.5f) < chance) {
+		if ((util::IntNoise2D(hashed, hashedI) * 0.5f + 0.5f) < chance)
+		{
 			chance--;
 		}
-		else {
+		else
+		{
 			break;
 		}
 		float t = util::IntNoise2D(id, i) * 0.5f + 0.5f;
@@ -126,11 +141,12 @@ void Branch::generateLeaves(uint32 maxChildCount, uint32 minOrder, float leafDen
 
 		float size = sizeMultiplier * (util::IntNoise2D(id, hashedI) * 0.3f + 0.7f);
 
-		if (t > 0.9) {
+		if (t > 0.9)
+		{
 			size *= 1.0f;
 		}
 
-		leaves.emplace_back(*this, t, size, rndAngle);
+		leaves.emplace_back(this, t, size, rndAngle);
 
 
 
