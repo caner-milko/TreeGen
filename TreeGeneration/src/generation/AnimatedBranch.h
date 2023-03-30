@@ -35,9 +35,11 @@ struct AnimatedBranch
 	rb<const TreeNode> from;
 	util::BBox boundingBox;
 	AnimatedBranchShaderData shaderData;
+	Bezier bez;
 public:
 	AnimatedBranch(vec2 animationBounds, const Branch& endBranch,
 		const std::optional<Branch>& startBranch = std::nullopt);
 	AnimatedBranchShaderData asShaderData(const vec3& color) const;
+	Bezier curBezier(float animationT);
 };
 }

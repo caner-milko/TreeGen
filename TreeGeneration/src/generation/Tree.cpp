@@ -236,7 +236,7 @@ const std::vector<Branch>& Tree::recalculateBranchs()
 		if (!branchEnd)
 		{
 			lastOffset = branch.offset;
-			lastPlaneNormal = branch.bezierPlaneNormal;
+			lastPlaneNormal = branch.bez.bezierPlaneNormal;
 			length += branch.length;
 		}
 		branchs.push_back(branch);

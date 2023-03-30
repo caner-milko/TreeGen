@@ -28,7 +28,6 @@ void TreeGenerator::growTree(Tree& tree)
 	tree.calculateChildCount();
 
 	tree.endGrow();
-	tree.OnAfterGrow.dispatch({});
 }
 void TreeGenerator::iterateWorld(TreeWorld& world, int count)
 {
@@ -39,6 +38,12 @@ void TreeGenerator::iterateWorld(TreeWorld& world, int count)
 			growTree(*tree);
 		}
 		world.age++;
+	}
+	for (auto& tree : world.getTrees())
+	{
+		if (!tree->growthData.grow)
+			return;
+		tree->OnAfterGrow.dispatch({});
 	}
 	world.OnAfterWorldGrow.dispatch(EventData{});
 }

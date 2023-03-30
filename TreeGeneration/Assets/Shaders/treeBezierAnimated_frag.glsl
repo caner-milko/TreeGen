@@ -121,18 +121,18 @@ AnimatedBranch toBranch(in AnimatedBranchData bData) {
     float lowRadius = MapLowRadius(bData.lowRadiusBounds, bData.animationBounds, animationT);
     float highRadius = MapHighRadius(bData.highRadiusBounds, bData.animationBounds, animationT);
 
-    return AnimatedBranch(  bData.model,
-                            t,
-	                        bData.start.xyz,
-                            bData.mid.xyz,
-	                        bData.end.xyz,
-                            bData.color.xyz,
-	                        lowRadius,
-	                        highRadius,
-                            bData.startLength,
-                            bData.branchLength,
-                            bData.uvOffset,
-                            bData.order);
+    return AnimatedBranch(bData.model,
+                          t,
+	                      bData.start.xyz,
+                          bData.mid.xyz,
+	                      bData.end.xyz,
+                          bData.color.xyz,
+	                      lowRadius,
+	                      highRadius,
+                          bData.startLength,
+                          bData.branchLength,
+                          bData.uvOffset,
+                          bData.order);
 }
 
 Bezier toBezier(in AnimatedBranch branch) {

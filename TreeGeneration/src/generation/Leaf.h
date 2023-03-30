@@ -3,17 +3,21 @@
 namespace tgen::gen
 {
 struct Branch;
+struct AnimatedBranch;
 
 struct Leaf
 {
 	mat4 model;
 	rb<Branch> attachedTo;
 	float branchT;
+	float randomAngle;
+	float size;
 	static float pertubateAngle;
 
 	Leaf(rb<Branch> branch, float branchT, float size, float randomAngle);
 
-	vec3 calculatePos() inline const;
+	mat4 animatedLeaf(rb<AnimatedBranch> animated, float animationT) const;
 
+	vec3 calculatePos() inline const;
 };
 }

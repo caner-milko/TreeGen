@@ -19,7 +19,7 @@ struct TreeGrowthData
 
 	float apicalControl = 0.5f;
 	float vigorMultiplier = 2.0f;
-	float baseLength = .02f;
+	float baseLength = .1f;
 
 	float baseRadius = 0.0005f;
 	float radiusN = 2.5f;

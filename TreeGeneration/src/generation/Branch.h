@@ -28,13 +28,24 @@ struct BranchShaderData
 	//vec4 filler;
 };
 
+struct Bezier
+{
+	vec3 A, B, C;
+	vec3 bezierPlaneNormal;
+	float lowRadius;
+	float highRadius; //radius at endT
+	float endT = 1.0f;
+	float mapT(float T) inline const;
+	vec3 evaluatePos(float t) inline const;
+	vec3 evaluateDir(float t) inline const;
+	vec3 evaluateNormal(float t) inline const;
+	float evaluateWidth(float t) inline const;
+};
+
 struct Branch
 {
 	mat4 model;
-	vec3 A, B, C;
-	float lowRadius;
-	float highRadius;
-	vec3 bezierPlaneNormal;
+	Bezier bez;
 	float startLength;
 	float length;
 	float offset;
@@ -48,8 +59,7 @@ public:
 	Branch(rb<const TreeNode> node, float baseRadius, float radiusPow, float curviness, float startLength, const vec3& lastPlaneNormal, float lastOffset);
 
 	Branch(const Branch& other, bool copyLeaves)
-		: model(other.model), A(other.A), B(other.B), C(other.C), lowRadius(other.lowRadius), highRadius(other.highRadius),
-		bezierPlaneNormal(other.bezierPlaneNormal), startLength(other.startLength), length(other.length),
+		: model(other.model), bez(other.bez), startLength(other.startLength), length(other.length),
 		offset(other.offset), order(other.order), boundingBox(other.boundingBox), from(other.from)
 	{
 		if (copyLeaves)
@@ -59,10 +69,5 @@ public:
 	void generateLeaves(uint32 maxChildCount, uint32 minOrder, float leafDensity, float sizeMultiplier);
 
 	BranchShaderData asShaderData(const vec3& color) const;
-
-	vec3 evaluatePos(float t) inline const;
-	vec3 evaluateDir(float t) inline const;
-	vec3 evaluateNormal(float t) inline const;
-	float evaluateWidth(float t) inline const;
 };
 }

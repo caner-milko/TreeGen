@@ -161,7 +161,7 @@ void AnimatedTreeRendererManager::renderBranchs(RendererSpan renderers, const Dr
 {
 	static GraphicsPipeline BranchRenderPipeline = []() -> GraphicsPipeline
 	{
-		GraphicsPipeline pipeline("Branchs", *resources.animatedBranchShader);
+		GraphicsPipeline pipeline("Animated Branchs", *resources.animatedBranchShader);
 		pipeline.vertexInputState = TreeRendererManager::resources.cubeMesh->inputState;
 		return pipeline;
 	}();
@@ -192,5 +192,30 @@ void AnimatedTreeRendererManager::renderBranchs(RendererSpan renderers, const Dr
 }
 void AnimatedTreeRendererManager::renderLeaves(RendererSpan renderers, const DrawView& view, const DrawScene& scene) const
 {
+	const GraphicsPipeline pipeline = []() ->GraphicsPipeline
+	{
+		GraphicsPipeline pipeline("Animated Leaves", *StaticTreeRendererManager::resources.leafShader);
+		pipeline.rasterizationState.cullMode = CullMode::NONE;
+		pipeline.vertexInputState = TreeRendererManager::resources.leafMesh->inputState;
+		return pipeline;
+	}();
+	Cmd::ScopedGraphicsPipeline _(pipeline);
+	Cmd::util::BindMesh(*TreeRendererManager::resources.leafMesh);
+
+	Cmd::BindUBO(0, *TreeRendererManager::resources.camUBO, 0, TreeRendererManager::resources.camUBO->getRawSize());
+	Cmd::BindUBO(1, *TreeRendererManager::resources.lightUBO, 0, TreeRendererManager::resources.lightUBO->getRawSize());
+
+	std::chrono::duration<float> diff = std::chrono::steady_clock::now() - lastGrowth;
+	float timeSinceLastGrowth = glm::clamp(diff.count() * resources.animationSpeed, 0.0f, 1.0f);
+
+	glBindTextureUnit(StaticTreeRendererManager::resources.leafShader->getTextureIndex("leafTex"), TreeRendererManager::resources.leafTexture->getHandle());
+	for (auto renderer : renderers)
+	{
+		((AnimatedTreeRenderer*)renderer)->CreateLeafSSBO(timeSinceLastGrowth);
+		if (renderer->getLeafSSBO().getRawSize() == 0)
+			continue;
+		Cmd::BindSSBO(0, renderer->getLeafSSBO(), 0, renderer->getLeafSSBO().getRawSize());
+		Cmd::DrawIndexed(TreeRendererManager::resources.leafMesh->ebo.getSize(), renderer->getLeafSSBO().getSize());
+	}
 }
 }

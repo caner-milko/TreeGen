@@ -13,6 +13,7 @@ public:
 				recordOldBranchs();
 			});
 	};
+	void CreateLeafSSBO(float animationT);
 	void recordOldBranchs();
 	~AnimatedTreeRenderer() override = default;
 	void updateRenderer() override;
@@ -20,6 +21,8 @@ public:
 	uint32 getBranchCount() const override { return branchSSBO.getSize(); }
 
 private:
+	std::vector<gen::Branch> branchs;
+	std::vector<gen::AnimatedBranch> animatedBranchs;
 	std::unordered_map<uint32, gen::Branch> lastRecorded;
 	std::unique_ptr<EventSubscriber<gen::Tree::TreeEventData>> onGrowBeforeSubscriber{};
 	gl::SSBO<gen::AnimatedBranchShaderData> branchSSBO{};
