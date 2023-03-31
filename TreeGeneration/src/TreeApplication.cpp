@@ -267,7 +267,7 @@ void TreeApplication::updateScene()
 		float timeSinceLastGrowth = diff.count() * AnimatedTreeRendererManager::resources.animationSpeed;
 		if (timeSinceLastGrowth > 1.0f)
 		{
-			generator->iterateWorld(*world, 1);
+			generator->iterateWorld(*world, 1, appData.renderBody || appData.renderBodyShadow);
 			lastGrowth = std::chrono::steady_clock::now();
 		}
 	}
@@ -420,7 +420,7 @@ void TreeApplication::drawScene()
 			std::cout << "Recalculate until age" << std::endl;
 			previewWorld->ResetToRealWorld();
 			CreateRenderers(previewWorld->getTrees(), false);
-			generator->iterateWorld(*previewWorld, appData.previewAge);
+			generator->iterateWorld(*previewWorld, appData.previewAge, appData.renderBody || appData.renderBodyShadow);
 		}
 		for (auto& tree : previewWorld->getTrees())
 		{
@@ -632,7 +632,7 @@ void TreeApplication::keyInput()
 			animationRunning = !animationRunning;
 		}
 		else
-			generator->iterateWorld(*world);
+			generator->iterateWorld(*world, 1, appData.renderBody || appData.renderBodyShadow);
 	}
 
 	if (ImGui::IsKeyPressed(ImGuiKey_E, false))

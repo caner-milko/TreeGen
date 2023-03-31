@@ -198,6 +198,7 @@ const std::vector<Branch>& Tree::getBranchs()
 
 const std::vector<Branch>& Tree::recalculateBranchs()
 {
+	//cache old branchs and their leaves
 	branchs.clear();
 	if (root->nodeStatus != TreeNode::ALIVE)
 		return branchs;

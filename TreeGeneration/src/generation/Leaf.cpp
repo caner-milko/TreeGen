@@ -19,8 +19,8 @@ Leaf::Leaf(rb<Branch> branch, float branchT, float size, float randomAngle)
 
 	dir = glm::normalize(dir - glm::dot(norm, dir) * norm);
 
+	//TODO: inverse is slow
 	mat4 rotMat = glm::inverse(glm::lookAt(vec3(0.0f), dir, norm));
-
 
 	model = glm::scale(glm::translate(mat4(1.0f), pos) * rotMat,
 		vec3(size));

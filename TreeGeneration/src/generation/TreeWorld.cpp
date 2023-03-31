@@ -158,6 +158,7 @@ void TreeWorld::castShadows(const vec3& pos, int pyramidHeight, float a, float b
 			continue;
 		for (int i = glm::max(relScaledPos.x - q, 0); i <= glm::min(relScaledPos.x + q, info.worldSize.x - 1); i++) {
 			for (int k = glm::max(relScaledPos.z - q, 0); k <= glm::min(relScaledPos.z + q, info.worldSize.z - 1); k++) {
+				//LUT for pow
 				float s = a * glm::pow(b, -(q / 2.0f));
 				addShadowTo(ivec3(i, j, k), s * (float(addShadows) * 2.0f - 1.0f));
 			}
