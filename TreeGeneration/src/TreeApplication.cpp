@@ -314,8 +314,6 @@ void TreeApplication::drawGUI()
 		treeSettingsEdited |= ImGui::SliderFloat("Shed Multiplier", &growthData.shedMultiplier, 0.0f, 3.0f);
 		treeSettingsEdited |= ImGui::SliderFloat("Shed Exp", &growthData.shedExp, 0.5f, 5.0f);
 
-
-
 		radiusSettingsEdited |= ImGui::SliderFloat("Branch Radius Min", &growthData.baseRadius, 0.00001f, 0.005f, "%.5f", ImGuiSliderFlags_Logarithmic);
 		radiusSettingsEdited |= ImGui::SliderFloat("Branch Radius Power", &growthData.radiusN, 1.0f, 4.0f);
 		radiusSettingsEdited |= ImGui::SliderFloat("Branch Curviness", &growthData.branchCurviness, 0.0f, 1.0f);
@@ -437,7 +435,7 @@ void TreeApplication::drawScene()
 	if (radiusSettingsEdited)
 	{
 		for (auto& tree : selWorld.getTrees())
-			tree->recalculateBranchs();
+			tree->recalculateBranchs(false);
 		for (auto& renderer : treeRenderers)
 			renderer->updateRenderer();
 	}

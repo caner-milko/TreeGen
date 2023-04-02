@@ -87,9 +87,14 @@ public:
 
 	std::vector<TreeNode> AsNodeVector(bool includeBuds) const;
 
-	const std::vector<Branch>& getBranchs();
+	const std::vector<rb<Branch>>& getBranchs();
 
-	const std::vector<Branch>& recalculateBranchs();
+	const std::vector<rb<Branch>>& recalculateBranchs(bool clearCache);
+
+	const Branch& getBranchAt(TreeNodeId id) const
+	{
+		return cachedBranchs.at(id);
+	}
 
 	void generateLeaves();
 
@@ -101,8 +106,8 @@ public:
 	bool operator==(const Tree& other) const;
 
 private:
-
-	std::vector<Branch> branchs;
+	std::vector<rb<Branch>> branchs;
+	std::unordered_map<TreeNodeId, Branch> cachedBranchs;
 	float accumulateLightRecursive(TreeNode& node);
 	void distributeVigorRecursive(TreeNode& node);
 	void addShootsRecursive(TreeNode& node);

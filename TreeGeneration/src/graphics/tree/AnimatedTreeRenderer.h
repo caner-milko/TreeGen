@@ -21,7 +21,7 @@ public:
 	uint32 getBranchCount() const override { return branchSSBO.getSize(); }
 
 private:
-	std::vector<gen::Branch> branchs;
+	std::vector<rb<gen::Branch>> branchs;
 	std::vector<gen::AnimatedBranch> animatedBranchs;
 	std::unordered_map<uint32, gen::Branch> lastRecorded;
 	std::unique_ptr<EventSubscriber<gen::Tree::TreeEventData>> onGrowBeforeSubscriber{};

@@ -14,7 +14,7 @@ void AnimatedTreeRenderer::CreateLeafSSBO(float animationT)
 	for (auto& branch : branchs)
 	{
 		auto& animatedBranch = animatedBranchs[i];
-		for (auto& leaf : branch.leaves)
+		for (auto& leaf : branch->leaves)
 		{
 			models.emplace_back(leaf.animatedLeaf(&animatedBranch, animationT));
 		}
@@ -25,10 +25,10 @@ void AnimatedTreeRenderer::CreateLeafSSBO(float animationT)
 void AnimatedTreeRenderer::recordOldBranchs()
 {
 	lastRecorded.clear();
-	const std::vector<Branch>& branchs = tree->getBranchs();
+	const auto& branchs = tree->getBranchs();
 	for (auto& branch : branchs)
 	{
-		lastRecorded.try_emplace(branch.from->id, Branch(branch, false));
+		lastRecorded.try_emplace(branch->from->id, Branch(*branch, false));
 	}
 }
 
@@ -43,9 +43,9 @@ void AnimatedTreeRenderer::updateRenderer()
 	animatedBranchs.reserve(branchs.size());
 	branchData.reserve(branchs.size());
 
-	for (auto& branch : branchs)
+	for (auto branchPtr : branchs)
 	{
-
+		auto& branch = *branchPtr;
 		uint32 colorSelected = branch.from->order;
 		vec3 color = vec3(util::IntNoise2D(colorSelected), util::IntNoise2D(colorSelected, 1), util::IntNoise2D(colorSelected, 2)) * 0.5f + 0.5f;
 		if (auto it = lastRecorded.find(branch.from->id); it != lastRecorded.end())

@@ -1,9 +1,12 @@
 #pragma once
 #include "Common.h"
-namespace tgen::gen {
+namespace tgen::gen
+{
+using TreeNodeId = uint32;
 struct TreeNode
 {
-	enum NodeStatus {
+	enum NodeStatus
+	{
 		BUD, ALIVE, DEAD,
 	};
 	vec3 startPos;
@@ -13,7 +16,7 @@ struct TreeNode
 	uint32 childCount = 0;
 
 	uint8 nodeStatus = NodeStatus::BUD;
-	uint32 id = 0;
+	TreeNodeId id = 0;
 	uint32 order = 0;
 	uint32 createdAt = 0;
 
@@ -40,8 +43,10 @@ struct TreeNode
 		return startPos + length * direction;
 	}
 
-	TreeNode* dominantChild() const {
-		if (mainChild->nodeStatus != ALIVE) {
+	TreeNode* dominantChild() const
+	{
+		if (mainChild->nodeStatus != ALIVE)
+		{
 			if (lateralChild->nodeStatus != ALIVE)
 				return nullptr;
 			return lateralChild;
@@ -53,8 +58,10 @@ struct TreeNode
 		return lateralChild;
 	}
 
-	TreeNode* weakerChild() const {
-		if (mainChild->nodeStatus != ALIVE || lateralChild->nodeStatus != ALIVE) {
+	TreeNode* weakerChild() const
+	{
+		if (mainChild->nodeStatus != ALIVE || lateralChild->nodeStatus != ALIVE)
+		{
 			return nullptr;
 		}
 		if (mainChild->childCount >= lateralChild->childCount)
@@ -62,11 +69,13 @@ struct TreeNode
 		return mainChild;
 	}
 
-	bool isDominantChild() const {
+	bool isDominantChild() const
+	{
 		return order == 0 || parent->dominantChild()->id == id;
 	}
 
-	TreeNode* sibling() const {
+	TreeNode* sibling() const
+	{
 		if (order == 0)
 			return nullptr;
 		if (parent->lateralChild == this)

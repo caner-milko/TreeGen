@@ -66,6 +66,8 @@ public:
 			leaves = other.leaves;
 	}
 
+	void updateBranch(float baseRadius, float radiusPow);
+
 	void generateLeaves(uint32 maxChildCount, uint32 minOrder, float leafDensity, float sizeMultiplier);
 
 	BranchShaderData asShaderData(const vec3& color) const;

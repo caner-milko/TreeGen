@@ -11,7 +11,6 @@ Branch::Branch(rb<const TreeNode> nodePtr, float baseRadius, float radiusPow, fl
 	length = node.length;
 	if (node.order > 0 && node.parent->dominantChild()->id != node.id)
 	{
-
 		length += node.parent->length;
 		bez.A = node.parent->startPos;
 		bez.B = node.startPos + node.direction * node.length * 0.5f;
@@ -97,6 +96,44 @@ Branch::Branch(rb<const TreeNode> nodePtr, float baseRadius, float radiusPow, fl
 	model = boundingBox.asModel();
 
 	order = node.order;
+}
+
+void Branch::updateBranch(float baseRadius, float radiusPow)
+{
+	TreeNode* dominantChild = from->dominantChild();
+	bez.lowRadius = glm::pow(from->childCount, 1.0f / radiusPow) * baseRadius;
+
+	bez.highRadius = dominantChild == nullptr ? 0.0f
+		: (glm::pow(dominantChild->childCount, 1.0f / radiusPow) * baseRadius);
+
+	bez.lowRadius = glm::max(bez.lowRadius, 0.0001f);
+	bez.highRadius = glm::max(bez.highRadius, 0.0001f);
+
+	// extremes
+	vec3 mi = glm::min(bez.A, bez.C);
+	vec3 ma = glm::max(bez.A, bez.C);
+
+
+	mi -= bez.lowRadius;
+	ma += bez.lowRadius;
+
+	// maxima/minima point, if p1 is outside the current bbox/hull
+	if (bez.B.x<mi.x || bez.B.x>ma.x || bez.B.y<mi.y ||
+		bez.B.y>ma.y || bez.B.z < mi.x || bez.B.z > mi.y)
+	{
+
+		vec3 t = glm::clamp((bez.A - bez.B) / (bez.A - 2.0f * bez.B + bez.C), 0.0f, 1.0f);
+		vec3 s = 1.0f - t;
+		vec3 q = s * s * bez.A + 2.0f * s * t * bez.B + t * t * bez.C;
+
+		mi = min(mi, q - bez.lowRadius);
+		ma = max(ma, q + bez.lowRadius);
+	}
+
+
+	boundingBox = { mi, ma };
+
+	model = boundingBox.asModel();
 }
 
 void Branch::generateLeaves(uint32 maxChildCount, uint32 minOrder, float leafDensity, float sizeMultiplier)

@@ -1,10 +1,13 @@
 #pragma once
 #include "Common.h"
-namespace tgen::util {
-struct BBox {
+namespace tgen::util
+{
+struct BBox
+{
 	vec3 min, max;
 
-	BBox(vec3 min, vec3 max) : min(glm::min(min, max)), max(glm::max(min, max)) {
+	BBox(vec3 min, vec3 max) : min(glm::min(min, max)), max(glm::max(min, max))
+	{
 	}
 
 	mat4 asModel() inline const {

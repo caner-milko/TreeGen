@@ -189,23 +189,29 @@ std::vector<TreeNode> Tree::AsNodeVector(bool includeBuds) const
 	return nodes;
 }
 
-const std::vector<Branch>& Tree::getBranchs()
+const std::vector<rb<Branch>>& Tree::getBranchs()
 {
 	if (!branchs.empty())
 		return branchs;
-	return recalculateBranchs();
+	return recalculateBranchs(false);
 }
 
-const std::vector<Branch>& Tree::recalculateBranchs()
+const std::vector<rb<Branch>>& Tree::recalculateBranchs(bool clearCache)
 {
 	//cache old branchs and their leaves
 	branchs.clear();
+	if (clearCache)
+	{
+		cachedBranchs.clear();
+	}
 	if (root->nodeStatus != TreeNode::ALIVE)
 		return branchs;
 	std::stack<const TreeNode*> stack({ root });
 	float lastOffset = 0.0f;
 	vec3 lastPlaneNormal(1.0f, 0.0f, 0.0f);
 	float length = 0.0f;
+	branchs.reserve(cachedBranchs.size());
+
 	while (!stack.empty())
 	{
 		const TreeNode* selected = stack.top();
@@ -232,15 +238,28 @@ const std::vector<Branch>& Tree::recalculateBranchs()
 			length = 0.0f;
 		}
 
-		Branch branch(selected, growthData.baseRadius, growthData.radiusN, growthData.branchCurviness, length, lastPlaneNormal, lastOffset);
+		auto id = selected->id;
+		Branch* curBranch;
+		if (auto it = cachedBranchs.find(id); it != cachedBranchs.end())
+		{
+			curBranch = &cachedBranchs.at(id);
+			curBranch->updateBranch(growthData.baseRadius, growthData.radiusN);
+		}
+		else
+		{
+			curBranch =
+				&cachedBranchs.try_emplace(id, selected, growthData.baseRadius,
+					growthData.radiusN, growthData.branchCurviness, length, lastPlaneNormal,
+					lastOffset).first->second;
+		}
 
 		if (!branchEnd)
 		{
-			lastOffset = branch.offset;
-			lastPlaneNormal = branch.bez.bezierPlaneNormal;
-			length += branch.length;
+			lastOffset = curBranch->offset;
+			lastPlaneNormal = curBranch->bez.bezierPlaneNormal;
+			length += curBranch->length;
 		}
-		branchs.push_back(branch);
+		branchs.push_back(curBranch);
 	}
 	generateLeaves();
 	return branchs;
@@ -248,8 +267,9 @@ const std::vector<Branch>& Tree::recalculateBranchs()
 
 void Tree::generateLeaves()
 {
-	for (auto& branch : branchs)
+	for (auto& [_, branch] : cachedBranchs)
 	{
+		//TODO cache these too
 		branch.generateLeaves(growthData.leafMaxChildCount, growthData.leafMinOrder, growthData.leafDensity, growthData.leafSizeMultiplier);
 	}
 }
@@ -386,6 +406,7 @@ void Tree::shedBranchsRecursive(TreeNode& node)
 	}
 
 	node.nodeStatus = TreeNode::DEAD;
+	cachedBranchs.erase(node.id);
 	if (node.order != 0 && node.parent->mainChild->id == node.id)
 	{
 		removeShadows(node);
@@ -394,6 +415,7 @@ void Tree::shedBranchsRecursive(TreeNode& node)
 	while (!query.empty())
 	{
 		TreeNode* sel = query.front();
+		cachedBranchs.erase(sel->id);
 		if (node.nodeStatus == TreeNode::ALIVE)
 		{
 			query.emplace(sel->mainChild);

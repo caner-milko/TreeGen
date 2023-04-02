@@ -12,7 +12,7 @@ void StaticTreeRenderer::updateRenderer()
 {
 	if (tree->age <= 0)
 		return;
-	const std::vector<Branch>& branchs = tree->getBranchs();
+	const std::vector<rb<Branch>>& branchs = tree->getBranchs();
 	std::vector<BranchShaderData> branchData;
 
 	branchData.reserve(branchs.size());
@@ -20,11 +20,11 @@ void StaticTreeRenderer::updateRenderer()
 	for (auto& branch : branchs)
 	{
 
-		uint32 colorSelected = branch.from->order;
+		uint32 colorSelected = branch->from->order;
 		vec3 color = vec3(util::IntNoise2D(colorSelected), util::IntNoise2D(colorSelected, 1), util::IntNoise2D(colorSelected, 2)) * 0.5f + 0.5f;
 
 
-		branchData.push_back(branch.asShaderData(color));
+		branchData.push_back(branch->asShaderData(color));
 	}
 	branchSSBO.init(std::span<BranchShaderData>(branchData));
 
@@ -32,7 +32,7 @@ void StaticTreeRenderer::updateRenderer()
 
 	for (auto& branch : branchs)
 	{
-		for (auto& leaf : branch.leaves)
+		for (auto& leaf : branch->leaves)
 		{
 			models.emplace_back(leaf.model);
 		}
