@@ -287,12 +287,8 @@ void TreeApplication::drawGUI()
 
 	if (ImGui::CollapsingHeader("Tree Growth Data"))
 	{
-		//shadows
-		float fullExposure = 3.0f;
-		int pyramidHeight = 5;
-		float a = 0.5f;
-		//b > 1
-		float b = 2.0f;
+		bool worldSettingsEdited = false;
+		auto worldInfo = world->getWorldInfo();
 
 		int32 seed = trees[0]->seed;
 		treeSettingsEdited |= ImGui::DragInt("Seed", &seed);
@@ -309,10 +305,10 @@ void TreeApplication::drawGUI()
 		treeSettingsEdited |= ImGui::SliderFloat("Optimal Direction Weight", &growthData.directionWeights.x, 0.0f, 1.0f);
 		treeSettingsEdited |= ImGui::SliderFloat("Tropism Weight", &growthData.directionWeights.y, 0.0f, 1.0f);
 
-		treeSettingsEdited |= ImGui::SliderFloat("Full Exposure Light", &growthData.fullExposure, 0.5f, 5.0f);
-		treeSettingsEdited |= ImGui::SliderInt("Shadow Pyramid Height", &growthData.pyramidHeight, 1, 20);
-		treeSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Multiplier", &growthData.a, 0.1f, 3.0f);
-		treeSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Base", &growthData.b, 1.1f, 3.0f);
+		worldSettingsEdited |= ImGui::SliderFloat("Full Exposure Light", &worldInfo.fullExposure, 0.5f, 5.0f);
+		worldSettingsEdited |= ImGui::SliderInt("Shadow Pyramid Height", &worldInfo.pyramidHeight, 1, 20);
+		worldSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Multiplier", &worldInfo.a, 0.1f, 3.0f);
+		worldSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Base", &worldInfo.b, 1.1f, 3.0f);
 
 		treeSettingsEdited |= ImGui::Checkbox("Shedding", &growthData.shouldShed);
 		treeSettingsEdited |= ImGui::SliderFloat("Shed Multiplier", &growthData.shedMultiplier, 0.0f, 3.0f);
@@ -329,6 +325,13 @@ void TreeApplication::drawGUI()
 		leafSettingsEdited |= ImGui::SliderFloat("Leaf Density", &growthData.leafDensity, 0.5f, 150.0f);
 		leafSettingsEdited |= ImGui::SliderFloat("Leaf Size Multiplier", &growthData.leafSizeMultiplier, 0.05f, 3.0f);
 		leafSettingsEdited |= ImGui::SliderAngle("Leaf Angle", &Leaf::pertubateAngle);
+
+		if (worldSettingsEdited)
+		{
+			world->SetWorldInfo(worldInfo);
+			treeSettingsEdited = true;
+		}
+
 		for (auto& tree : world->getTrees())
 		{
 			tree->growthData = growthData;

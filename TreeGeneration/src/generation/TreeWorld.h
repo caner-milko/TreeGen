@@ -18,23 +18,33 @@ public:
 		ivec3 worldSize;
 		vec3 leftBottomCorner;
 		float cellSize;
+
+		//shadows
+		float fullExposure = 2.5f;
+		int32 pyramidHeight = 6;
+		float a = 0.8f;
+		//b > 1
+		float b = 1.5f;
+
 		bool operator==(const TreeWorldInfo& rhs) const = default;
 	};
 	TreeWorld(const util::BBox& worldBoundingBox, float cellSize, uint32 seed = 0);
 
 	TreeWorld(TreeWorldInfo info);
 
+	void SetWorldInfo(TreeWorldInfo info);
 	void resizeShadowGrid();
+	void recalculateLUT();
 
 	//void calculateShadows();
 	Tree& createTree(vec3 position, TreeGrowthData growthData);
 	const std::vector<std::unique_ptr<Tree>>& getTrees() const { return trees; }
 	const std::vector<ShadowCell>& getShadowGrid() const { return shadowGrid; }
 	void removeTree(Tree& tree);
-	float getLightAt(const vec3& position, float a, float fullExposure);
+	float getLightAt(const vec3& position);
 	vec3 getOptimalDirection(const vec3& position);
 
-	void castShadows(const vec3& pos, int pyramidHeight, float a, float b, bool addShadows = true);
+	void castShadows(const vec3& pos, bool addShadows = true);
 	ivec3 coordinateToCell(const vec3& pos) const;
 	vec3 cellToCoordinate(const ivec3& cell) const;
 	int cellToIndex(const ivec3& cell) const;
@@ -71,6 +81,7 @@ public:
 
 protected:
 	TreeWorldInfo info;
+	std::vector<float> pyramidShadowLUT;
 	std::vector<std::unique_ptr<Tree>> trees;
 	uint32 treeCount = 0;
 	std::vector<ShadowCell> shadowGrid;

@@ -30,13 +30,6 @@ struct TreeGrowthData
 	vec3 tropism = vec3(0.0f, 1.0f, 0.0f);
 	//default, optimal, tropism
 	vec2 directionWeights = vec2(0.1f, 0.1f);
-	//shadows
-	float fullExposure = 2.5f;
-
-	int32 pyramidHeight = 6;
-	float a = 0.8f;
-	//b > 1
-	float b = 1.5f;
 
 	//shedding
 	bool shouldShed = true;

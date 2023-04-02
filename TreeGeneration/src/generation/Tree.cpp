@@ -71,7 +71,7 @@ void Tree::distributeVigor()
 
 float Tree::lightAtBud(TreeNode& bud)
 {
-	return world->getLightAt(bud.startPos, growthData.a, growthData.fullExposure);
+	return world->getLightAt(bud.startPos);
 }
 
 void Tree::addNewShoots()
@@ -425,26 +425,12 @@ float Tree::calculateChildCountRecursive(TreeNode& node)
 	}
 }
 
-/*void Tree::calculateShadowsRecursive(TreeNode& node) const
-{
-	if (node.nodeStatus == ALIVE) {
-		calculateShadowsRecursive(*node.mainChild);
-		calculateShadowsRecursive(*node.lateralChild);
-	}
-	else if (node.nodeStatus == BUD) {
-		if (!world.isOutOfBounds(node.startPos)) {
-			if (node.order == 0 || node.parent->mainChild->id == node.id)
-				world.castShadows(node.startPos, growthData.pyramidHeight, growthData.a, growthData.b);
-		}
-	}
-}*/
-
 void Tree::removeShadows(const TreeNode& node) const
 {
-	world->castShadows(node.startPos, growthData.pyramidHeight, growthData.a, growthData.b, false);
+	world->castShadows(node.startPos, false);
 }
 void Tree::addShadows(TreeNode& node)
 {
-	world->castShadows(node.startPos, growthData.pyramidHeight, growthData.a, growthData.b, true);
+	world->castShadows(node.startPos, true);
 }
 }
