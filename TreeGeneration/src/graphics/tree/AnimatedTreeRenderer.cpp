@@ -16,7 +16,7 @@ void AnimatedTreeRenderer::CreateLeafSSBO(float animationT)
 		auto& animatedBranch = animatedBranchs[i];
 		for (auto& leaf : branch->leaves)
 		{
-			models.emplace_back(leaf.animatedLeaf(&animatedBranch, animationT));
+			models.emplace_back(leaf.animatedLeaf(&animatedBranch, tree->age, animationT));
 		}
 		i++;
 	}

@@ -136,12 +136,13 @@ void Branch::updateBranch(float baseRadius, float radiusPow)
 	model = boundingBox.asModel();
 }
 
-void Branch::generateLeaves(uint32 maxChildCount, uint32 minOrder, float leafDensity, float sizeMultiplier)
+void Branch::generateLeaves(uint32 maxChildCount, uint32 minOrder, float leafDensity, float sizeMultiplier, bool forceRegen)
 {
-	leaves.clear();
-
 	if (minOrder > from->order)
+	{
+		leaves.clear();
 		return;
+	}
 	TreeNode* dominantChild = from->dominantChild();
 	uint32 domChildCount = dominantChild == nullptr ? 0 : dominantChild->childCount;
 	if (dominantChild == nullptr)
@@ -149,14 +150,13 @@ void Branch::generateLeaves(uint32 maxChildCount, uint32 minOrder, float leafDen
 		dominantChild = nullptr;
 	}
 	if (domChildCount >= maxChildCount)
-		return;
-	float startT = 0.0f;
-
-	if (from->childCount > maxChildCount)
 	{
-		startT = float(from->childCount - maxChildCount) / float(from->childCount - domChildCount);
+		leaves.clear();
+		return;
 	}
-
+	if (!forceRegen && !leaves.empty())
+		return;
+	leaves.clear();
 	float chance = length * leafDensity;
 
 	uint32 id = from->id;
@@ -184,11 +184,7 @@ void Branch::generateLeaves(uint32 maxChildCount, uint32 minOrder, float leafDen
 		}
 
 		leaves.emplace_back(this, t, size, rndAngle);
-
-
-
 	}
-
 }
 
 BranchShaderData Branch::asShaderData(const vec3& color) const

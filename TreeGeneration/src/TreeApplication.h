@@ -53,7 +53,7 @@ struct TreeApplicationData
 	bool renderBodyShadow = true;
 	bool renderLeafShadow = true;
 
-	bool animated = false;
+	bool animated = true;
 };
 
 
