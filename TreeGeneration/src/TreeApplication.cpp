@@ -14,9 +14,6 @@
 #include "util/Util.h"
 namespace tgen::app
 {
-
-
-
 TreeApplication::TreeApplication(const TreeApplicationData& appData)
 {
 #pragma region Setup_GLFW
@@ -166,26 +163,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 		Renderer::getRenderer().setupSkybox(skyboxTex, skyboxShader);
 
 
-		{
-			heightMapImage = ResourceManager::getInstance().readImageFile("./Assets/Textures/terrain/noiseTexture.png");
 
-			TerrainData terrainData = {};
-			terrainData.heightMap = heightMapImage;
-			terrainData.maxHeight = 0.2f;
-			terrainObject.terrain = std::make_unique<Terrain>(terrainData);
-			terrainObject.terrainRenderer = std::make_unique<TerrainRenderer>(*terrainObject.terrain);
-			{
-				auto& res = TerrainRenderer::resources;
-				res.terrainShader = terrainShader;
-				res.terrainShadowShader = terrainShadowShader;
-				res.material = terrainMaterial;
-				res.lineShader = lineShader;
-				res.lineVAO = &Renderer::getRenderer().getLineMesh();
-				res.camUBO = &Renderer::getRenderer().getCamUBO();
-				res.lightUBO = &Renderer::getRenderer().getLightUBO();
-			}
-			terrainObject.terrainRenderer->update();
-		}
 	}
 #pragma endregion Load_Resources
 
@@ -198,8 +176,39 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 
 	generator = std::make_unique<TreeGenerator>();
 
+	world = std::make_unique<TreeWorld>(worldGrowthData, appData.worldBbox, baseGrowthData.baseLength);
+	world->newGrowthData(DETAILED, presetColors[0]);
+	world->newGrowthData(DETAILED_LOW, presetColors[1]);
+	{
+		worldPresetImage = ResourceManager::getInstance().readImageFile("./Assets/preset.png");
+		world->setPresetMap(worldPresetImage);
+	}
 
-	world = std::make_unique<TreeWorld>(appData.worldBbox, growthData.baseLength);
+	{
+		heightMapImage = ResourceManager::getInstance().readImageFile("./Assets/Textures/terrain/noiseTexture.png");
+
+		TerrainData terrainData = {};
+		terrainData.heightMap = heightMapImage;
+		terrainData.maxHeight = 0.2f;
+		auto worldInfo = world->getWorldInfo();
+		terrainData.size = worldInfo.cellSize * vec2(worldInfo.worldSize.x, worldInfo.worldSize.z);
+		terrainData.center = worldInfo.leftBottomCorner +
+			worldInfo.cellSize * vec3(worldInfo.worldSize.x, 0.0f, worldInfo.worldSize.z) / 2.0f;
+		terrainObject.terrain = std::make_unique<Terrain>(terrainData);
+		terrainObject.terrainRenderer = std::make_unique<TerrainRenderer>(*terrainObject.terrain);
+		{
+			auto& res = TerrainRenderer::resources;
+			res.terrainShader = terrainShader;
+			res.terrainShadowShader = terrainShadowShader;
+			res.material = terrainMaterial;
+			res.lineShader = lineShader;
+			res.lineVAO = &Renderer::getRenderer().getLineMesh();
+			res.camUBO = &Renderer::getRenderer().getCamUBO();
+			res.lightUBO = &Renderer::getRenderer().getLightUBO();
+		}
+		terrainObject.terrainRenderer->update();
+	}
+
 	{
 		{
 			auto& res = TreeRendererManager::resources;
@@ -243,7 +252,6 @@ void TreeApplication::execute()
 #pragma region Frame
 void TreeApplication::startFrame()
 {
-
 	treeSettingsEdited = false;
 	previewWorldChanged = false;
 	radiusSettingsEdited = false;
@@ -288,14 +296,14 @@ void TreeApplication::drawGUI()
 	if (ImGui::CollapsingHeader("Tree Growth Data"))
 	{
 		bool worldSettingsEdited = false;
-		auto worldInfo = world->getWorldInfo();
-
+		auto& worldGrowthData = world->getWorldGrowthData();
+		auto& growthData = world->getWorldGrowthData().presets.begin()->second;
 		int32 seed = trees[0]->seed;
 		treeSettingsEdited |= ImGui::DragInt("Seed", &seed);
 		trees[0]->seed = seed;
 		treeSettingsEdited |= ImGui::SliderFloat("Apical Control", &growthData.apicalControl, 0.0f, 1.0f);
 		treeSettingsEdited |= ImGui::SliderFloat("Vigor Multiplier", &growthData.vigorMultiplier, 0.25f, 4.0f);
-		treeSettingsEdited |= ImGui::SliderFloat("Base Length", &growthData.baseLength, 0.01f, 1.0f);
+		//treeSettingsEdited |= ImGui::SliderFloat("Base Length", &growthData.baseLength, 0.01f, 1.0f);
 
 
 		treeSettingsEdited |= ImGui::SliderAngle("Lateral Angle", &growthData.lateralAngle, 15.0f, 90.0f);
@@ -305,10 +313,10 @@ void TreeApplication::drawGUI()
 		treeSettingsEdited |= ImGui::SliderFloat("Optimal Direction Weight", &growthData.directionWeights.x, 0.0f, 1.0f);
 		treeSettingsEdited |= ImGui::SliderFloat("Tropism Weight", &growthData.directionWeights.y, 0.0f, 1.0f);
 
-		worldSettingsEdited |= ImGui::SliderFloat("Full Exposure Light", &worldInfo.fullExposure, 0.5f, 5.0f);
-		worldSettingsEdited |= ImGui::SliderInt("Shadow Pyramid Height", &worldInfo.pyramidHeight, 1, 20);
-		worldSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Multiplier", &worldInfo.a, 0.1f, 3.0f);
-		worldSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Base", &worldInfo.b, 1.1f, 3.0f);
+		worldSettingsEdited |= ImGui::SliderFloat("Full Exposure Light", &worldGrowthData.fullExposure, 0.5f, 5.0f);
+		worldSettingsEdited |= ImGui::SliderInt("Shadow Pyramid Height", &worldGrowthData.pyramidHeight, 1, 20);
+		worldSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Multiplier", &worldGrowthData.a, 0.1f, 3.0f);
+		worldSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Base", &worldGrowthData.b, 1.1f, 3.0f);
 
 		treeSettingsEdited |= ImGui::Checkbox("Shedding", &growthData.shouldShed);
 		treeSettingsEdited |= ImGui::SliderFloat("Shed Multiplier", &growthData.shedMultiplier, 0.0f, 3.0f);
@@ -324,20 +332,8 @@ void TreeApplication::drawGUI()
 		leafSettingsEdited |= ImGui::SliderFloat("Leaf Size Multiplier", &growthData.leafSizeMultiplier, 0.05f, 3.0f);
 		leafSettingsEdited |= ImGui::SliderAngle("Leaf Angle", &Leaf::pertubateAngle);
 
-		if (worldSettingsEdited)
-		{
-			world->SetWorldInfo(worldInfo);
-			treeSettingsEdited = true;
-		}
-
-		for (auto& tree : world->getTrees())
-		{
-			tree->growthData = growthData;
-		}
-		for (auto& tree : trees)
-		{
-			tree->growthData = growthData;
-		}
+		treeSettingsEdited |= worldSettingsEdited;
+		world->recalculateLUT();
 	}
 
 	if (ImGui::CollapsingHeader("Render Options"))
@@ -395,6 +391,7 @@ void TreeApplication::drawGUI()
 void TreeApplication::drawScene()
 {
 	DrawScene scene(DirectionalLight::GDirLight);
+	const Camera& cam = editingTerrain ? terrainObject.terrain->getTerrainCamera() : this->cam;
 	DrawView view{ cam };
 
 	if (previewWorldChanged && !appData.previewWorld)
@@ -422,10 +419,6 @@ void TreeApplication::drawScene()
 			previewWorld->ResetToRealWorld();
 			CreateRenderers(previewWorld->getTrees(), false);
 			generator->iterateWorld(*previewWorld, appData.previewAge, appData.renderBody || appData.renderBodyShadow);
-		}
-		for (auto& tree : previewWorld->getTrees())
-		{
-			tree->growthData = growthData;
 		}
 	}
 
@@ -469,8 +462,7 @@ void TreeApplication::drawScene()
 
 	Renderer::getRenderer().beginSwapchain();
 
-
-	Renderer::getRenderer().renderTest(view);
+	//Renderer::getRenderer().renderTest(view);
 
 	treeRendererManager->renderTrees(renderers, view, scene, appData.renderBody, appData.renderLeaves);
 
@@ -553,9 +545,12 @@ void TreeApplication::redistributeTrees()
 		points.push_back(vec2(0.0));
 		points.push_back(vec2(0.0, 0.2));
 	}
+	uint32 i = 0;
 	for (auto& point : points)
 	{
-		trees.emplace_back(&generator->createTree(*world, vec3(point.x, terrainObject.terrain->heightAtWorldPos(vec3(point.x, 0.0f, point.y)), point.y), growthData));
+		uint32 id = world->getGrowthDataFromMap(point);
+		trees.emplace_back(&generator->createTree(*world, vec3(point.x, terrainObject.terrain->heightAtWorldPos(vec3(point.x, 0.0f, point.y)), point.y), id));
+		i++;
 	}
 	//trees.emplace_back(&generator->createTree(*app.world, vec3(0.0f, app.terrainObject.terrain->heightAtWorldPos(vec3(0.0f)), 0.0), app.growthData));
 	//trees.emplace_back(&app.generator->createTree(*app.world, vec3(0.2f, app.terrainObject.terrain->heightAtWorldPos(vec3(0.2f, 0.0f, 0.0f)), 0.0f), app.growthData));
@@ -620,6 +615,8 @@ void TreeApplication::keyInput()
 		camPos += glm::vec3(0.0f, cameraSpeed, 0.0f);
 	if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
 		camPos += glm::vec3(0.0f, -cameraSpeed, 0.0f);
+	if (ImGui::IsKeyPressed(ImGuiKey_K))
+		editingTerrain = !editingTerrain;
 	if (ImGui::IsKeyDown(ImGuiKey_L))
 	{
 		auto& light = DirectionalLight::GDirLight;

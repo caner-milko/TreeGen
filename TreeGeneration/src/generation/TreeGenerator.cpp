@@ -1,14 +1,19 @@
 #include "TreeGenerator.h"
 namespace tgen::gen
 {
-Tree& TreeGenerator::createTree(TreeWorld& world, vec3 position, TreeGrowthData growthData)
+Tree& TreeGenerator::createTree(TreeWorld& world, vec3 position, GrowthDataId growthDataId)
 {
-	return world.createTree(position, growthData);
+	return world.createTree(position, growthDataId);
+}
+
+std::vector<vec2> TreeGenerator::spreadSeeds(Tree& world)
+{
+	return std::vector<vec2>();
 }
 
 void TreeGenerator::growTree(Tree& tree)
 {
-	if (!tree.growthData.grow)
+	if (!tree.getGrowthData().grow)
 		return;
 	tree.OnBeforeGrow.dispatch({});
 	tree.age++;
@@ -20,15 +25,13 @@ void TreeGenerator::growTree(Tree& tree)
 
 
 	tree.addNewShoots();
-	if (tree.growthData.shouldShed)
-	{
-		tree.shedBranchs();
-	}
+	tree.shedBranchs();
 
 	tree.calculateChildCount();
 
 	tree.endGrow();
 }
+
 void TreeGenerator::iterateWorld(TreeWorld& world, int count, bool updateRenderers)
 {
 	for (int i = 0; i < count; i++)
@@ -39,10 +42,11 @@ void TreeGenerator::iterateWorld(TreeWorld& world, int count, bool updateRendere
 		}
 		world.age++;
 	}
-	if(updateRenderers) {
+	if (updateRenderers)
+	{
 		for (auto& tree : world.getTrees())
 		{
-			if (!tree->growthData.grow)
+			if (!tree->getGrowthData().grow)
 				return;
 			tree->OnAfterGrow.dispatch({});
 		}

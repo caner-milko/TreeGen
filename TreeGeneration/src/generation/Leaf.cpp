@@ -18,7 +18,9 @@ inline mat4 calcLeafModel(const Bezier& bez, float randomAngle,
 
 	vec3 pos = bez.evaluatePos(branchT) + norm * bez.evaluateWidth(branchT);
 
-	norm = util::randomPerturbateVector(norm, pertubateAngle, util::hash(randomAngle / PI * 180.0f));
+	float randomAngleDegrees = randomAngle / PI * 180.0f;
+
+	norm = util::randomPerturbateVector(norm, pertubateAngle, util::hash(reinterpret_cast<uint32&>(randomAngleDegrees)));
 
 	dir = glm::normalize(dir - glm::dot(norm, dir) * norm);
 

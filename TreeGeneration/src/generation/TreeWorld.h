@@ -2,6 +2,7 @@
 #include <vector>
 #include "Tree.h"
 #include <span>
+#include "EditableMap.h"
 namespace tgen::gen
 {
 struct ShadowCell
@@ -18,26 +19,18 @@ public:
 		ivec3 worldSize;
 		vec3 leftBottomCorner;
 		float cellSize;
-
-		//shadows
-		float fullExposure = 2.5f;
-		int32 pyramidHeight = 6;
-		float a = 0.8f;
-		//b > 1
-		float b = 1.5f;
-
 		bool operator==(const TreeWorldInfo& rhs) const = default;
 	};
-	TreeWorld(const util::BBox& worldBoundingBox, float cellSize, uint32 seed = 0);
+	TreeWorld(TreeWorldGrowthData worldGrowthData, const util::BBox& worldBoundingBox, float cellSize, uint32 seed = 0);
 
-	TreeWorld(TreeWorldInfo info);
+	TreeWorld(TreeWorldInfo info, TreeWorldGrowthData worldGrowthData);
 
-	void SetWorldInfo(TreeWorldInfo info);
+	void SetWorldGrowthData(TreeWorldGrowthData data);
 	void resizeShadowGrid();
 	void recalculateLUT();
 
 	//void calculateShadows();
-	Tree& createTree(vec3 position, TreeGrowthData growthData);
+	Tree& createTree(vec3 position, GrowthDataId growthDataId);
 	const std::vector<std::unique_ptr<Tree>>& getTrees() const { return trees; }
 	const std::vector<ShadowCell>& getShadowGrid() const { return shadowGrid; }
 	void removeTree(Tree& tree);
@@ -66,6 +59,11 @@ public:
 	const ShadowCell& getCellAt(const ivec3& cell) const;
 	void addShadowTo(const ivec3& cell, float amount);
 	TreeWorldInfo getWorldInfo() { return info; }
+	TreeWorldGrowthData& getWorldGrowthData() { return worldGrowthData; }
+
+	GrowthDataId getGrowthDataFromMap(vec2 worldPos);
+	void setPresetMap(rc<graphics::Image> image);
+	std::pair<GrowthDataId, glm::vec<3, uint8>> newGrowthData(TreeGrowthData data = {}, std::optional<glm::vec<3, uint8>> col = std::nullopt);
 
 	void clear()
 	{
@@ -81,9 +79,11 @@ public:
 
 protected:
 	TreeWorldInfo info;
+	TreeWorldGrowthData worldGrowthData;
 	std::vector<float> pyramidShadowLUT;
 	std::vector<std::unique_ptr<Tree>> trees;
 	uint32 treeCount = 0;
 	std::vector<ShadowCell> shadowGrid;
+	rc<EditableMap> presetMap;
 };
 }

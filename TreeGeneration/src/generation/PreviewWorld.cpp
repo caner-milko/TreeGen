@@ -1,7 +1,7 @@
 #include "PreviewWorld.h"
 
 tgen::gen::PreviewWorld::PreviewWorld(TreeWorld& realWorld)
-	: TreeWorld(realWorld.getWorldInfo()), realWorld(realWorld)
+	: TreeWorld(realWorld.getWorldInfo(), realWorld.getWorldGrowthData()), realWorld(realWorld)
 {
 	ResetToRealWorld();
 }
@@ -11,8 +11,9 @@ void tgen::gen::PreviewWorld::ResetToRealWorld()
 	age = realWorld.age;
 	if (info != realWorld.getWorldInfo())
 	{
-		SetWorldInfo(realWorld.getWorldInfo());
+		info = realWorld.getWorldInfo();
 	}
+	SetWorldGrowthData(realWorld.getWorldGrowthData());
 	trees.clear();
 	shadowGrid = realWorld.getShadowGrid();
 

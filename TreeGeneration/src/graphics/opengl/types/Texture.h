@@ -4,12 +4,15 @@
 #include "Common.h"
 #include "graphics/Image.h"
 #include "graphics/opengl/BasicTypes.h"
-namespace tgen::graphics::gl {
+namespace tgen::graphics::gl
+{
 using TextureHandle = uint32;
 
-class Texture {
+class Texture
+{
 public:
-	struct TextureCreateData {
+	struct TextureCreateData
+	{
 		ImageType imageType = ImageType::TEX_2D;
 		ivec3 size = { 1920, 1080, 1 };
 		int32 mipLevels = -1;
@@ -21,7 +24,8 @@ public:
 		bool compareEnable = false;
 		CompareOp compareOp = CompareOp::NEVER;
 	};
-	struct TextureUploadData {
+	struct TextureUploadData
+	{
 		UploadDimension dimensions = UploadDimension::TWO;
 		UploadFormat inputFormat = UploadFormat::RGBA;
 		uint32 level = 0;
@@ -40,10 +44,13 @@ public:
 
 	virtual void subImage(TextureUploadData uploadData = {});
 	void genMipMaps();
-	TextureHandle getHandle() const {
+
+	TextureHandle getHandle() const
+	{
 		return handle;
 	}
-	TextureCreateData const& getCreateData() const {
+	TextureCreateData const& getCreateData() const
+	{
 		return data;
 	}
 private:

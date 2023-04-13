@@ -54,7 +54,7 @@ struct Branch
 	util::BBox boundingBox;
 	std::vector<Leaf> leaves;
 	rb<const TreeNode> from;
-
+	bool wasDominant;
 public:
 	Branch(rb<const TreeNode> node, float baseRadius, float radiusPow, float curviness, float startLength, const vec3& lastPlaneNormal, float lastOffset);
 
@@ -66,7 +66,11 @@ public:
 			leaves = other.leaves;
 	}
 
-	void updateBranch(float baseRadius, float radiusPow);
+	//this doesn't calculates radiuses and the bounding box
+	void recalculateBezier(float curviness, const vec3& lastPlaneNormal, float lastOffset);
+
+	void updateBranch(float baseRadius, float radiusPow,
+		float curviness, float startLength, const vec3& lastPlaneNormal, float lastOffset);
 
 	void generateLeaves(uint32 maxChildCount, uint32 minOrder, float leafDensity, float sizeMultiplier, bool forceRegen = false);
 

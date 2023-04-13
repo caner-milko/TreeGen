@@ -104,13 +104,17 @@ ru<Texture> ResourceManager::createTexture(std::string_view imagePath, Texture::
 		createData.textureFormat = img->nrChannels == 4 ? (SRGB ? Format::R8G8B8A8_SRGB : Format::R8G8B8A8_UNORM) : (SRGB ? Format::R8G8B8_SRGB : Format::R8G8B8_UNORM);
 	auto tex = std::make_unique<Texture>();
 	tex->init(createData);
-	Texture::TextureUploadData uploadData = {};
-	uploadData.size = ivec3(img->width, img->height, 0);
-	uploadData.inputFormat = img->nrChannels == 4 ? UploadFormat::RGBA : UploadFormat::RGB;
-	uploadData.data = img->data;
-	tex->subImage(uploadData);
-	tex->genMipMaps();
+	uploadImageToTexture(*tex, *img);
 	return tex;
+}
+
+void ResourceManager::uploadImageToTexture(Texture& tex, Image& img, gl::Texture::TextureUploadData uploadData) const
+{
+	uploadData.size = ivec3(img.width, img.height, 0);
+	uploadData.inputFormat = img.nrChannels == 4 ? UploadFormat::RGBA : UploadFormat::RGB;
+	uploadData.data = img.data;
+	tex.subImage(uploadData);
+	tex.genMipMaps();
 }
 
 ru<CubemapTexture> ResourceManager::createCubemapTexture(std::array<std::string_view, 6> facePaths, Texture::TextureCreateData createData, bool dataFromImage)

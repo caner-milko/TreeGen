@@ -6,24 +6,25 @@
 #include <stack>
 namespace tgen::gen
 {
-Tree::Tree(rb<TreeWorld> world, uint32 id, vec3 position, TreeGrowthData growthData, uint32 seed) : world(world), id(id), growthData(growthData),
+Tree::Tree(rb<TreeWorld> world, uint32 id, vec3 position, GrowthDataId growthDataId, uint32 seed) : world(world), id(id), growthDataId(growthDataId),
 root(new TreeNode(nullptr, 0, position, vec3(0.0f, 1.0f, 0.0f))), seed(seed)
 {
 	addShadows(*root);
 }
 
 Tree::Tree(const Tree& from)
-	: world(from.world), id(from.id), growthData(from.growthData), age(from.age), seed(from.seed), metamerCount(from.metamerCount), budCount(from.budCount)
+	: world(from.world), id(from.id), growthDataId(from.growthDataId), age(from.age), seed(from.seed), metamerCount(from.metamerCount), budCount(from.budCount), lastNodeId(from.lastNodeId)
 {
 	root = new TreeNode(*from.root);
 	std::queue<TreeNode*> queue({ root });
+	int i = 0;
 	while (!queue.empty())
 	{
 		TreeNode* selected = queue.front();
 		queue.pop();
 		if (selected->nodeStatus != TreeNode::ALIVE)
 			continue;
-
+		i++;
 		selected->mainChild = new TreeNode(*selected->mainChild);
 		selected->mainChild->parent = selected;
 
@@ -39,7 +40,7 @@ void Tree::budToMetamer(TreeNode& bud)
 {
 	bud.mainChild = new TreeNode(&bud, lastNodeId, bud.endPos(), bud.direction);
 	lastNodeId++;
-	vec3 lateralDir = util::randomPerturbateVector(glm::normalize(bud.direction), growthData.lateralAngle, world->getWorldInfo().seed + seed + age + bud.id * 2 + 2);
+	vec3 lateralDir = util::randomPerturbateVector(glm::normalize(bud.direction), getGrowthData().lateralAngle, world->getWorldInfo().seed + seed + age + bud.id * 2 + 2);
 	bud.lateralChild = new TreeNode(&bud, lastNodeId, bud.endPos(), lateralDir);
 	budCount++;
 	lastNodeId++;
@@ -65,7 +66,7 @@ float Tree::accumulateLight()
 
 void Tree::distributeVigor()
 {
-	root->vigor = growthData.vigorMultiplier * root->light;
+	root->vigor = getGrowthData().vigorMultiplier * root->light;
 	distributeVigorRecursive(*root);
 }
 
@@ -81,6 +82,8 @@ void Tree::addNewShoots()
 
 void Tree::shedBranchs()
 {
+	if (!getGrowthData().shouldShed)
+		return;
 	shedBranchsRecursive(*root);
 }
 
@@ -134,6 +137,17 @@ void Tree::removeNode(TreeNode& node)
 
 
 
+}
+
+std::vector<vec2> Tree::spreadSeeds()
+{
+	std::vector<vec2> seeds;
+	if (age < 6)
+		return seeds;
+
+	uint32 seedCount = glm::log(root->vigor);
+
+	return seeds;
 }
 
 void Tree::calculateChildCount()
@@ -200,6 +214,7 @@ const std::vector<rb<Branch>>& Tree::recalculateBranchs(bool clearCache)
 {
 	//cache old branchs and their leaves
 	branchs.clear();
+	cachedBranchs.clear();
 	if (clearCache)
 	{
 		cachedBranchs.clear();
@@ -240,10 +255,12 @@ const std::vector<rb<Branch>>& Tree::recalculateBranchs(bool clearCache)
 
 		auto id = selected->id;
 		Branch* curBranch;
+		auto& growthData = getGrowthData();
 		if (auto it = cachedBranchs.find(id); it != cachedBranchs.end())
 		{
 			curBranch = &cachedBranchs.at(id);
-			curBranch->updateBranch(growthData.baseRadius, growthData.radiusN);
+			curBranch->updateBranch(growthData.baseRadius, growthData.radiusN,
+				growthData.branchCurviness, length, lastPlaneNormal, lastOffset);
 		}
 		else
 		{
@@ -270,6 +287,7 @@ void Tree::generateLeaves()
 	for (auto& [_, branch] : cachedBranchs)
 	{
 		//TODO cache these too
+		auto& growthData = getGrowthData();
 		branch.generateLeaves(growthData.leafMaxChildCount, growthData.leafMinOrder, growthData.leafDensity, growthData.leafSizeMultiplier);
 	}
 }
@@ -326,6 +344,7 @@ void Tree::distributeVigorRecursive(TreeNode& node)
 {
 	if (node.nodeStatus != TreeNode::ALIVE)
 		return;
+	auto& growthData = getGrowthData();
 	float apicalControl = growthData.apicalControl;
 	float mainV = 0.0f;
 	float lateralV = 0.0f;
@@ -363,6 +382,7 @@ void Tree::addShootsRecursive(TreeNode& node)
 	float vigor = node.vigor;
 	int vigorFloored = static_cast<int>(glm::floor(vigor));
 
+	auto& growthData = getGrowthData();
 	float metamerLength = growthData.baseLength * vigor / glm::floor(vigor);
 
 	if (world->isOutOfBounds(node.startPos))
@@ -395,6 +415,7 @@ void Tree::shedBranchsRecursive(TreeNode& node)
 	if (node.nodeStatus != TreeNode::ALIVE)
 		return;
 
+	auto& growthData = getGrowthData();
 	float p = node.vigor - growthData.shedMultiplier *
 		glm::pow(glm::pow(node.childCount, 1.0f / growthData.radiusN), growthData.shedExp);
 
@@ -429,7 +450,7 @@ void Tree::shedBranchsRecursive(TreeNode& node)
 	}
 }
 
-float Tree::calculateChildCountRecursive(TreeNode& node)
+uint32 Tree::calculateChildCountRecursive(TreeNode& node)
 {
 	if (node.nodeStatus == TreeNode::BUD)
 	{
@@ -455,4 +476,10 @@ void Tree::addShadows(TreeNode& node)
 {
 	world->castShadows(node.startPos, true);
 }
+
+TreeGrowthData& Tree::getGrowthData()
+{
+	return world->getWorldGrowthData().presets[growthDataId];
+}
+
 }

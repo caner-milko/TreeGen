@@ -4,7 +4,8 @@
 #include "util/util.h"
 #include "generation/Branch.h"
 #include "types/Buffer.h"
-namespace tgen::graphics {
+namespace tgen::graphics
+{
 using namespace gl;
 using namespace util;
 using namespace gen;
@@ -20,12 +21,13 @@ DirectionalLight DirectionalLight::GDirLight = {};
 
 constexpr vec3 lightPos = 0.5f * vec3(-4.0f, 8.0f, 4.0f);
 constexpr float lightFarPlane = 10.0f, lightNearPlane = 1.0f;
-constexpr vec4 lightOrtho = 2.0f * vec4(-1.0f, 1.0f, -1.0f, 1.0f);
+constexpr vec4 lightOrtho = 3.0f * vec4(-1.0f, 1.0f, -1.0f, 1.0f);
 const vec3 lightDir = glm::normalize(vec3(0.4, -0.6, -0.4));
 constexpr vec3 lightAmbientCol = 0.5f * vec3(0.2f, 0.2f, 0.15f);
 constexpr vec3 lightColor = vec3(1.0f, 1.0f, 1.0f) * 3.0f;
 constexpr ivec2 shadowSize = ivec2(2048);
-void setupDirLight() {
+void setupDirLight()
+{
 	Texture::TextureCreateData tcd;
 	tcd.imageType = ImageType::TEX_2D;
 	tcd.mipLevels = 1;
@@ -58,7 +60,8 @@ void message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GL
 {
 	if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
 		return;
-	auto const src_str = [source]() {
+	auto const src_str = [source]()
+	{
 		switch (source)
 		{
 		case GL_DEBUG_SOURCE_API: return "API";
@@ -71,7 +74,8 @@ void message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GL
 		}
 	}();
 
-	auto const type_str = [type]() {
+	auto const type_str = [type]()
+	{
 		switch (type)
 		{
 		case GL_DEBUG_TYPE_ERROR: return "ERROR";
@@ -87,13 +91,19 @@ void message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GL
 		}
 	}();
 
-	auto const severity_str = [severity]() {
-		switch (severity) {
+	auto const severity_str = [severity]()
+	{
+		switch (severity)
+		{
 		case GL_DEBUG_SEVERITY_NOTIFICATION: return "NOTIFICATION";
 		case GL_DEBUG_SEVERITY_LOW: return "LOW";
 		case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
 		case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
-		default: assert(false);
+		default:
+		{
+			assert(false);
+			return "";
+		}
 		}
 	}();
 	std::cout << src_str << ", " << type_str << ", " << severity_str << ", " << id << ": " << message << '\n';
@@ -196,21 +206,25 @@ void Renderer::endSwapchain()
 	EndRendering();
 }
 
-void Renderer::updateLightUBO(const DrawScene& scene) {
+void Renderer::updateLightUBO(const DrawScene& scene)
+{
 	auto lightUniform = DirLightUniform::fromLightAndVP(scene.light, scene.lightVP);
 	lightUBO.bufferData({ &lightUniform, 1 }, 0);
 }
-void Renderer::updateCameraUBO(const DrawView& view) {
+void Renderer::updateCameraUBO(const DrawView& view)
+{
 	auto camUniform = CameraUniform::fromCameraAndVP(view.camera, view.VP);
 	camUBO.bufferData({ &camUniform, 1 }, 0);
 }
 
-void Renderer::startDraw(bool SRGB) {
+void Renderer::startDraw(bool SRGB)
+{
 	if (SRGB)
 		glEnable(GL_FRAMEBUFFER_SRGB);
 }
 
-void Renderer::endDraw(bool SRGB) {
+void Renderer::endDraw(bool SRGB)
+{
 	if (SRGB)
 		glDisable(GL_FRAMEBUFFER_SRGB);
 }
@@ -262,7 +276,8 @@ void Renderer::renderPlane(const DrawView& view, Shader& shader, mat4 model)
 	}
 }*/
 
-void RenderShadowPoint(Shader* shader, const vec3& pos, float shadow) {
+void RenderShadowPoint(Shader* shader, const vec3& pos, float shadow)
+{
 	/*shader->setUniform("pos", pos);
 	glPointSize(shadow * 2.0f);
 	shader->setUniform("shadow", shadow);
@@ -333,7 +348,8 @@ void Renderer::renderBBoxLines(const DrawView& view, Shader& shader, const BBox&
 	Cmd::SetUniform("VP", view.VP);
 	Cmd::SetUniform("color", color);
 
-	auto const drawLine = [&](const vec3& first, const vec3& second) {
+	auto const drawLine = [&](const vec3& first, const vec3& second)
+	{
 		Cmd::SetUniform("pos1", first);
 		Cmd::SetUniform("pos2", second);
 		Cmd::DrawIndexed(2);
@@ -418,7 +434,8 @@ void Renderer::setupSkybox(const rc<CubemapTexture>& skyboxTexture, const rc<Sha
 
 void Renderer::renderSkybox(const DrawView& view)
 {
-	static GraphicsPipeline pipeline = []() ->GraphicsPipeline {
+	static GraphicsPipeline pipeline = []() ->GraphicsPipeline
+	{
 		GraphicsPipeline pipeline("Skybox Pipeline", *Renderer::getRenderer().skyboxShader);
 		pipeline.rasterizationState.cullMode = CullMode::NONE;
 		pipeline.depthState.depthCompareOp = CompareOp::LESS_OR_EQUAL;
@@ -433,9 +450,11 @@ void Renderer::renderSkybox(const DrawView& view)
 	Cmd::Draw(36);
 }
 
-void Renderer::renderTest(const DrawView& view) {
+void Renderer::renderTest(const DrawView& view)
+{
 
-	static GraphicsPipeline pipeline = []() -> GraphicsPipeline {
+	static GraphicsPipeline pipeline = []() -> GraphicsPipeline
+	{
 		GraphicsPipeline pipeline("Test Pipeline", *Renderer::getRenderer().pointShader);
 		pipeline.inputAssemblyState.topology = PrimitiveTopology::POINT_LIST;
 		pipeline.rasterizationState.pointSize = 10.0f;
@@ -484,10 +503,12 @@ const IndexedMesh<IndexType::UNSIGNED_INT>& Renderer::getPointMesh()
 {
 	return pointMesh;
 }
-const gl::UBO<CameraUniform>& Renderer::getCamUBO() {
+const gl::UBO<CameraUniform>& Renderer::getCamUBO()
+{
 	return camUBO;
 }
-const gl::UBO<DirLightUniform>& Renderer::getLightUBO() {
+const gl::UBO<DirLightUniform>& Renderer::getLightUBO()
+{
 	return lightUBO;
 }
 

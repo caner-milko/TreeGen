@@ -3,27 +3,27 @@
 #include <iostream>
 namespace tgen::gen
 {
-TreeWorld::TreeWorld(const util::BBox& worldBoundingBox, float cellSize, uint32 seed)
+TreeWorld::TreeWorld(TreeWorldGrowthData worldGrowthData, const util::BBox& worldBoundingBox, float cellSize, uint32 seed)
 	: TreeWorld(
 		TreeWorldInfo{
 	.seed = seed,
 	.worldSize = ivec3(glm::ceil((worldBoundingBox.max - worldBoundingBox.min) / cellSize)),
 	.leftBottomCorner = worldBoundingBox.min,
 	.cellSize = cellSize
-		})
+		}, worldGrowthData)
 {
 	recalculateLUT();
 }
 
-TreeWorld::TreeWorld(TreeWorldInfo info)
+TreeWorld::TreeWorld(TreeWorldInfo info, TreeWorldGrowthData worldGrowthData) : info(info)
 {
-	SetWorldInfo(info);
+	SetWorldGrowthData(worldGrowthData);
 	resizeShadowGrid();
 }
 
-void TreeWorld::SetWorldInfo(TreeWorldInfo info)
+void TreeWorld::SetWorldGrowthData(TreeWorldGrowthData data)
 {
-	this->info = info;
+	this->worldGrowthData = data;
 	recalculateLUT();
 }
 
@@ -36,17 +36,17 @@ void TreeWorld::resizeShadowGrid()
 
 void TreeWorld::recalculateLUT()
 {
-	pyramidShadowLUT = std::vector<float>(info.pyramidHeight + 1, 0);
-	for (int q = 0; q <= info.pyramidHeight; q++)
+	pyramidShadowLUT = std::vector<float>(worldGrowthData.pyramidHeight + 1, 0);
+	for (int q = 0; q <= worldGrowthData.pyramidHeight; q++)
 	{
-		pyramidShadowLUT[q] = info.a * glm::pow(info.b, -(q / 2.0f));
+		pyramidShadowLUT[q] = worldGrowthData.a * glm::pow(worldGrowthData.b, -(q / 2.0f));
 	}
 }
 
-Tree& TreeWorld::createTree(vec3 position, TreeGrowthData growthData)
+Tree& TreeWorld::createTree(vec3 position, GrowthDataId growthDataId)
 {
 	treeCount++;
-	return *trees.emplace_back(std::make_unique<Tree>(this, trees.size(), position, growthData, trees.size()));
+	return *trees.emplace_back(std::make_unique<Tree>(this, trees.size(), position, growthDataId, trees.size()));
 }
 
 void TreeWorld::removeTree(Tree& tree)
@@ -67,7 +67,7 @@ float TreeWorld::getLightAt(const vec3& position)
 	ivec3 relScaledPos = coordinateToCell(position);
 	if (relScaledPos.x < 0 || relScaledPos.x >= info.worldSize.x || relScaledPos.y < 0 || relScaledPos.y >= info.worldSize.y || relScaledPos.z < 0 || relScaledPos.z >= info.worldSize.z)
 		return 0.0f;
-	return glm::max(info.fullExposure - getCellAt(relScaledPos).shadow + info.a, 0.0f);
+	return glm::max(worldGrowthData.fullExposure - getCellAt(relScaledPos).shadow + worldGrowthData.a, 0.0f);
 }
 
 vec3 TreeWorld::getOptimalDirection(const vec3& position)
@@ -162,7 +162,7 @@ vec3 TreeWorld::getOptimalDirection(const vec3& position)
 void TreeWorld::castShadows(const vec3& pos, bool addShadows)
 {
 	ivec3 relScaledPos = coordinateToCell(pos);
-	for (int q = 0; q <= info.pyramidHeight; q++)
+	for (int q = 0; q <= worldGrowthData.pyramidHeight; q++)
 	{
 		int j = relScaledPos.y - q;
 		if (j < 0)
@@ -254,5 +254,35 @@ const ShadowCell& TreeWorld::getCellAt(const ivec3& cell) const
 void TreeWorld::addShadowTo(const ivec3& cell, float amount)
 {
 	getCellAt(cell).shadow += amount;
+}
+
+GrowthDataId TreeWorld::getGrowthDataFromMap(vec2 worldPos)
+{
+	vec2 uv = (worldPos - vec2(info.leftBottomCorner.x, info.leftBottomCorner.z))
+		/ (info.cellSize * vec2(info.worldSize.x, info.worldSize.z));
+	auto col = presetMap->getImage()->getRGB<3>(presetMap->getImage()->uvToPixel(uv));
+	auto it = worldGrowthData.colorToPresetMap.find(col);
+	assert(it != worldGrowthData.colorToPresetMap.end());
+	return it->second;
+}
+
+void TreeWorld::setPresetMap(rc<graphics::Image> image)
+{
+	presetMap = std::make_shared<EditableMap>(image);
+}
+
+std::pair<GrowthDataId, glm::vec<3, uint8>> TreeWorld::newGrowthData(TreeGrowthData data, std::optional<glm::vec<3, uint8>> col)
+{
+	auto id = worldGrowthData.presets.emplace(worldGrowthData.presets.size(), data).first->first;
+	auto size = worldGrowthData.presets.size();
+	if (!col)
+	{
+		uint8 colR = util::IntNoise2D(size, 0, 0, 1) * 255;
+		uint8 colG = util::IntNoise2D(size, util::hash(size), 0, 1) * 255;
+		uint8 colB = util::IntNoise2D(size, size * 2, 0, 1) * 255;
+		col = glm::vec<3, uint8>(colR, colG, colB);
+	}
+	worldGrowthData.colorToPresetMap[*col] = id;
+	return { id, *col };
 }
 }

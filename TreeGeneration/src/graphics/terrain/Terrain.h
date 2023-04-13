@@ -3,13 +3,16 @@
 #include "graphics/Image.h"
 #include <memory>
 #include <vector>
-
-namespace tgen::graphics::terrain {
-struct TerrainVertex {
+#include "graphics/Camera.h"
+namespace tgen::graphics::terrain
+{
+struct TerrainVertex
+{
 	vec3 pos;
 	vec3 normal;
 };
-struct TerrainData {
+struct TerrainData
+{
 	vec3 center = vec3(0.0);
 	vec2 size = vec2(10.0);
 	float maxHeight = 1.0;
@@ -18,7 +21,8 @@ struct TerrainData {
 
 	rc<Image> heightMap = nullptr;
 };
-class Terrain {
+class Terrain
+{
 public:
 	TerrainData data;
 
@@ -31,12 +35,17 @@ public:
 	float valueAt(vec2 uv) const;
 	vec3 normalAt(ivec2 vertex) const;
 
-	inline int32 vertexIndex(ivec2 vertex) const {
+	inline int32 vertexIndex(ivec2 vertex) const
+	{
 		return vertex.y * (data.gridSize.x + 1) + vertex.x;
 	}
-	inline vec2 cellSize() const {
+	inline vec2 cellSize() const
+	{
 		return vec2(1.0f) / vec2(data.gridSize);
 	}
+
+	Camera getTerrainCamera() const;
+
 private:
 };
 }

@@ -2,11 +2,13 @@
 #include "ApiToEnum.h"
 
 #include <glm/gtc/integer.hpp>
-namespace tgen::graphics::gl {
+namespace tgen::graphics::gl
+{
 using namespace tgen::graphics::gl::detail;
 bool Texture::init(TextureCreateData data, bool reinit)
 {
-	if (handle != 0 && reinit) {
+	if (handle != 0 && reinit)
+	{
 		this->~Texture();
 	}
 	assert(handle == 0);
@@ -74,7 +76,8 @@ bool Texture::init(TextureCreateData data, bool reinit)
 void Texture::subImage(TextureUploadData uploadData)
 {
 	assert(handle);
-	switch (uploadData.dimensions) {
+	switch (uploadData.dimensions)
+	{
 	case UploadDimension::ONE:
 		glTextureSubImage1D(handle, uploadData.level, uploadData.offset.x, uploadData.size.x,
 			UploadFormatToGL(uploadData.inputFormat), UploadTypeToGL(uploadData.type), uploadData.data);
@@ -98,4 +101,5 @@ void Texture::genMipMaps()
 	assert(handle);
 	glGenerateTextureMipmap(handle);
 }
+
 }

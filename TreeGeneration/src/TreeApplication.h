@@ -9,8 +9,11 @@
 #include "graphics/tree/TreeRendererManager.h"
 #include "graphics/terrain/TerrainRenderer.h"
 #include "PreviewWorld.h"
+
+
 namespace tgen::app
 {
+
 //shouldn't be included by anything
 using namespace tgen::graphics;
 using namespace tgen::gen;
@@ -18,6 +21,50 @@ using namespace tgen::gen;
 using namespace tgen::graphics::gl;
 using namespace tgen::graphics::terrain;
 using namespace tgen::util;
+
+//Growth Data Presets
+static TreeGrowthData DETAILED =
+{
+	.apicalControl = 0.5f,
+	.vigorMultiplier = 2.0f,
+	.baseLength = .02f,
+	.baseRadius = 0.0005f,
+	.radiusN = 2.5f,
+	.shouldShed = true,
+	.shedMultiplier = 0.3f,
+	.shedExp = 1.5f,
+	.leafMaxChildCount = 5,
+	.leafMinOrder = 4,
+	.leafDensity = 60.0f,
+	.leafSizeMultiplier = 0.4f,
+}, DETAILED_LOW = {
+	.apicalControl = 0.54f,
+	.vigorMultiplier = 2.0f,
+	.baseLength = .05f,
+	.baseRadius = 0.001f,
+	.radiusN = 2.3f,
+	.shouldShed = false,
+
+	.leafMaxChildCount = 5,
+	.leafMinOrder = 4,
+	.leafDensity = 120.0f,
+	.leafSizeMultiplier = 0.4f,
+};
+
+static TreeWorldGrowthData DETAILED_WORLD = {
+	.fullExposure = 2.5f,
+	.pyramidHeight = 6,
+	.a = 0.8f,
+	.b = 1.5f,
+}, DETAILED_LOW_WORLD = {
+	.fullExposure = 2.5f,
+	.pyramidHeight = 6,
+	.a = 0.8f,
+	.b = 1.5f,
+};
+
+static std::vector<glm::vec<3, uint8>> presetColors = { {255, 0, 0}, {0, 255, 0} };
+
 struct TreeApplicationData
 {
 	uint32 width = 1600, height = 900;
@@ -28,7 +75,7 @@ struct TreeApplicationData
 	//float yaw = 0.0f, pitch = 0.0f;
 	//float fov = 45.0f;
 	// 
-	vec3 camPos = vec3(-2.0f, 1.0f, 2.0f);
+	vec3 camPos = vec3(-2.0f, 0.5f, 2.0f);
 	float yaw = -45.0f, pitch = 0.0f;
 	float fov = 45.0f;
 
@@ -42,7 +89,7 @@ struct TreeApplicationData
 	bool showVigor = false;
 	bool showOptimalDirs = false;
 
-	BBox worldBbox = BBox(vec3(-2.0f, -0.1f, -2.0f), vec3(2.0f, 4.0f, 2.0f));
+	BBox worldBbox = BBox(vec3(-2.0f, 0.0f, -2.0f), vec3(2.0f, 4.0f, 2.0f));
 
 	int treeDistributionSeed = 0;
 	int treeCount = 10;
@@ -53,7 +100,7 @@ struct TreeApplicationData
 	bool renderBodyShadow = true;
 	bool renderLeafShadow = true;
 
-	bool animated = true;
+	bool animated = false;
 };
 
 
@@ -97,7 +144,8 @@ public:
 
 	} terrainObject;
 
-	TreeGrowthData growthData{ .baseLength = 0.02f };
+	TreeGrowthData baseGrowthData = DETAILED;
+	TreeWorldGrowthData worldGrowthData = DETAILED_LOW_WORLD;
 
 	bool treeSettingsEdited = false;
 	bool previewWorldChanged = false;
@@ -128,10 +176,12 @@ public:
 
 	graphics::terrain::TerrainRenderer::TerrainMaterial terrainMaterial{};
 
+	rc<Image> worldPresetImage;
 	rc<Image> heightMapImage;
 
 	rc<CubemapTexture> skyboxTex{};
 
+	bool editingTerrain = false;
 
 	bool animationRunning = false;
 	std::chrono::steady_clock::time_point lastGrowth;

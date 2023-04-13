@@ -2,13 +2,56 @@
 #include "util/Util.h"
 namespace tgen::gen
 {
-Branch::Branch(rb<const TreeNode> nodePtr, float baseRadius, float radiusPow, float curviness, float startLength, const vec3& lastPlaneNormal, float lastOffset) : from(nodePtr), startLength(startLength), boundingBox(vec3(0.0f), vec3(0.0f))
+
+Branch::Branch(rb<const TreeNode> nodePtr, float baseRadius,
+	float radiusPow, float curviness, float startLength,
+	const vec3& lastPlaneNormal, float lastOffset) : from(nodePtr), startLength(startLength), boundingBox(vec3(0.0f), vec3(0.0f))
 {
 	const TreeNode& node = *nodePtr;
+	TreeNode* dominantChild = node.dominantChild();
 	bez.lowRadius = glm::pow(node.childCount, 1.0f / radiusPow) * baseRadius;
 
-	TreeNode* dominantChild = node.dominantChild();
+	recalculateBezier(curviness, lastPlaneNormal, lastOffset);
+
+	bez.highRadius = dominantChild == nullptr ? 0.0f : (glm::pow(dominantChild->childCount, 1.0f / radiusPow) * baseRadius);
+	bez.lowRadius = glm::max(bez.lowRadius, 0.0001f);
+	bez.highRadius = glm::max(bez.highRadius, 0.0001f);
+
+
+	// extremes
+	vec3 mi = glm::min(bez.A, bez.C);
+	vec3 ma = glm::max(bez.A, bez.C);
+
+
+	mi -= bez.lowRadius;
+	ma += bez.lowRadius;
+
+	// maxima/minima point, if p1 is outside the current bbox/hull
+	if (bez.B.x<mi.x || bez.B.x>ma.x || bez.B.y<mi.y || bez.B.y>ma.y || bez.B.z < mi.x || bez.B.z > mi.y)
+	{
+
+		vec3 t = glm::clamp((bez.A - bez.B) / (bez.A - 2.0f * bez.B + bez.C), 0.0f, 1.0f);
+		vec3 s = 1.0f - t;
+		vec3 q = s * s * bez.A + 2.0f * s * t * bez.B + t * t * bez.C;
+
+		mi = min(mi, q - bez.lowRadius);
+		ma = max(ma, q + bez.lowRadius);
+	}
+
+
+	boundingBox = { mi, ma };
+
+	model = boundingBox.asModel();
+
+	order = node.order;
+}
+
+void Branch::recalculateBezier(float curviness, const vec3& lastPlaneNormal, float lastOffset)
+{
+	const TreeNode& node = *from;
+	TreeNode* dominantChild = from->dominantChild();
 	length = node.length;
+	wasDominant = from->isDominantChild();
 	if (node.order > 0 && node.parent->dominantChild()->id != node.id)
 	{
 		length += node.parent->length;
@@ -17,7 +60,6 @@ Branch::Branch(rb<const TreeNode> nodePtr, float baseRadius, float radiusPow, fl
 	}
 	else
 	{
-
 		bez.A = node.startPos;
 		vec3 parentPoint(0.0);
 
@@ -64,43 +106,17 @@ Branch::Branch(rb<const TreeNode> nodePtr, float baseRadius, float radiusPow, fl
 	float angle = glm::atan(glm::dot(bezierNormalOnPlane, lastPlaneNormal), glm::dot(bez.bezierPlaneNormal, lastPlaneNormal));
 
 	offset = lastOffset + angle, PI * 2.0f;
-
-	bez.highRadius = dominantChild == nullptr ? 0.0f : (glm::pow(dominantChild->childCount, 1.0f / radiusPow) * baseRadius);
-	bez.lowRadius = glm::max(bez.lowRadius, 0.0001f);
-	bez.highRadius = glm::max(bez.highRadius, 0.0001f);
-
-
-	// extremes
-	vec3 mi = glm::min(bez.A, bez.C);
-	vec3 ma = glm::max(bez.A, bez.C);
-
-
-	mi -= bez.lowRadius;
-	ma += bez.lowRadius;
-
-	// maxima/minima point, if p1 is outside the current bbox/hull
-	if (bez.B.x<mi.x || bez.B.x>ma.x || bez.B.y<mi.y || bez.B.y>ma.y || bez.B.z < mi.x || bez.B.z > mi.y)
-	{
-
-		vec3 t = glm::clamp((bez.A - bez.B) / (bez.A - 2.0f * bez.B + bez.C), 0.0f, 1.0f);
-		vec3 s = 1.0f - t;
-		vec3 q = s * s * bez.A + 2.0f * s * t * bez.B + t * t * bez.C;
-
-		mi = min(mi, q - bez.lowRadius);
-		ma = max(ma, q + bez.lowRadius);
-	}
-
-
-	boundingBox = { mi, ma };
-
-	model = boundingBox.asModel();
-
-	order = node.order;
 }
 
-void Branch::updateBranch(float baseRadius, float radiusPow)
+void Branch::updateBranch(float baseRadius, float radiusPow,
+	float curviness, float startLength, const vec3& lastPlaneNormal, float lastOffset)
 {
+	this->startLength = startLength;
 	TreeNode* dominantChild = from->dominantChild();
+	if (wasDominant != from->isDominantChild())
+	{
+		recalculateBezier(curviness, lastPlaneNormal, lastOffset);
+	}
 	bez.lowRadius = glm::pow(from->childCount, 1.0f / radiusPow) * baseRadius;
 
 	bez.highRadius = dominantChild == nullptr ? 0.0f

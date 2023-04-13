@@ -1,5 +1,6 @@
 #include "Terrain.h"
-namespace tgen::graphics::terrain {
+namespace tgen::graphics::terrain
+{
 Terrain::Terrain(const TerrainData& data) : data(data)
 {
 }
@@ -14,8 +15,10 @@ void Terrain::generateMesh(std::vector<TerrainVertex>* vertices, std::vector<uin
 	indices->reserve(indicesSize);
 
 
-	for (int32 y = 0; y <= data.gridSize.y; y++) {
-		for (int32 x = 0; x <= data.gridSize.x; x++) {
+	for (int32 y = 0; y <= data.gridSize.y; y++)
+	{
+		for (int32 x = 0; x <= data.gridSize.x; x++)
+		{
 			TerrainVertex vertex;
 			vec2 uv = cellSize() * vec2(x, y);
 			vertex.pos = vec3(uv.x, valueAt(uv), uv.y);
@@ -23,8 +26,10 @@ void Terrain::generateMesh(std::vector<TerrainVertex>* vertices, std::vector<uin
 			vertices->emplace_back(vertex);
 		}
 	}
-	for (int32 x = 0; x < data.gridSize.x; x++) {
-		for (int32 y = 0; y < data.gridSize.y; y++) {
+	for (int32 x = 0; x < data.gridSize.x; x++)
+	{
+		for (int32 y = 0; y < data.gridSize.y; y++)
+		{
 			//first triangle
 			indices->emplace_back(vertexIndex(ivec2(x, y + 1)));
 			indices->emplace_back(vertexIndex(ivec2(x + 1, y)));
@@ -54,10 +59,11 @@ float Terrain::heightAtWorldPos(vec3 worldPos) const
 
 float Terrain::heightAt(vec2 uv) const
 {
-	return glm::mix(data.minHeight, data.maxHeight, valueAt(uv));
+	return data.center.y + glm::mix(data.minHeight, data.maxHeight, valueAt(uv));
 }
 
-float Terrain::valueAt(vec2 uv) const {
+float Terrain::valueAt(vec2 uv) const
+{
 	return data.heightMap->getRGB<1>(uv).x / 256.0f;
 }
 
@@ -96,4 +102,17 @@ vec3 Terrain::normalAt(ivec2 vertex) const
 	//return glm::normalize((pY3 - nY3), (pX3 - nX3)));
 
 }
+
+Camera Terrain::getTerrainCamera() const
+{
+	Camera cam;
+	cam.projection = vec4(-data.size.x * 0.5f, data.size.x * 0.5f, -data.size.y * 0.5f, data.size.y * 0.5f);
+	cam.nearPlane = 1.0f;
+	cam.farPlane = 50.0f;
+	cam.cameraPosition = data.center + vec3(0, glm::max(10.0f, data.maxHeight + 15.0f), 0);
+	cam.dir = vec3(0.0f, -1.0f, 0.0f);
+	cam.up = vec3(0.0f, 0.0f, -1.0f);
+	return cam;
+}
+
 }

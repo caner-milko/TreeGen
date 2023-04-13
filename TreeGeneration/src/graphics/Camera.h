@@ -2,8 +2,10 @@
 #include "Common.h"
 #include <optional>
 #include <variant>
-namespace tgen::graphics {
-class Camera {
+namespace tgen::graphics
+{
+class Camera
+{
 public:
 	static constexpr float maxPitch = 90.0f, minPitch = -90.0f, maxFov = 45.0f, minFov = 1.0f;
 
@@ -29,6 +31,7 @@ public:
 	glm::vec3 cameraPosition{ 0.0f };
 	float nearPlane = 0.01f, farPlane = 10.0f;
 	std::optional<vec3> dir;
+	vec3 up = vec3(0.0f, 1.0f, 0.0f);
 private:
 	float pitch = 0.0f, yaw = 0.0f;
 	float fov = 45.0f;

@@ -8,10 +8,13 @@
 #include "opengl/types/Texture.h"
 #include "Mesh.h"
 #include "Pipeline.h"
-namespace tgen::graphics::terrain {
-class TerrainRenderer {
+namespace tgen::graphics::terrain
+{
+class TerrainRenderer
+{
 public:
-	struct TerrainMaterial {
+	struct TerrainMaterial
+	{
 		rc<gl::Texture> grassTexture;
 		float grassColorMultiplier = 1.5f;
 		rc<gl::Texture> normalMap;
@@ -22,9 +25,11 @@ public:
 	DELETE_COPY_CONSTRUCTORS(TerrainRenderer);
 	void update();
 	void renderShadows(const DrawView& view) const;
+	void updateTerrainColor(const std::vector<glm::vec4>& obstacles);
 	static void renderTerrains(std::span<rb<TerrainRenderer>> renderers, const DrawView& view, const DrawScene& scene);
 	static void renderTerrainShadows(std::span<rb<TerrainRenderer>> renderers, const DrawView& view);
-	struct TerrainRendererResources {
+	struct TerrainRendererResources
+	{
 		rc<gl::Shader> terrainShader;
 		rc<gl::Shader> terrainShadowShader;
 		TerrainMaterial material;
@@ -33,6 +38,7 @@ public:
 		rb<const gl::UBO<CameraUniform>> camUBO;
 		rb<const gl::UBO<DirLightUniform>> lightUBO;
 	} static resources;
+	rb<gl::Texture> terrainColorMap;
 private:
 	Terrain& terrain;
 	std::vector<TerrainVertex> vertices;

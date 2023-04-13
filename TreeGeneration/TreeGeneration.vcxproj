@@ -130,6 +130,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -151,6 +152,7 @@
     <ClCompile Include="dependencies\include\header_impl.cpp" />
     <ClCompile Include="src\generation\AnimatedBranch.cpp" />
     <ClCompile Include="src\generation\Branch.cpp" />
+    <ClCompile Include="src\generation\EditableMap.cpp" />
     <ClCompile Include="src\generation\Leaf.cpp" />
     <ClCompile Include="src\generation\PreviewWorld.cpp" />
     <ClCompile Include="src\graphics\tree\AnimatedTreeRenderer.cpp" />
@@ -179,7 +181,9 @@
     <ClCompile Include="src\util\Util.cpp" />
     <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="src\generation\AnimatedBranch.h" />
+    <ClInclude Include="src\generation\EditableMap.h" />
     <ClInclude Include="src\generation\PreviewWorld.h" />
+    <ClInclude Include="src\generation\GrowthData.h" />
     <ClInclude Include="src\graphics\tree\AnimatedTreeRenderer.h" />
     <ClInclude Include="src\graphics\Mesh.h" />
     <ClInclude Include="src\graphics\tree\StaticTreeRenderer.h" />
