@@ -16,7 +16,9 @@ public:
 	struct TerrainMaterial
 	{
 		rc<gl::Texture> grassTexture;
+		rc<gl::Texture> dirtTexture;
 		float grassColorMultiplier = 1.5f;
+		float dirtColorMultiplier = 0.5f;
 		rc<gl::Texture> normalMap;
 		float normalMapStrength = 3.0f;
 		float uvScale = 20.0f;
@@ -25,7 +27,7 @@ public:
 	DELETE_COPY_CONSTRUCTORS(TerrainRenderer);
 	void update();
 	void renderShadows(const DrawView& view) const;
-	void updateTerrainColor(const std::vector<glm::vec4>& obstacles);
+	void updateTerrainColor(std::vector<glm::vec4>& obstacles);
 	static void renderTerrains(std::span<rb<TerrainRenderer>> renderers, const DrawView& view, const DrawScene& scene);
 	static void renderTerrainShadows(std::span<rb<TerrainRenderer>> renderers, const DrawView& view);
 	struct TerrainRendererResources
@@ -38,8 +40,9 @@ public:
 		rb<const gl::UBO<CameraUniform>> camUBO;
 		rb<const gl::UBO<DirLightUniform>> lightUBO;
 	} static resources;
-	rb<gl::Texture> terrainColorMap;
+	rc<gl::Texture> terrainColorMap;
 private:
+	gl::SSBO<vec4> obstacleSSBO;
 	Terrain& terrain;
 	std::vector<TerrainVertex> vertices;
 	CompleteMesh<TerrainVertex, gl::IndexType::UNSIGNED_INT> mesh;

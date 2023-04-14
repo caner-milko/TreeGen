@@ -13,8 +13,7 @@ public:
 
 	rc<graphics::Image> getImage()
 	{
-		if (edited)
-			return image;
+		return image;
 	}
 
 	void Edited()

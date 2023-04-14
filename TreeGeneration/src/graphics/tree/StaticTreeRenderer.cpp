@@ -10,6 +10,7 @@ using namespace gl;
 using namespace gen;
 void StaticTreeRenderer::updateRenderer()
 {
+	auto* tree = getTree();
 	if (tree->age <= 0)
 		return;
 	const std::vector<rb<Branch>>& branchs = tree->getBranchs();

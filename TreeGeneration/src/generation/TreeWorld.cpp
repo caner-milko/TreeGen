@@ -43,19 +43,24 @@ void TreeWorld::recalculateLUT()
 	}
 }
 
-Tree& TreeWorld::createTree(vec3 position, GrowthDataId growthDataId)
+Tree& TreeWorld::createTree(vec2 position, GrowthDataId growthDataId)
 {
 	treeCount++;
-	return *trees.emplace_back(std::make_unique<Tree>(this, trees.size(), position, growthDataId, trees.size()));
+	float height = terrain->heightAtWorldPos(vec3(position.x, 0, position.y));
+	vec3 terPos = vec3(position.x, height, position.y);
+	auto& tree = *trees.emplace_back(std::make_unique<Tree>(this, trees.size(), terPos, growthDataId, trees.size()));
+
+	onTreeCreated.dispatch({ .newTree = tree });
+	return tree;
 }
 
-void TreeWorld::removeTree(Tree& tree)
+void TreeWorld::removeTree(uint32 treeId)
 {
 	for (int i = 0; i < trees.size(); i++)
 	{
-		if (*trees[i] == tree)
+		if (trees[i]->id == treeId)
 		{
-			tree.removeNode(*tree.root);
+			onTreeDestroyed.dispatch({ .newTree = *trees[i] });
 			trees.erase(trees.begin() + i);
 			return;
 		}
@@ -260,7 +265,9 @@ GrowthDataId TreeWorld::getGrowthDataFromMap(vec2 worldPos)
 {
 	vec2 uv = (worldPos - vec2(info.leftBottomCorner.x, info.leftBottomCorner.z))
 		/ (info.cellSize * vec2(info.worldSize.x, info.worldSize.z));
-	auto col = presetMap->getImage()->getRGB<3>(presetMap->getImage()->uvToPixel(uv));
+	std::cout << uv.x << "  " << uv.y << std::endl;
+	auto pix = presetMap->getImage()->uvToPixel(uv);
+	auto col = presetMap->getImage()->getRGB<3>(pix);
 	auto it = worldGrowthData.colorToPresetMap.find(col);
 	assert(it != worldGrowthData.colorToPresetMap.end());
 	return it->second;
@@ -273,7 +280,7 @@ void TreeWorld::setPresetMap(rc<graphics::Image> image)
 
 std::pair<GrowthDataId, glm::vec<3, uint8>> TreeWorld::newGrowthData(TreeGrowthData data, std::optional<glm::vec<3, uint8>> col)
 {
-	auto id = worldGrowthData.presets.emplace(worldGrowthData.presets.size(), data).first->first;
+	auto id = worldGrowthData.presets.emplace((GrowthDataId)worldGrowthData.presets.size(), data).first->first;
 	auto size = worldGrowthData.presets.size();
 	if (!col)
 	{

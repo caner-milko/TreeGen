@@ -26,7 +26,9 @@ layout(std140, binding=1) uniform Light {
 
 struct TerrainMaterial {
     sampler2D grassTex;
+    sampler2D dirtTex;
     float grassColorMultiplier;
+    float dirtColorMultiplier;
     sampler2D normalMap;
     float normalMapStrength;
     float uvScale;

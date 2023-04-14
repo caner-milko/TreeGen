@@ -9,6 +9,7 @@ using namespace gl;
 using namespace gen;
 void AnimatedTreeRenderer::CreateLeafSSBO(float animationT)
 {
+	auto* tree = getTree();
 	std::vector<mat4> models;
 	int i = 0;
 	for (auto& branch : branchs)
@@ -24,6 +25,7 @@ void AnimatedTreeRenderer::CreateLeafSSBO(float animationT)
 }
 void AnimatedTreeRenderer::recordOldBranchs()
 {
+	auto* tree = getTree();
 	lastRecorded.clear();
 	const auto& branchs = tree->getBranchs();
 	for (auto& branch : branchs)
@@ -34,6 +36,7 @@ void AnimatedTreeRenderer::recordOldBranchs()
 
 void AnimatedTreeRenderer::updateRenderer()
 {
+	auto* tree = getTree();
 	if (tree->age <= 0)
 		return;
 	branchs = tree->getBranchs();

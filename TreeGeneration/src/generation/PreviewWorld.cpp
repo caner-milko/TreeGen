@@ -8,6 +8,7 @@ tgen::gen::PreviewWorld::PreviewWorld(TreeWorld& realWorld)
 
 void tgen::gen::PreviewWorld::ResetToRealWorld()
 {
+	terrain = realWorld.terrain;
 	age = realWorld.age;
 	if (info != realWorld.getWorldInfo())
 	{

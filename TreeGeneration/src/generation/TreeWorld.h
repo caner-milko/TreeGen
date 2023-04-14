@@ -3,6 +3,7 @@
 #include "Tree.h"
 #include <span>
 #include "EditableMap.h"
+#include "terrain/Terrain.h"
 namespace tgen::gen
 {
 struct ShadowCell
@@ -30,10 +31,10 @@ public:
 	void recalculateLUT();
 
 	//void calculateShadows();
-	Tree& createTree(vec3 position, GrowthDataId growthDataId);
+	Tree& createTree(vec2 position, GrowthDataId growthDataId);
 	const std::vector<std::unique_ptr<Tree>>& getTrees() const { return trees; }
 	const std::vector<ShadowCell>& getShadowGrid() const { return shadowGrid; }
-	void removeTree(Tree& tree);
+	void removeTree(uint32 treeId);
 	float getLightAt(const vec3& position);
 	vec3 getOptimalDirection(const vec3& position);
 
@@ -65,6 +66,15 @@ public:
 	void setPresetMap(rc<graphics::Image> image);
 	std::pair<GrowthDataId, glm::vec<3, uint8>> newGrowthData(TreeGrowthData data = {}, std::optional<glm::vec<3, uint8>> col = std::nullopt);
 
+	inline rb<Tree> getTreeById(uint32 id)
+	{
+		for (auto& tree : trees)
+			if (tree->id == id)
+				return tree.get();
+		assert(false);
+		return nullptr;
+	}
+
 	void clear()
 	{
 		resizeShadowGrid();
@@ -76,7 +86,13 @@ public:
 	uint32 age = 0;
 
 	Event<EventData> OnAfterWorldGrow{};
-
+	struct TreeCreatedEvent : EventData
+	{
+		Tree& newTree;
+	};
+	Event<TreeCreatedEvent> onTreeCreated{};
+	Event<TreeCreatedEvent> onTreeDestroyed{};
+	rb<graphics::terrain::Terrain> terrain;
 protected:
 	TreeWorldInfo info;
 	TreeWorldGrowthData worldGrowthData;

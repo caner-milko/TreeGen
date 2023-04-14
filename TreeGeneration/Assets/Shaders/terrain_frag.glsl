@@ -23,9 +23,17 @@ layout(std140, binding=1) uniform Light {
     Camera lightCam;
 };
 
+layout(std430, binding=0) buffer branch_data {
+    vec4 obstacles[];
+};
+
+uniform int obstacleCount;
+
 struct TerrainMaterial {
     sampler2D grassTex;
+    sampler2D dirtTex;
     float grassColorMultiplier;
+    float dirtColorMultiplier;
     sampler2D normalMap;
     float normalMapStrength;
     float uvScale;
@@ -89,11 +97,25 @@ void main()
 
     vec3 normalTex = texture(material.normalMap, uv).xyz * 2.0 - 1.0;
 
+    float minSqrDist = 10000.0f;
+
+    for(int i = 0; i < obstacleCount; i++) {
+        vec4 obstacle = obstacles[i];
+        vec3 dif = fragPos - obstacle.xyz;
+        minSqrDist = min(minSqrDist, dot(dif, dif) - (obstacle.w * obstacle.w));
+    }
+
+    minSqrDist = clamp(minSqrDist, 0, 1);
+
+    float blend = pow(minSqrDist, 0.5);
+
     normalTex.z /= material.normalMapStrength;
 
     vec3 norm = normalize(TBN * normalTex);
 
-    vec3 col = texture(material.grassTex, uv).xyz * material.grassColorMultiplier;
+    vec3 grassCol = texture(material.grassTex, uv).xyz * material.grassColorMultiplier;
+    vec3 dirtCol = texture(material.dirtTex, uv).xyz * material.dirtColorMultiplier;
+    vec3 col = mix(grassCol, dirtCol, blend);
     vec3 projCoords;
     float shadow = calcShadow(fragPos, projCoords);
     FragColor = vec4(calcLight(normalize(cam.pos_near.xyz - fragPos), norm, col) * calcShadow(fragPos, projCoords), 1.0);

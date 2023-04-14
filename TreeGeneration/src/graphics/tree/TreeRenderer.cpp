@@ -8,7 +8,7 @@ namespace tgen::graphics
 {
 using namespace gl;
 using namespace gen;
-TreeRenderer::TreeRenderer(rb<Tree> tree) : tree(tree)
+TreeRenderer::TreeRenderer(rb<Tree> tree) : treeId(tree->id), world(tree->world)
 {
 	onGrowAfterSubscriber = tree->OnAfterGrow.subscribe(this, "Renderer", [this](const Tree::TreeEventData& eventData)
 		{
@@ -22,7 +22,8 @@ TreeRenderer::TreeRenderer(rb<Tree> tree) : tree(tree)
 
 void TreeRenderer::clear()
 {
-	tree = nullptr;
+	treeId = -1;
+	world = nullptr;
 	onGrowAfterSubscriber->event = nullptr;
 	OnDestroySubscriber->event = nullptr;
 }
@@ -63,6 +64,7 @@ void TreeRenderer::renderOptimalDirection(const DrawView& view)
 
 void TreeRenderer::updateRenderer()
 {
+	auto* tree = getTree();
 	if (tree->age <= 0)
 		return;
 

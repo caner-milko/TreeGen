@@ -134,19 +134,28 @@ void Tree::removeNode(TreeNode& node)
 		query.pop();
 		delete& node;
 	}
-
-
-
 }
 
 std::vector<vec2> Tree::spreadSeeds()
 {
 	std::vector<vec2> seeds;
-	if (age < 6)
+	if (age < 6 || root->nodeStatus != TreeNode::ALIVE || root->vigor < 3.0f)
 		return seeds;
 
-	uint32 seedCount = glm::log(root->vigor);
-
+	float logVigor = glm::log(root->vigor);
+	uint32 ageIdHash = util::hash(age + util::hash(id) + util::hash(world->age));
+	uint32 seedCount = util::hash(age + util::hash(id)) % (uint32)glm::ceil(logVigor * 0.75f);
+	seedCount += logVigor * 0.25f;
+	vec2 rootPos = vec2(root->startPos.x, root->startPos.z);
+	float maxDist = logVigor / 8.f * 0.5f;
+	for (int i = 0; i < seedCount; i++)
+	{
+		float randX = util::IntNoise2D(ageIdHash, util::hash(i));
+		float randZ = util::IntNoise2D(ageIdHash, util::hash(i) + 1);
+		vec2 newSeed = rootPos + logVigor * vec2{ randX, randZ };
+		seeds.push_back(newSeed);
+	}
+	std::cout << "Seed count: " << seedCount << " Log vigor: " << logVigor << std::endl;
 	return seeds;
 }
 

@@ -37,6 +37,19 @@ static TreeGrowthData DETAILED =
 	.leafMinOrder = 4,
 	.leafDensity = 60.0f,
 	.leafSizeMultiplier = 0.4f,
+}, DETAILED_WEAK = {
+	.apicalControl = 0.46f,
+	.vigorMultiplier = 1.2f,
+	.baseLength = .02f,
+	.baseRadius = 0.0005f,
+	.radiusN = 2.5f,
+	.shouldShed = false,
+	.shedMultiplier = 0.3f,
+	.shedExp = 1.5f,
+	.leafMaxChildCount = 5,
+	.leafMinOrder = 4,
+	.leafDensity = 60.0f,
+	.leafSizeMultiplier = 0.4f,
 }, DETAILED_LOW = {
 	.apicalControl = 0.54f,
 	.vigorMultiplier = 2.0f,
@@ -100,7 +113,7 @@ struct TreeApplicationData
 	bool renderBodyShadow = true;
 	bool renderLeafShadow = true;
 
-	bool animated = false;
+	bool animated = true;
 };
 
 
@@ -133,7 +146,6 @@ public:
 	ru<TreeGenerator> generator;
 
 
-	std::vector<rb<Tree>> trees;
 	std::vector<ru<TreeRenderer>> treeRenderers;
 	ru<TreeRendererManager> treeRendererManager;
 
@@ -144,7 +156,6 @@ public:
 
 	} terrainObject;
 
-	TreeGrowthData baseGrowthData = DETAILED;
 	TreeWorldGrowthData worldGrowthData = DETAILED_LOW_WORLD;
 
 	bool treeSettingsEdited = false;
@@ -169,6 +180,8 @@ public:
 	rc<Shader> leavesShadowShader{};
 	rc<Shader> animatedBranchShader{};
 
+	ru<EventSubscriber<TreeWorld::TreeCreatedEvent>> treeCreatedSubscriber;
+	ru<EventSubscriber<TreeWorld::TreeCreatedEvent>> treeDestroyedSubscriber;
 
 	graphics::TreeMaterial treeMaterial{};
 
@@ -204,8 +217,16 @@ public:
 
 	void scrollInput(const vec2& offset);
 
-	void CreateRenderers(const std::vector<ru<Tree>>& trees, bool updateRenderer);
-
+	void createRenderers(const std::vector<ru<Tree>>& trees, bool updateRenderer);
+	TreeRenderer& createRenderer(Tree& tree);
+	void removeRenderer(Tree& tree);
 	void redistributeTrees();
+
+	TreeWorld& getActiveWorld();
+
+	void checkPreviewWorld();
+	void createPreviewWorld();
+	void destroyPreviewWorld();
+
 };
 }

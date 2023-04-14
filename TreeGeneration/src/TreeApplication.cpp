@@ -153,6 +153,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 		treeMaterial.normalTexture = rm.createTexture("./Assets/Textures/tree/normal.jpg", {}, true, true, false);
 		leafTex = rm.createTexture("./Assets/Textures/tree/leaf5.png", { .wrapping = AddressMode::CLAMP_TO_EDGE });
 		terrainMaterial.grassTexture = rm.createTexture("./Assets/Textures/terrain/patchy-meadow1_albedo.png", {});
+		terrainMaterial.dirtTexture = rm.createTexture("./Assets/Textures/terrain/dirt.jpg", {});
 		terrainMaterial.normalMap = rm.createTexture("./Assets/Textures/terrain/patchy-meadow1_normal-ogl.png", {}, true, true, false);
 
 		skyboxTex = rm.createCubemapTexture({ "./Assets/Textures/skybox/posx.jpg", "./Assets/Textures/skybox/negx.jpg",
@@ -176,9 +177,9 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 
 	generator = std::make_unique<TreeGenerator>();
 
-	world = std::make_unique<TreeWorld>(worldGrowthData, appData.worldBbox, baseGrowthData.baseLength);
+	world = std::make_unique<TreeWorld>(worldGrowthData, appData.worldBbox, DETAILED.baseLength);
 	world->newGrowthData(DETAILED, presetColors[0]);
-	world->newGrowthData(DETAILED_LOW, presetColors[1]);
+	world->newGrowthData(DETAILED_WEAK, presetColors[1]);
 	{
 		worldPresetImage = ResourceManager::getInstance().readImageFile("./Assets/preset.png");
 		world->setPresetMap(worldPresetImage);
@@ -208,7 +209,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 		}
 		terrainObject.terrainRenderer->update();
 	}
-
+	world->terrain = terrainObject.terrain.get();
 	{
 		{
 			auto& res = TreeRendererManager::resources;
@@ -233,6 +234,8 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 		}
 		redistributeTrees();
 	}
+	previewWorldChanged = true;
+	checkPreviewWorld();
 #pragma endregion Setup_TreeGen
 }
 
@@ -298,9 +301,6 @@ void TreeApplication::drawGUI()
 		bool worldSettingsEdited = false;
 		auto& worldGrowthData = world->getWorldGrowthData();
 		auto& growthData = world->getWorldGrowthData().presets.begin()->second;
-		int32 seed = trees[0]->seed;
-		treeSettingsEdited |= ImGui::DragInt("Seed", &seed);
-		trees[0]->seed = seed;
 		treeSettingsEdited |= ImGui::SliderFloat("Apical Control", &growthData.apicalControl, 0.0f, 1.0f);
 		treeSettingsEdited |= ImGui::SliderFloat("Vigor Multiplier", &growthData.vigorMultiplier, 0.25f, 4.0f);
 		//treeSettingsEdited |= ImGui::SliderFloat("Base Length", &growthData.baseLength, 0.01f, 1.0f);
@@ -369,9 +369,11 @@ void TreeApplication::drawGUI()
 			totBranch += renderer->getBranchCount();
 			totBud += renderer->getBudCount();
 			totLeaf += renderer->getLeafCount();
-			maxOrder = glm::max(maxOrder, trees[i]->maxOrder);
-			ImGui::Text("Tree:%i Branch Count: %u, Bud Count: %u, Leaf Count: %u, Max Order: %u",
-				i, renderer->getBranchCount(), renderer->getBudCount(), renderer->getLeafCount(), trees[i]->maxOrder);
+			maxOrder = glm::max(maxOrder, renderer->getTree()->maxOrder);
+			ImGui::Text("Tree:%i Branch Count: %u, Bud Count: %u, Leaf Count: %u, Max Order: %u, Root Vigor: %.3f",
+				i, renderer->getBranchCount(), renderer->getBudCount(),
+				renderer->getLeafCount(), renderer->getTree()->maxOrder,
+				renderer->getTree()->root->vigor);
 			i++;
 		}
 		ImGui::Text("Total Branch Count: %u, Total Bud Count: %u, Total Leaf Count: %u, Max Order: %u",
@@ -394,33 +396,7 @@ void TreeApplication::drawScene()
 	const Camera& cam = editingTerrain ? terrainObject.terrain->getTerrainCamera() : this->cam;
 	DrawView view{ cam };
 
-	if (previewWorldChanged && !appData.previewWorld)
-	{
-		std::cout << "Clear preview world" << std::endl;
-		previewWorld = nullptr;
-		CreateRenderers(world->getTrees(), true);
-	}
-	if (appData.previewWorld && (previewWorldChanged || previewWorld == nullptr))
-	{
-		std::cout << "Create preview world" << std::endl;
-		previewWorld = std::make_unique<PreviewWorld>(*world);
-	}
-
-	if (appData.previewWorld)
-	{
-		if (treeSettingsEdited)
-		{
-			std::cout << "Tree settings edited" << std::endl;
-			previewWorld->age = 0;
-		}
-		if (previewWorld->age - world->age != appData.previewAge)
-		{
-			std::cout << "Recalculate until age" << std::endl;
-			previewWorld->ResetToRealWorld();
-			CreateRenderers(previewWorld->getTrees(), false);
-			generator->iterateWorld(*previewWorld, appData.previewAge, appData.renderBody || appData.renderBodyShadow);
-		}
-	}
+	checkPreviewWorld();
 
 
 	TreeWorld& selWorld = appData.previewWorld ? *previewWorld : *world;
@@ -494,6 +470,16 @@ void TreeApplication::drawScene()
 
 	Renderer::getRenderer().renderBBoxLines(view, *lineShader, world->getBBox(), vec3(1.0f));
 
+	std::vector<vec4> obstacles;
+	for (auto& tree : selWorld.getTrees())
+	{
+		if (tree->age == 0)
+			continue;
+		obstacles.push_back({ tree->root->startPos, tree->age / 10.0f * 0.1f });
+	}
+
+	terrainRenderers[0]->updateTerrainColor(obstacles);
+
 	if (appData.renderTerrain)
 	{
 		TerrainRenderer::renderTerrains(terrainRenderers, view, scene);
@@ -534,7 +520,6 @@ void TreeApplication::endFrame()
 
 void TreeApplication::redistributeTrees()
 {
-	trees.clear();
 	treeRenderers.clear();
 	world->clear();
 	auto points = util::DistributePoints(appData.treeDistributionSeed, appData.treeCount,
@@ -549,16 +534,84 @@ void TreeApplication::redistributeTrees()
 	for (auto& point : points)
 	{
 		uint32 id = world->getGrowthDataFromMap(point);
-		trees.emplace_back(&generator->createTree(*world, vec3(point.x, terrainObject.terrain->heightAtWorldPos(vec3(point.x, 0.0f, point.y)), point.y), id));
+		generator->createTree(*world, point, id);
 		i++;
 	}
 	//trees.emplace_back(&generator->createTree(*app.world, vec3(0.0f, app.terrainObject.terrain->heightAtWorldPos(vec3(0.0f)), 0.0), app.growthData));
 	//trees.emplace_back(&app.generator->createTree(*app.world, vec3(0.2f, app.terrainObject.terrain->heightAtWorldPos(vec3(0.2f, 0.0f, 0.0f)), 0.0f), app.growthData));
 	previewWorld = nullptr;
-	CreateRenderers(world->getTrees(), true);
+	createRenderers(world->getTrees(), true);
 }
 
-void TreeApplication::CreateRenderers(const std::vector<ru<Tree>>& trees, bool updateRenderer)
+TreeWorld& TreeApplication::getActiveWorld()
+{
+	if (previewWorld)
+		return *previewWorld;
+	return *world;
+}
+
+void TreeApplication::checkPreviewWorld()
+{
+	if (previewWorldChanged && !appData.previewWorld)
+	{
+		destroyPreviewWorld();
+	}
+	else if (appData.previewWorld && (previewWorldChanged || previewWorld == nullptr))
+	{
+		createPreviewWorld();
+	}
+
+	if (appData.previewWorld)
+	{
+		if (treeSettingsEdited)
+		{
+			std::cout << "Tree settings edited" << std::endl;
+			previewWorld->age = 0;
+		}
+		if (previewWorld->age - world->age != appData.previewAge)
+		{
+			std::cout << "Recalculate until age" << std::endl;
+			previewWorld->ResetToRealWorld();
+			createRenderers(previewWorld->getTrees(), false);
+			generator->iterateWorld(*previewWorld, appData.previewAge, appData.renderBody || appData.renderBodyShadow);
+		}
+	}
+
+
+
+}
+
+void TreeApplication::createPreviewWorld()
+{
+	std::cout << "Create preview world" << std::endl;
+	previewWorld = std::make_unique<PreviewWorld>(*world);
+	createRenderers(previewWorld->getTrees(), false);
+	treeCreatedSubscriber = previewWorld->onTreeCreated.subscribe(this, "app", [this](const auto& data)
+		{
+			createRenderer(data.newTree);
+		});
+	treeDestroyedSubscriber = previewWorld->onTreeDestroyed.subscribe(this, "app", [this](const auto& data)
+		{
+			removeRenderer(data.newTree);
+		});
+}
+
+void TreeApplication::destroyPreviewWorld()
+{
+	std::cout << "Clear preview world" << std::endl;
+	treeCreatedSubscriber = world->onTreeCreated.subscribe(this, "app", [this](const auto& data)
+		{
+			createRenderer(data.newTree);
+		});
+	treeDestroyedSubscriber = world->onTreeDestroyed.subscribe(this, "app", [this](const auto& data)
+		{
+			removeRenderer(data.newTree);
+		});
+	previewWorld = nullptr;
+	createRenderers(world->getTrees(), true);
+}
+
+void TreeApplication::createRenderers(const std::vector<ru<Tree>>& trees, bool updateRenderer)
 {
 	treeRenderers.clear();
 	if (!appData.animated)
@@ -567,21 +620,33 @@ void TreeApplication::CreateRenderers(const std::vector<ru<Tree>>& trees, bool u
 		treeRendererManager = std::make_unique<AnimatedTreeRendererManager>(*world);
 	for (auto& tree : trees)
 	{
-
-		if (!appData.animated)
-		{
-			auto& newRenderer = treeRenderers.emplace_back(std::make_unique<StaticTreeRenderer>(tree.get()));
-			if (updateRenderer)
-				newRenderer->updateRenderer();
-		}
-		else
-		{
-			auto& newRenderer = treeRenderers.emplace_back(std::make_unique<AnimatedTreeRenderer>(tree.get()));
-			if (updateRenderer)
-				newRenderer->updateRenderer();
-		}
-
+		auto& created = createRenderer(*tree);
+		if (updateRenderer)
+			created.updateRenderer();
 	}
+}
+
+TreeRenderer& TreeApplication::createRenderer(Tree& tree)
+{
+	if (!appData.animated)
+	{
+		return *treeRenderers.emplace_back(std::make_unique<StaticTreeRenderer>(&tree));
+	}
+	else
+	{
+		return *treeRenderers.emplace_back(std::make_unique<AnimatedTreeRenderer>(&tree));
+	}
+
+}
+
+void TreeApplication::removeRenderer(Tree& tree)
+{
+	for (int i = 0; i < treeRenderers.size(); i++)
+		if (tree.id == treeRenderers[i]->getTree()->id)
+		{
+			treeRenderers.erase(treeRenderers.begin() + i);
+			return;
+		}
 }
 
 #pragma region Inputs

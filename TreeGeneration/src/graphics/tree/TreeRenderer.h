@@ -1,5 +1,5 @@
 #pragma once
-#include "generation/Tree.h"
+#include "generation/TreeWorld.h"
 #include "DrawView.h"
 #include "opengl/types/Buffer.h"
 #include "opengl/types/VertexArray.h"
@@ -59,8 +59,14 @@ public:
 	const gl::SSBO<ColoredLine>& getColoredLineSSBO() const { return coloredLineSSBO; }
 	const gl::SSBO<BudPoint>& getBudSSBO() const { return budSSBO; }
 
+	inline rb<gen::Tree> getTree()
+	{
+		return world->getTreeById(treeId);
+	}
+
 protected:
-	rb<gen::Tree> tree;
+	rb<gen::TreeWorld> world;
+	uint32 treeId;
 	std::unique_ptr<EventSubscriber<gen::Tree::TreeEventData>> onGrowAfterSubscriber{}, OnDestroySubscriber{};
 	gl::SSBO<BudPoint> budSSBO{};
 	gl::SSBO<ColoredLine> coloredLineSSBO{};
