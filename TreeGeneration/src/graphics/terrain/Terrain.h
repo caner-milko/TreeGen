@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include "graphics/Camera.h"
+#include "util/BBox.h"
 namespace tgen::graphics::terrain
 {
 struct TerrainVertex
@@ -45,6 +46,7 @@ public:
 	}
 
 	Camera getTerrainCamera() const;
+	util::BBox getTerrainBBox() const;
 
 private:
 };

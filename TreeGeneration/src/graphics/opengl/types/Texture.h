@@ -34,6 +34,14 @@ public:
 		UploadType type = UploadType::UBYTE;
 		const void* data = nullptr;
 	};
+	struct TextureDownloadData
+	{
+		UploadFormat downloadFormat = UploadFormat::RGBA;
+		UploadType downloadType = UploadType::UBYTE;
+		uint32 level = 0;
+		size_t bufSize;
+		void* data;
+	};
 	Texture() = default;
 	bool init(TextureCreateData data = {}, bool reinit = true);
 	virtual ~Texture() { destroy(); }
@@ -44,6 +52,8 @@ public:
 
 	virtual void subImage(TextureUploadData uploadData = {});
 	void genMipMaps();
+	void getImage(TextureDownloadData downloadData = {});
+
 
 	TextureHandle getHandle() const
 	{

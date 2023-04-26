@@ -155,7 +155,6 @@ std::vector<vec2> Tree::spreadSeeds()
 		vec2 newSeed = rootPos + logVigor * vec2{ randX, randZ };
 		seeds.push_back(newSeed);
 	}
-	std::cout << "Seed count: " << seedCount << " Log vigor: " << logVigor << std::endl;
 	return seeds;
 }
 

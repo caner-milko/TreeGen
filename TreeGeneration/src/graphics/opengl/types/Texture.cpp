@@ -102,4 +102,10 @@ void Texture::genMipMaps()
 	glGenerateTextureMipmap(handle);
 }
 
+void Texture::getImage(TextureDownloadData downloadData)
+{
+	glGetTextureImage(handle, downloadData.level, UploadFormatToGL(downloadData.downloadFormat),
+		UploadTypeToGL(downloadData.downloadType), downloadData.bufSize, downloadData.data);
+}
+
 }

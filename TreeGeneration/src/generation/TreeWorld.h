@@ -64,6 +64,8 @@ public:
 
 	GrowthDataId getGrowthDataFromMap(vec2 worldPos);
 	void setPresetMap(rc<graphics::Image> image);
+	rc<graphics::gl::Texture> getPresetTexture() { return presetMap->getTexture(); }
+	rc<EditableMap> getPresetMap() { return presetMap; }
 	std::pair<GrowthDataId, glm::vec<3, uint8>> newGrowthData(TreeGrowthData data = {}, std::optional<glm::vec<3, uint8>> col = std::nullopt);
 
 	inline rb<Tree> getTreeById(uint32 id)

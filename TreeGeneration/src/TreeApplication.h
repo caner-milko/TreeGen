@@ -113,7 +113,7 @@ struct TreeApplicationData
 	bool renderBodyShadow = true;
 	bool renderLeafShadow = true;
 
-	bool animated = true;
+	bool animated = false;
 };
 
 
@@ -194,14 +194,32 @@ public:
 
 	rc<CubemapTexture> skyboxTex{};
 
+
+	// map editor
+	rc<Shader> editorPlaneShader{};
+	rc<Shader> editorSphereShader{};
+	rc<CompleteMesh<Vertex, IndexType::UNSIGNED_INT>> planeMesh{};
+	rc<CompleteMesh<Vertex, IndexType::UNSIGNED_INT>> sphereMesh{};
 	bool editingTerrain = false;
+	rb<EditableMap> editingMap = nullptr;
+	vec3 editingColor;
+	vec2 editingPoint;
+	void renderEditing(const Camera& cam);
+
+	void drawToMap(const Camera& cam);
+
+	void startEditing(rc<EditableMap> map, vec3 editingColor);
+
 
 	bool animationRunning = false;
 	std::chrono::steady_clock::time_point lastGrowth;
 
+
 	void startFrame();
 
 	void updateScene();
+
+	void drawGrowthDataGUI(GrowthDataId id, TreeGrowthData& growthData, vec3 color);
 
 	void drawGUI();
 

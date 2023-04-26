@@ -115,4 +115,11 @@ Camera Terrain::getTerrainCamera() const
 	return cam;
 }
 
+util::BBox Terrain::getTerrainBBox() const
+{
+	vec3 min = data.center - 0.5f * vec3(data.size.x, 0, data.size.y) - vec3(0, 2.f, 0);
+	vec3 max = data.center + 0.5f * vec3(data.size.x, 0, data.size.y) - vec3(0, 2.f, 0);
+	return util::BBox(min, max);
+}
+
 }

@@ -8,24 +8,31 @@ class EditableMap
 public:
 	EditableMap(rc<graphics::Image> image) : image(image)
 	{
-
+		initTexture();
+		updateImage();
 	}
+
+	void initTexture();
 
 	rc<graphics::Image> getImage()
 	{
+		if (textureEdited)
+			updateImage();
 		return image;
 	}
 
-	void Edited()
+	void edited()
 	{
-		edited = true;
+		textureEdited = true;
 	}
 
-	void UpdateTexture();
+	void updateImage();
+
+	rc<graphics::gl::Texture> getTexture() { return texture; }
 
 private:
-	bool edited;
+	bool textureEdited;
 	rc<graphics::Image> image;
-	graphics::gl::Texture texture;
+	rc<graphics::gl::Texture> texture;
 };
 }
