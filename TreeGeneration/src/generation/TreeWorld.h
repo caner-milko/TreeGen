@@ -63,6 +63,13 @@ public:
 	TreeWorldGrowthData& getWorldGrowthData() { return worldGrowthData; }
 
 	GrowthDataId getGrowthDataFromMap(vec2 worldPos);
+	ivec3 getGrowthDataColor(GrowthDataId id)
+	{
+		for (auto& [color, idd] : worldGrowthData.colorToPresetMap)
+			if (idd == id)
+				return color;
+		return ivec3(0);
+	}
 	void setPresetMap(rc<graphics::Image> image);
 	rc<graphics::gl::Texture> getPresetTexture() { return presetMap->getTexture(); }
 	rc<EditableMap> getPresetMap() { return presetMap; }

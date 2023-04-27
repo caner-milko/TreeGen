@@ -357,19 +357,26 @@ void TreeApplication::drawGUI()
 			world->recalculateLUT();
 		treeSettingsEdited |= worldSettingsEdited;
 	}
-
-	for (auto& [color, id] : world->getWorldGrowthData().colorToPresetMap)
+	if(ImGui::CollapsingHeader("Growth Datas")) 
 	{
-		ImGui::PushID(("Growth Data " + std::to_string(id)).c_str());
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(color.x, color.y, color.z, 1.0f));
-		if (ImGui::CollapsingHeader(("Tree Growth Data " + std::to_string(id)).c_str()))
+		for (auto& [id, preset] : world->getWorldGrowthData().presets)
 		{
-			ImGui::PopStyleColor();
-			drawGrowthDataGUI(id, world->getWorldGrowthData().presets[id], color);
+			ImGui::PushID(("Growth Data " + std::to_string(id)).c_str());
+			vec3 color = vec3(world->getGrowthDataColor(id)) / 255.0f;
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(color.x, color.y, color.z, 1.0f));
+			if (ImGui::CollapsingHeader(("Tree Growth Data " + std::to_string(id)).c_str()))
+			{
+				ImGui::PopStyleColor();
+				drawGrowthDataGUI(id, world->getWorldGrowthData().presets[id], color);
+			}
+			else
+				ImGui::PopStyleColor();
+			ImGui::PopID();
 		}
-		else
-			ImGui::PopStyleColor();
-		ImGui::PopID();
+		if (ImGui::Button("Add New Growth Data"))
+		{
+			world->newGrowthData();
+		}
 	}
 
 	if (ImGui::CollapsingHeader("Render Options"))
@@ -430,6 +437,8 @@ void TreeApplication::renderEditing(const Camera& cam)
 	{
 		gl::GraphicsPipeline MapDrawPipeline("Draw Map", *editorPlaneShader);
 		MapDrawPipeline.vertexInputState = planeMesh->inputState;
+		MapDrawPipeline.depthState.depthWriteEnable = false;
+		MapDrawPipeline.depthState.depthTestEnable = false;
 		Cmd::ScopedGraphicsPipeline _(MapDrawPipeline);
 
 		mat4 model = terrainObject.terrain->getTerrainBBox().asModel();
@@ -445,6 +454,8 @@ void TreeApplication::renderEditing(const Camera& cam)
 	{
 		gl::GraphicsPipeline MapDrawPipeline("Draw Editor Sphere", *editorSphereShader);
 		MapDrawPipeline.vertexInputState = sphereMesh->inputState;
+		MapDrawPipeline.depthState.depthWriteEnable = false;
+		MapDrawPipeline.depthState.depthTestEnable = false;
 		Cmd::ScopedGraphicsPipeline _(MapDrawPipeline);
 		
 		float aspectRatio = 1.f/(appData.width / (float) appData.height);
@@ -542,6 +553,9 @@ void TreeApplication::drawScene()
 
 	Renderer::getRenderer().beginSwapchain();
 
+	if (editingTerrain)
+		renderEditing(cam);
+
 	//Renderer::getRenderer().renderTest(view);
 
 	treeRendererManager->renderTrees(renderers, view, scene, appData.renderBody, appData.renderLeaves);
@@ -590,8 +604,7 @@ void TreeApplication::drawScene()
 	}
 	if(!editingTerrain)
 		Renderer::getRenderer().renderSkybox(view);
-	if (editingTerrain)
-		renderEditing(cam);
+	
 	Renderer::getRenderer().endSwapchain();
 
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "Common.h"
 #include <unordered_map>
+#include <map>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 namespace tgen::gen
@@ -37,7 +38,7 @@ struct TreeGrowthData
 };
 struct TreeWorldGrowthData
 {
-	std::unordered_map<GrowthDataId, TreeGrowthData> presets;
+	std::map<GrowthDataId, TreeGrowthData> presets;
 	std::unordered_map<ivec3, GrowthDataId> colorToPresetMap;
 	//shadows
 	float fullExposure = 2.5f;
