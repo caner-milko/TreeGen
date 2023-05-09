@@ -1,5 +1,17 @@
 #include "TreeApplication.h"
 
+/*
+Bezier cam
+Fix mapping
+
+Ankete video vs.
+Anket sorularý
+Mapping sorularý
+
+Preset texture(önemsiz)
+
+*/
+
 
 #include <iostream>
 
@@ -14,6 +26,7 @@
 #include "util/Util.h"
 namespace tgen::app
 {
+
 TreeApplication::TreeApplication(const TreeApplicationData& appData)
 {
 #pragma region Setup_GLFW
@@ -23,6 +36,8 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
+	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
 	window = glfwCreateWindow(appData.width, appData.height, "TreeGen", NULL, NULL);
 
@@ -32,6 +47,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 		glfwTerminate();
 		return;
 	}
+
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -43,7 +59,10 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 		{
 			Input::GetInstance().scroll_callback(window, xoffset, yoffset);
 		});
-
+	glfwSetWindowSizeCallback(window, [](GLFWwindow* window, int width, int height)
+		{
+			Input::GetInstance().windowSizeCallback(window, width, height);
+		});
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		std::cout << "Failed to initialize GLAD" << std::endl;
@@ -51,8 +70,10 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	}
 	const char* glsl_version = "#version 460";
 	double xpos, ypos;
+	int width, height;
 	glfwGetCursorPos(window, &xpos, &ypos);
-	Input::GetInstance().init(xpos, ypos);
+	glfwGetWindowSize(window, &width, &height);
+	Input::GetInstance().init(xpos, ypos, ivec2(width, height));
 
 #pragma endregion Setup_GLFW
 
@@ -86,7 +107,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 #pragma endregion ImGui_Setup
 
 	Renderer::getRenderer();
-
+	Renderer::getRenderer().viewportSize = ivec2(appData.width, appData.height);
 #pragma region Load_Resources
 	{
 		leafMesh = ResourceManager::getInstance().objToMesh("./Assets/leafMesh.wobj");
@@ -173,11 +194,24 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 
 
 		Renderer::getRenderer().setupSkybox(skyboxTex, skyboxShader);
-
-
-
 	}
 #pragma endregion Load_Resources
+
+#pragma region Setup_Cam
+	assert(appData.camPoints.size() % 3 == 0);
+	for (int i = 0; i < appData.camPoints.size(); i += 3)
+	{
+		const vec3* ptr = &appData.camPoints[i];
+		camPath.addNew(1.5f* ptr[0],1.5f*  ptr[1],1.5f* ptr[2]);
+	}
+	/*camPath.addNew(2.f * vec3(-1.0f, 0.5f, -0.5f), 2.f * vec3(-0.5f, 0.5f, -1.f), 2.f * vec3(0.0f, 0.5f, -1.f));
+
+	camPath.addNew(2.f * vec3(0.5f, 0.5f, -1.f), 2.f * vec3(1.0f, 0.5f, -0.5f), 2.f * vec3(1.0f, .5f, 0.f));
+
+	camPath.addNew(2.f * vec3(1.0f, 0.5f, 0.5f), 2.f * vec3(0.5f, 0.5f, 1.f), 2.f * vec3(0.f, 0.5f, 1.f));
+
+	camPath.addNew(2.f * vec3(-0.5f, 0.5f, 1.f), 2.f * vec3(-1.f, 0.5f, .5f), 2.f * vec3(-1.f, 0.5f, 0.f));*/
+#pragma endregion
 
 #pragma region Setup_TreeGen
 	cam.projection = ((float)appData.width) / ((float)appData.height);
@@ -188,11 +222,20 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 
 	generator = std::make_unique<TreeGenerator>();
 
-	world = std::make_unique<TreeWorld>(worldGrowthData, appData.worldBbox, DETAILED.baseLength);
-	world->newGrowthData(DETAILED, presetColors[0]);
-	world->newGrowthData(DETAILED_WEAK, presetColors[1]);
+	world = std::make_unique<TreeWorld>(worldGrowthData, appData.worldBbox, SelectedGrowthData.baseLength);
+	
+	//world->newGrowthData(SelectedGrowthData, presetColors[0]);
+	
+	//q2
+
+	//intro
+	world->newGrowthData(introBlack, introPresetColors[3]);
+	world->newGrowthData(introRed, introPresetColors[0]);
+	world->newGrowthData(introGreen, introPresetColors[1]);
+	world->newGrowthData(introBlue, introPresetColors[2]);
+
 	{
-		worldPresetImage = ResourceManager::getInstance().readImageFile("./Assets/preset.png");
+		worldPresetImage = ResourceManager::getInstance().readImageFile(presetPath);
 		world->setPresetMap(worldPresetImage);
 	}
 
@@ -212,7 +255,6 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 			auto& res = TerrainRenderer::resources;
 			res.terrainShader = terrainShader;
 			res.terrainShadowShader = terrainShadowShader;
-			terrainMaterial.grassTexture = world->getPresetTexture();
 			res.material = terrainMaterial;
 			res.lineShader = lineShader;
 			res.lineVAO = &Renderer::getRenderer().getLineMesh();
@@ -258,7 +300,8 @@ void TreeApplication::execute()
 		startFrame();
 		processInputs();
 		updateScene();
-		drawGUI();
+		if(appData.showImgui)
+			drawGUI();
 		drawScene();
 		endFrame();
 	}
@@ -295,6 +338,33 @@ void TreeApplication::updateScene()
 		}
 	}
 
+	if(appData.camAnimated) {
+		cam.cameraPosition = camPath.calculate(camT);
+		cam.dir = glm::normalize(vec3(0.0f, 0.25f, 0.0f) - cam.cameraPosition);
+		camT += deltaTime * appData.camAnimSpeed;
+	}
+
+	else if(false)
+	{
+		camT += deltaTime * 0.04f;
+		if (camT > 1.f)
+			camT = 0.0f;
+		int a = 2;
+		auto& growthData = world->getWorldGrowthData().presets.begin()->second;
+		switch (a)
+		{
+		case 0:
+			growthData.apicalControl = glm::mix(0.35f, 0.65f, camT);
+			break;
+		case 1:
+			growthData.tropism.y = glm::mix(-1.f, 1.f, camT);
+			break;
+		case 2:
+			growthData.vigorMultiplier = glm::mix(0.5f, 2.5f, camT);
+			break;
+		}
+		previewWorldChanged = true;
+	}
 
 	float sinDeltaTime = glm::sin(currentFrame);
 	float cosDeltaTime = glm::cos(currentFrame);
@@ -306,6 +376,8 @@ void TreeApplication::updateScene()
 
 void TreeApplication::drawGrowthDataGUI(GrowthDataId id, TreeGrowthData& growthData, vec3 color)
 {
+	treeSettingsEdited |= ImGui::Checkbox("Grow", &growthData.grow);
+	treeSettingsEdited |= ImGui::Checkbox("Spread", &growthData.spread);
 	treeSettingsEdited |= ImGui::SliderFloat("Apical Control", &growthData.apicalControl, 0.0f, 1.0f);
 	treeSettingsEdited |= ImGui::SliderFloat("Vigor Multiplier", &growthData.vigorMultiplier, 0.25f, 4.0f);
 	//treeSettingsEdited |= ImGui::SliderFloat("Base Length", &growthData.baseLength, 0.01f, 1.0f);
@@ -344,6 +416,7 @@ void TreeApplication::drawGrowthDataGUI(GrowthDataId id, TreeGrowthData& growthD
 void TreeApplication::drawGUI()
 {
 	ImGui::Begin("Tree Generator");
+
 
 	if (ImGui::CollapsingHeader("World Growth Data"))
 	{
@@ -397,6 +470,10 @@ void TreeApplication::drawGUI()
 		ImGui::Checkbox("Show Optimal Dirs", &appData.showOptimalDirs);
 		ImGui::SliderFloat("Shadow Cell Visibility Radius", &appData.shadowCellVisibilityRadius, 0.5f, 20.0f);
 		ImGui::SliderFloat("Animation Speed", &AnimatedTreeRendererManager::resources.animationSpeed, 0.05f, 2.0f);
+		if (ImGui::Checkbox("Camera Animated", &appData.camAnimated))
+		{
+			camT = 0.0f;
+		}
 	}
 	ImGui::Text("Frame Rate: %.3f, Frame Time: %.3f ms", ImGui::GetIO().Framerate, 1.0 / ImGui::GetIO().Framerate * 1000.0);
 
@@ -422,6 +499,8 @@ void TreeApplication::drawGUI()
 		ImGui::Text("Total Branch Count: %u, Total Bud Count: %u, Total Leaf Count: %u, Max Order: %u",
 			totBranch, totBud, totLeaf, maxOrder);
 	}
+
+	ImGui::Text("World age: %i", world->age);
 
 	if (ImGui::Button("Reset Trees"))
 	{
@@ -460,7 +539,7 @@ void TreeApplication::renderEditing(const Camera& cam)
 		
 		float aspectRatio = 1.f/(appData.width / (float) appData.height);
 
-		mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), vec3(editingPoint.x, 0.0f, editingPoint.y)), vec3(aspectRatio, 1.0f, 1.f));
+		mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), vec3(editingPoint.x, 0.0f, editingPoint.y)), appData.paintSize * vec3(aspectRatio, 1.0f, 1.f));
 		Cmd::SetUniform("color", editingColor + 0.02f);
 		Cmd::SetUniform("MVP", cam.getVP() * model);
 		
@@ -483,7 +562,7 @@ void TreeApplication::drawToMap(const Camera& cam)
 
 		float aspectRatio = 1.f/(appData.width / (float)appData.height);
 
-		mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), vec3(editingPoint.x * aspectRatio, 0.0f, editingPoint.y * aspectRatio)), aspectRatio * vec3(aspectRatio, 1.0f, 1.f));
+		mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), vec3(editingPoint.x, 0.0f, editingPoint.y )), appData.paintSize * vec3(aspectRatio, 1.0f, 1.f));
 
 		Cmd::SetUniform("color", editingColor);
 		Cmd::SetUniform("MVP", cam.getVP() * model);
@@ -577,13 +656,13 @@ void TreeApplication::drawScene()
 	}*/
 	if (appData.showVigor)
 	{
-		treeRenderers[0]->renderVigor(view);
-		treeRenderers[1]->renderVigor(view);
+		for(auto& renderer : treeRenderers)
+			renderer->renderVigor(view);
 	}
 	if (appData.showOptimalDirs)
 	{
-		treeRenderers[0]->renderOptimalDirection(view);
-		treeRenderers[1]->renderOptimalDirection(view);
+		for (auto& renderer : treeRenderers)
+			renderer->renderOptimalDirection(view);
 	}
 
 	Renderer::getRenderer().renderBBoxLines(view, *lineShader, world->getBBox(), vec3(1.0f));
@@ -644,12 +723,19 @@ void TreeApplication::redistributeTrees()
 	world->clear();
 	auto points = util::DistributePoints(appData.treeDistributionSeed, appData.treeCount,
 		{ appData.worldBbox.min.x, appData.worldBbox.min.z, appData.worldBbox.max.x, appData.worldBbox.max.z });
+//#ifdef _DEBUG
 	if (appData.treeCount == 2)
 	{
 		points.clear();
 		points.push_back(vec2(0.0));
 		points.push_back(vec2(0.0, 0.2));
 	}
+	if (appData.treeCount == 1)
+	{
+		points.clear();
+		points.push_back(vec2(0.0));
+	}
+//#endif
 	uint32 i = 0;
 	for (auto& point : points)
 	{
@@ -779,6 +865,14 @@ void TreeApplication::processInputs()
 		mouseInput(input.getMouseOffset());
 	if (input.didScroll())
 		scrollInput(input.getScrollOffset());
+	if (input.didResize())
+	{
+		auto size = input.getWindowSize();
+		appData.width = size.x;
+		appData.height = size.y;
+		cam.projection = ((float)appData.width) / ((float)appData.height);
+		Renderer::getRenderer().viewportSize = size;
+	}
 }
 
 void TreeApplication::keyInput()
@@ -816,6 +910,17 @@ void TreeApplication::keyInput()
 	{
 		drawToMap(terrainObject.terrain->getTerrainCamera());
 	}
+
+	if (ImGui::IsKeyPressed(ImGuiKey_M))
+	{
+		appData.camAnimated ^= 1;
+		camT = 0.0f;
+	}
+	if (ImGui::IsKeyPressed(ImGuiKey_R))
+	{
+		camT = 0.0f;
+	}
+
 
 	if (ImGui::IsKeyDown(ImGuiKey_L))
 	{
@@ -857,14 +962,15 @@ void TreeApplication::mouseInput(const vec2& offset)
 	}
 	if (!cursorDisabled)
 		return;
-
-	if(!editingTerrain) 
+	if(!editingTerrain && false) 
 	{
-		cam.setYaw(cam.getYaw() + appData.mouseSensitivity * offset.x);
-		cam.setPitch(cam.getPitch() + appData.mouseSensitivity * offset.y);
+		if(!appData.camAnimated) {
+			cam.setYaw(cam.getYaw() + appData.mouseSensitivity * offset.x);
+			cam.setPitch(cam.getPitch() + appData.mouseSensitivity * offset.y);
 
-		appData.yaw = cam.getYaw();
-		appData.pitch = cam.getPitch();
+			appData.yaw = cam.getYaw();
+			appData.pitch = cam.getPitch();
+		}
 	}
 	else
 	{

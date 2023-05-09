@@ -12,6 +12,10 @@ struct Image
 	bool isEmpty() const;
 	inline ivec2 uvToPixel(vec2 uv) const
 	{
+		if (nrChannels == 3)
+		{
+			uv.y = 1.0 - uv.y;
+		}
 		return glm::max(ivec2(0, 0), glm::min(ivec2(uv * vec2(width, height)), ivec2(width - 1, height - 1)));
 	}
 	template<int N>

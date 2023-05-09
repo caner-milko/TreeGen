@@ -8,7 +8,7 @@ public:
 	Sampler() = default;
 	void init(bool reinit = true) {
 		if (handle != 0 && reinit) {
-			this->~Sampler();
+			destroy();
 		}
 		assert(handle == 0);
 		glCreateSamplers(1, &handle);

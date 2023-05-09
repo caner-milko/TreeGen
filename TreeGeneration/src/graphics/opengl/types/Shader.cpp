@@ -74,7 +74,7 @@ Shader& Shader::setUniform(const uint32 location, const mat3& val)
 bool Shader::init(std::string_view vertexSrc, std::string_view fragmentSrc, bool reinit)
 {
 	if (handle != 0 && reinit) {
-		this->~Shader();
+		destroy();
 	}
 	assert(handle == 0);
 	compile(vertexSrc, fragmentSrc);

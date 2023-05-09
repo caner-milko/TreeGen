@@ -23,7 +23,7 @@ void StaticTreeRenderer::updateRenderer()
 
 		uint32 colorSelected = branch->from->order;
 		vec3 color = vec3(util::IntNoise2D(colorSelected), util::IntNoise2D(colorSelected, 1), util::IntNoise2D(colorSelected, 2)) * 0.5f + 0.5f;
-
+		color = vec3(tree->world->getGrowthDataColor(tree->growthDataId)) / 255.0f;
 
 		branchData.push_back(branch->asShaderData(color));
 	}

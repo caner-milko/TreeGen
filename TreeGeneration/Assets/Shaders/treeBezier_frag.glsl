@@ -475,7 +475,7 @@ void main()
 
     float mixedOrder = mix(0.2, 1.0, mix(order, nextOrder, hit.splineT));
     vec3 col = texture(treeMaterial.colorTexture, hit.uv).xyz * mixedOrder;
-    
+    //col = branch.color;
     Bezier curve = toBezier(branch);
     
     vec3 norm = bumpMap(curve, texture(treeMaterial.normalTexture, hit.uv).xyz, hit.normal, pos, hit.splineT, 5.0);

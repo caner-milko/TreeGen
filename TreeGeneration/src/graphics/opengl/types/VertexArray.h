@@ -11,7 +11,7 @@ public:
 
 	bool init(bool reinit = true) {
 		if (handle != 0 && reinit) {
-			this->~VertexArray();
+			destroy();
 		}
 		assert(handle == 0); 
 		glCreateVertexArrays(1, &handle); 

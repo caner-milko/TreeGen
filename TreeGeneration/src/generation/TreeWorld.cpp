@@ -265,7 +265,6 @@ GrowthDataId TreeWorld::getGrowthDataFromMap(vec2 worldPos)
 {
 	vec2 uv = (worldPos - vec2(info.leftBottomCorner.x, info.leftBottomCorner.z))
 		/ (info.cellSize * vec2(info.worldSize.x, info.worldSize.z));
-	std::cout << uv.x << "  " << uv.y << std::endl;
 	auto pix = presetMap->getImage()->uvToPixel(uv);
 	auto col = presetMap->getImage()->getRGB<3>(pix);
 	auto it = worldGrowthData.colorToPresetMap.find(col);

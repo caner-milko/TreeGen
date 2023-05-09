@@ -194,10 +194,10 @@ void Renderer::beginSwapchain()
 {
 	SwapchainRenderInfo info;
 	info.name = "Swapchain";
-	info.viewport.size = ivec2(1600, 900);
+	info.viewport.size = viewportSize;
 	BeginSwapchainRendering(info);
 	//TODO move to begin swapchain rendering
-	glClearColor(0.0f, 0.3f, 0.2f, 0.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

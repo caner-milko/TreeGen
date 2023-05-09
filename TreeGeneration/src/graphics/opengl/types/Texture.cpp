@@ -9,7 +9,7 @@ bool Texture::init(TextureCreateData data, bool reinit)
 {
 	if (handle != 0 && reinit)
 	{
-		this->~Texture();
+		destroy();
 	}
 	assert(handle == 0);
 	this->data = data;

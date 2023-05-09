@@ -61,6 +61,7 @@ public:
 	const gl::UBO<DirLightUniform>& getLightUBO();
 
 	rc<gl::Shader> pointShader;
+	ivec2 viewportSize = ivec2(1600, 900);
 private:
 
 	Renderer() = default;

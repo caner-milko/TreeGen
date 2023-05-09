@@ -184,10 +184,12 @@
     <ClInclude Include="src\generation\EditableMap.h" />
     <ClInclude Include="src\generation\PreviewWorld.h" />
     <ClInclude Include="src\generation\GrowthData.h" />
+    <ClInclude Include="src\graphics\CameraPath.h" />
     <ClInclude Include="src\graphics\tree\AnimatedTreeRenderer.h" />
     <ClInclude Include="src\graphics\Mesh.h" />
     <ClInclude Include="src\graphics\tree\StaticTreeRenderer.h" />
     <ClInclude Include="src\graphics\tree\TreeRendererManager.h" />
+    <ClInclude Include="src\Questions.inl" />
     <ClInclude Include="src\util\BBox.h" />
     <ClInclude Include="src\generation\Branch.h" />
     <ClInclude Include="src\Input.h" />

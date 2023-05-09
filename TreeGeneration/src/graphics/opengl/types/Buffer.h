@@ -18,7 +18,7 @@ public:
 		BufferStorageFlags storageFlags = BufferStorageFlag::NONE,
 		BufferMapFlags mapFlags = BufferMapFlag::NONE, bool reinit = true) {
 		if (handle != 0 && reinit) {
-			this->~Buffer();
+			destroy();
 		}
 		assert(handle == 0);
 		this->size = data.size();

@@ -14,7 +14,7 @@ std::vector<vec2> TreeGenerator::spreadSeeds(Tree& tree)
 
 void TreeGenerator::growTree(Tree& tree)
 {
-	if (!tree.getGrowthData().grow || tree.age > 10)
+	if (!tree.getGrowthData().grow || tree.age > 20)
 		return;
 	tree.OnBeforeGrow.dispatch({});
 	tree.age++;
@@ -35,9 +35,7 @@ void TreeGenerator::growTree(Tree& tree)
 
 bool TreeGenerator::shouldDie(Tree& tree)
 {
-	if (tree.age < 4)
-		return false;
-	return tree.root->nodeStatus != TreeNode::ALIVE;
+	return tree.root->nodeStatus == TreeNode::DEAD || (tree.root->nodeStatus == TreeNode::BUD && tree.age >= 4);
 }
 
 void TreeGenerator::iterateWorld(TreeWorld& world, int count, bool updateRenderers)
@@ -73,7 +71,7 @@ void TreeGenerator::iterateWorld(TreeWorld& world, int count, bool updateRendere
 		for (auto& tree : world.getTrees())
 		{
 			if (!tree->getGrowthData().grow)
-				return;
+				continue;
 			tree->OnAfterGrow.dispatch({});
 		}
 	}

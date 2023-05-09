@@ -120,26 +120,27 @@ void Tree::removeNode(TreeNode& node)
 	while (!query.empty())
 	{
 		auto& [sel, shouldRem] = query.front();
-		if (node.nodeStatus == TreeNode::ALIVE)
+		if (sel->nodeStatus != TreeNode::BUD)
 		{
 			if (sel->mainChild)
 				query.emplace(std::make_pair(sel->mainChild, true));
 			if (sel->lateralChild)
 				query.emplace(std::make_pair(sel->lateralChild, false));
-			if (shouldRemove)
+			if (shouldRem)
 			{
 				removeShadows(node);
 			}
 		}
 		query.pop();
-		delete& node;
+		delete sel;
 	}
 }
 
 std::vector<vec2> Tree::spreadSeeds()
 {
 	std::vector<vec2> seeds;
-	if (age < 6 || root->nodeStatus != TreeNode::ALIVE || root->vigor < 3.0f)
+	const auto& growthData = getGrowthData();
+	if (!growthData.spread || age < 6 || root->nodeStatus != TreeNode::ALIVE || root->vigor < 3.0f)
 		return seeds;
 
 	float logVigor = glm::log(root->vigor);
@@ -152,7 +153,7 @@ std::vector<vec2> Tree::spreadSeeds()
 	{
 		float randX = util::IntNoise2D(ageIdHash, util::hash(i));
 		float randZ = util::IntNoise2D(ageIdHash, util::hash(i) + 1);
-		vec2 newSeed = rootPos + logVigor * vec2{ randX, randZ };
+		vec2 newSeed = rootPos + maxDist * vec2{ randX, randZ };
 		seeds.push_back(newSeed);
 	}
 	return seeds;
@@ -441,11 +442,15 @@ void Tree::shedBranchsRecursive(TreeNode& node)
 		removeShadows(node);
 	}
 	std::queue<TreeNode*> query({ node.mainChild, node.lateralChild });
+	if (node.mainChild->nodeStatus != TreeNode::BUD)
+	{
+		removeShadows(*node.mainChild);
+	}
 	while (!query.empty())
 	{
 		TreeNode* sel = query.front();
 		cachedBranchs.erase(sel->id);
-		if (node.nodeStatus == TreeNode::ALIVE)
+		if (sel->nodeStatus == TreeNode::ALIVE)
 		{
 			query.emplace(sel->mainChild);
 			if (sel->mainChild->nodeStatus != TreeNode::DEAD)
@@ -456,6 +461,8 @@ void Tree::shedBranchsRecursive(TreeNode& node)
 		query.pop();
 		delete sel;
 	}
+	node.mainChild = nullptr;
+	node.lateralChild = nullptr;
 }
 
 uint32 Tree::calculateChildCountRecursive(TreeNode& node)

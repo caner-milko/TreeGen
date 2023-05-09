@@ -10,6 +10,7 @@ using GrowthDataId = uint32;
 struct TreeGrowthData
 {
 	bool grow = true;
+	bool spread = true;
 
 	float apicalControl = 0.5f;
 	float vigorMultiplier = 2.0f;
@@ -21,7 +22,7 @@ struct TreeGrowthData
 	//lateral
 	float lateralAngle = glm::radians(45.0f);
 
-	vec3 tropism = vec3(0.0f, 1.0f, 0.0f);
+	vec3 tropism = vec3(0.0f, 0.0f, 0.0f);
 	//default, optimal, tropism
 	vec2 directionWeights = vec2(0.1f, 0.1f);
 

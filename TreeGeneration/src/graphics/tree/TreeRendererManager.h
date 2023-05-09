@@ -64,7 +64,7 @@ public:
 	{
 		rc<gl::Shader> animatedBranchShader = nullptr,
 			animatedLeafShader = nullptr;
-		float animationSpeed = 0.2f;
+		float animationSpeed = 1.5f;
 	} resources;
 
 	AnimatedTreeRendererManager(gen::TreeWorld& world);

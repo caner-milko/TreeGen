@@ -17,13 +17,15 @@ public:
 		return instance;
 	}
 
-	void init(double xpos, double ypos) {
+	void init(double xpos, double ypos, ivec2 windowSize) {
 		mousePos = { xpos, ypos };
+		this->windowSize = windowSize;
 	}
 
 	void Reset() {
 		mouseMoved = false;
 		scrolled = false;
+		resized = false;
 		scrollOffset = vec2(0.0f);
 		mouseOffset = vec2(0.0f);
 	}
@@ -36,6 +38,12 @@ public:
 	void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 		scrolled = true;
 		scrollOffset = vec2{ xoffset, yoffset };
+	}
+
+	void windowSizeCallback(GLFWwindow* window, int width, int height)
+	{
+		resized = true;
+		windowSize = ivec2(width, height);
 	}
 
 	bool didMouseMove() const {
@@ -58,6 +66,16 @@ public:
 		return scrollOffset;
 	}
 
+	bool didResize() const
+	{
+		return resized;
+	}
+
+	ivec2 getWindowSize() const
+	{
+		return windowSize;
+	}
+
 
 
 private:
@@ -67,5 +85,8 @@ private:
 
 	bool scrolled = false;
 	vec2 scrollOffset = vec2(0.0f);
+
+	bool resized = false;
+	ivec2 windowSize = ivec2(1600, 900);
 };
 }
