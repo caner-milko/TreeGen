@@ -7,7 +7,7 @@
 namespace tgen::gen
 {
 //TODO move this to TreeRenderer
-struct BranchShaderData
+struct alignas(16) BranchShaderData
 {
 	mat4 model;
 	vec4 A;
@@ -23,7 +23,7 @@ struct BranchShaderData
 	float offset;
 	int order;
 
-	vec2 a;
+	//vec2 a;
 
 	//vec4 filler;
 };

@@ -14,7 +14,7 @@ std::vector<vec2> TreeGenerator::spreadSeeds(Tree& tree)
 
 void TreeGenerator::growTree(Tree& tree)
 {
-	if (!tree.getGrowthData().grow || tree.age > 20)
+	if (!tree.getGrowthData().grow || tree.age > 10)
 		return;
 	tree.OnBeforeGrow.dispatch({});
 	tree.age++;
