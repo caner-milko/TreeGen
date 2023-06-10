@@ -5,6 +5,8 @@ in vec3 fragPos;
 flat in int instanceID;
 flat in int inside;
 
+
+
 struct Camera {
     mat4 vp;
     vec4 pos_near;
@@ -21,6 +23,8 @@ layout(std140, binding=1) uniform Light {
 
 #define SHOW_BBOX 0
 
+#define MAX_STEPS 15.0
+#define MIN_DIST 0.00001
 #define PI 3.14159265359
 
 struct Bezier {
@@ -239,8 +243,8 @@ void main()
     vec3 start = fragPos;
 
 	float distToCam = distance(lightCam.pos_near.xyz, branch.mid);
-    float stepCount = calcStepCount(distToCam, lightCam.pos_near.w, lightCam.dir_far.w, 6.0, 1.5);
-    float minDist = calcMinDist(distToCam, lightCam.pos_near.w, lightCam.dir_far.w, 0.001, 0.005);
+    float stepCount = calcStepCount(distToCam, lightCam.pos_near.w, lightCam.dir_far.w, MAX_STEPS, 1.5);
+    float minDist = calcMinDist(distToCam, lightCam.pos_near.w, lightCam.dir_far.w, MIN_DIST, 50.0*MIN_DIST);
 
 	Hit hit = intersect(start, rayDir, branch, stepCount, minDist);
 	if(!hit.hit) {

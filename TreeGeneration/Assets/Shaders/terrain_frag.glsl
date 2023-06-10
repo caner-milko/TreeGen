@@ -84,7 +84,7 @@ float calcShadow(vec3 pos, out vec3 projCoords) {
     float bias = 0.001;
     float visibility = 1.0;
     for (int i=0;i<4;i++){
-        vec2 newUv = projCoords.xy + poissonDisk[i]/1400.0;
+        vec2 newUv = projCoords.xy + poissonDisk[i]/1400.0/3.0;
         if(newUv.x < 1.0 && newUv.y < 1.0 && newUv.x > 0.0 && newUv.y > 0.0)
             visibility -= 0.2 * (1.0 - texture(shadowMap, vec3(newUv, projCoords.z - bias)));
             //visibility -= 0.2 * float(projCoords.z - bias > texture(shadowMap, newUv).r);
@@ -118,7 +118,9 @@ void main()
     vec3 col = mix(grassCol, dirtCol, blend);
     vec3 projCoords;
     float shadow = calcShadow(fragPos, projCoords);
+    
     FragColor = vec4(calcLight(normalize(cam.pos_near.xyz - fragPos), norm, col) * calcShadow(fragPos, projCoords), 1.0);
+    FragColor = vec4(vec3(1.0) * calcShadow(fragPos, projCoords), 1.0);
     //FragColor = vec4(vec3(shadow) * vec3(projCoords.xy, 0), 1);
     //FragColor = vec4(norm, 1.0);
 } 

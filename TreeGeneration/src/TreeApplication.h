@@ -65,12 +65,13 @@ static TreeGrowthData DETAILED =
 	.leafSizeMultiplier = 0.4f,
 }, TEST =
 {
+	.spread = false,
 	.apicalControl = 0.5f,
 	.vigorMultiplier = 2.0f,
 	.baseLength = .02f,
 	.baseRadius = 0.0005f,
 	.radiusN = 2.5f,
-	.shouldShed = false,
+	.shouldShed = true,
 	.shedMultiplier = 0.3f,
 	.shedExp = 1.5f,
 	.leafMaxChildCount = 5,
@@ -81,7 +82,7 @@ static TreeGrowthData DETAILED =
 
 #include "Questions.inl"
 
-static TreeGrowthData SelectedGrowthData = DETAILED;
+static TreeGrowthData SelectedGrowthData = TEST;
 
 static TreeWorldGrowthData DETAILED_WORLD = {
 	.fullExposure = 2.5f,
@@ -99,17 +100,19 @@ static std::vector<glm::vec<3, uint8>> presetColors = { {255, 0, 0}, {0, 255, 0}
 
 struct TreeApplicationData
 {
-	uint32 width = 1600, height = 900;
+	uint32 width = 2400, height = 1350;
 	float mouseSensitivity = 0.1f;
 	float cameraSpeed = 0.5f;
 
-	//vec3 camPos = vec3(-1.0f, 0.5f, 1.0f);
+	vec3 camPos = vec3(-3.f, .8f, 3.f);
+	//vec3 camPos = vec3(-1.63f, 1.18f, .25f);
 	//vec3 camPos = vec3(-1.3f, 0.4f, 1.3f);
-	//float yaw = -45.0f, pitch = 5.0f;
+	float yaw = -45.f, pitch = -0.0f;
+	//float yaw = 348.0f, pitch = -15.0f;
 
 	//q2
 	//vec3 camPos = vec3(-3.0f, 1.5f, -3.0f);
-	float yaw = 45.0f, pitch = -20.0f;
+	//float yaw = 45.0f, pitch = -20.0f;
 
 
 	float fov = 45.0f;
@@ -126,7 +129,7 @@ struct TreeApplicationData
 	BBox worldBbox = BBox(vec3(-2.0f, 0.0f, -2.0f), vec3(2.0f, 4.0f, 2.0f));
 
 	int treeDistributionSeed = 0;
-	int treeCount = 5;
+	int treeCount = 100;
 
 	bool renderTerrain = true;
 	bool renderBody = true;
@@ -134,13 +137,14 @@ struct TreeApplicationData
 	bool renderBodyShadow = true;
 	bool renderLeafShadow = true;
 	bool showImgui = true;
+	bool perfMetrics = false;
 
 	bool animated = false;
-	bool camAnimated = true;
+	bool camAnimated = false;
 	float camAnimSpeed = 0.2f;
 	float paintSize = 0.5f;
 
-	vec3 camPos = { 0,1,2 };
+	//vec3 camPos = { 0,1,2 };
 	std::vector<vec3> camPoints = { {0.5, 1, 2}, {1.53, 0.75, 2.1}, {1.9, 0.75, 1.72}, {2.28, 0.75, 1.35}, {2.29, 1.12, 0.13}, {2.11, 1.19, -0.32},
 		{1.76, 1.32, -1.26}, {1,0.9,-2},{0,0.9,-2},{-0.5,0.9,-2},{-1.28,1.23,-2.07},{-1.66,1.25,-1.7},{-2.03,1.28,-1.32},{-2.19, 0.96, -0.36}, {-2.19,0.96,0.13}, {-2.19, 0.96, 0.63},
 		{-1.68, 1.26,0.87}, {-1.26, 1.26, 1.21}, {-0.83, 1.27, 1.55}, {-0.5, 1, 2}, {0,1,2} };
@@ -245,7 +249,7 @@ public:
 	bool animationRunning = false;
 	float camT = 0.0f;
 	CameraPath camPath = 1.5f * appData.camPos;
-	std::string presetPath = "./Assets/introPreset.png";
+	std::string presetPath = "./Assets/forestPreset.png";
 	std::chrono::steady_clock::time_point lastGrowth;
 
 

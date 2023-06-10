@@ -36,7 +36,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
+	//glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
 	window = glfwCreateWindow(appData.width, appData.height, "TreeGen", NULL, NULL);
@@ -49,7 +49,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	}
 
 	glfwMakeContextCurrent(window);
-	glfwSwapInterval(1);
+	glfwSwapInterval(0);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos)
 		{
@@ -184,9 +184,12 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 		treeMaterial.colorTexture = rm.createTexture("./Assets/Textures/tree/color.jpg", {});
 		treeMaterial.normalTexture = rm.createTexture("./Assets/Textures/tree/normal.jpg", {}, true, true, false);
 		leafTex = rm.createTexture("./Assets/Textures/tree/leaf5.png", { .wrapping = AddressMode::CLAMP_TO_EDGE });
-		terrainMaterial.grassTexture = rm.createTexture("./Assets/Textures/terrain/patchy-meadow1_albedo.png", {});
-		terrainMaterial.dirtTexture = rm.createTexture("./Assets/Textures/terrain/dirt.jpg", {});
-		terrainMaterial.normalMap = rm.createTexture("./Assets/Textures/terrain/patchy-meadow1_normal-ogl.png", {}, true, true, false);
+		//terrainMaterial.grassTexture = rm.createTexture("./Assets/Textures/terrain/patchy-meadow1_albedo.png", {});
+		//terrainMaterial.dirtTexture = rm.createTexture("./Assets/Textures/terrain/dirt.jpg", {});
+		//terrainMaterial.normalMap = rm.createTexture("./Assets/Textures/terrain/patchy-meadow1_normal-ogl.png", {}, true, true, false);
+		terrainMaterial.dirtTexture = rm.createTexture("./Assets/Textures/terrain/whiteTexture.png", {});
+		terrainMaterial.grassTexture = rm.createTexture("./Assets/Textures/terrain/whiteTexture.png", {});
+		terrainMaterial.normalMap = rm.createTexture("./Assets/Textures/terrain/whiteTexture.png", {}, true, true, false);
 
 		skyboxTex = rm.createCubemapTexture({ "./Assets/Textures/skybox/posx.jpg", "./Assets/Textures/skybox/negx.jpg",
 			"./Assets/Textures/skybox/posy.jpg", "./Assets/Textures/skybox/negy.jpg",
@@ -225,7 +228,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	world = std::make_unique<TreeWorld>(worldGrowthData, appData.worldBbox, SelectedGrowthData.baseLength);
 	
 	//world->newGrowthData(SelectedGrowthData, presetColors[0]);
-	
+
 	//q2
 
 	//intro
@@ -240,13 +243,13 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	}
 
 	{
-		heightMapImage = ResourceManager::getInstance().readImageFile("./Assets/Textures/terrain/noiseTexture.png");
+		heightMapImage = ResourceManager::getInstance().readImageFile("./Assets/Textures/terrain/whiteTexture.png");
 
 		TerrainData terrainData = {};
 		terrainData.heightMap = heightMapImage;
 		terrainData.maxHeight = 0.2f;
 		auto worldInfo = world->getWorldInfo();
-		terrainData.size = worldInfo.cellSize * vec2(worldInfo.worldSize.x, worldInfo.worldSize.z);
+		terrainData.size = worldInfo.cellSize * vec2(worldInfo.worldSize.x, worldInfo.worldSize.z) * 3.0f;
 		terrainData.center = worldInfo.leftBottomCorner +
 			worldInfo.cellSize * vec3(worldInfo.worldSize.x, 0.0f, worldInfo.worldSize.z) / 2.0f;
 		terrainObject.terrain = std::make_unique<Terrain>(terrainData);
@@ -464,6 +467,7 @@ void TreeApplication::drawGUI()
 		ImGui::Checkbox("Render Body Shadow", &appData.renderBodyShadow);
 		ImGui::Checkbox("Render Leaf Shadow", &appData.renderLeafShadow);
 		ImGui::Checkbox("Render Terrain", &appData.renderTerrain);
+		ImGui::Checkbox("Enable Performance Metrics", &appData.perfMetrics);
 		ImGui::Checkbox("Show Shadow Grid", &appData.showShadowGrid);
 		ImGui::Checkbox("Show Shadow On Only Buds", &appData.shadowOnOnlyBuds);
 		ImGui::Checkbox("Show Vigor", &appData.showVigor);
@@ -475,6 +479,7 @@ void TreeApplication::drawGUI()
 			camT = 0.0f;
 		}
 	}
+	ImGui::Text("World Pos: (%.3f, %.3f, %.3f), Yaw: %.3f, Pitch: %.3f", cam.cameraPosition.x, cam.cameraPosition.y, cam.cameraPosition.z, cam.getYaw(), cam.getPitch());
 	ImGui::Text("Frame Rate: %.3f, Frame Time: %.3f ms", ImGui::GetIO().Framerate, 1.0 / ImGui::GetIO().Framerate * 1000.0);
 
 	if (ImGui::CollapsingHeader("Trees"))
@@ -665,7 +670,8 @@ void TreeApplication::drawScene()
 			renderer->renderOptimalDirection(view);
 	}
 
-	Renderer::getRenderer().renderBBoxLines(view, *lineShader, world->getBBox(), vec3(1.0f));
+	if (!appData.perfMetrics && false)
+		Renderer::getRenderer().renderBBoxLines(view, *lineShader, world->getBBox(), vec3(1.0f));
 
 	std::vector<vec4> obstacles;
 	for (auto& tree : selWorld.getTrees())
@@ -675,13 +681,14 @@ void TreeApplication::drawScene()
 		obstacles.push_back({ tree->root->startPos, tree->age / 10.0f * 0.1f });
 	}
 
-	terrainRenderers[0]->updateTerrainColor(obstacles);
+	if(!appData.perfMetrics)
+		terrainRenderers[0]->updateTerrainColor(obstacles);
 
-	if (appData.renderTerrain && !editingTerrain)
+	if (appData.renderTerrain && !editingTerrain && !appData.perfMetrics)
 	{
 		TerrainRenderer::renderTerrains(terrainRenderers, view, scene);
 	}
-	if(!editingTerrain)
+	if(!editingTerrain && !appData.perfMetrics && false)
 		Renderer::getRenderer().renderSkybox(view);
 	
 	Renderer::getRenderer().endSwapchain();
@@ -724,6 +731,13 @@ void TreeApplication::redistributeTrees()
 	auto points = util::DistributePoints(appData.treeDistributionSeed, appData.treeCount,
 		{ appData.worldBbox.min.x, appData.worldBbox.min.z, appData.worldBbox.max.x, appData.worldBbox.max.z });
 //#ifdef _DEBUG
+	if (appData.treeCount == 3)
+	{
+		points.clear();
+		points.push_back(vec2(0.0));
+		points.push_back(vec2(0.3, 0.0));
+		points.push_back(vec2(0.7, 0.0));
+	}
 	if (appData.treeCount == 2)
 	{
 		points.clear();
@@ -962,7 +976,7 @@ void TreeApplication::mouseInput(const vec2& offset)
 	}
 	if (!cursorDisabled)
 		return;
-	if(!editingTerrain && false) 
+	if(!editingTerrain) 
 	{
 		if(!appData.camAnimated) {
 			cam.setYaw(cam.getYaw() + appData.mouseSensitivity * offset.x);

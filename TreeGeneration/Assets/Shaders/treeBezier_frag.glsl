@@ -8,8 +8,8 @@ flat in int inside;
 #define SHOW_BBOX 0
 
 //these can be adjusted based on distance to camera
-#define MAX_STEPS 15.0
-#define MIN_DIST 0.0001
+#define MAX_STEPS 30.0
+#define MIN_DIST 0.000005
 #define PI 3.14159265359
 
 #define NORMAL_T 0.2
@@ -436,15 +436,15 @@ void main()
     vec3 start = mix(fragPos, cam.pos_near.xyz, float(inside));
 
     float distToCam = distance(cam.pos_near.xyz, branch.mid);
-    float stepCount = calcStepCount(distToCam, cam.pos_near.w, cam.dir_far.w, 7.0, 1.5);
-    float minDist = calcMinDist(distToCam, cam.pos_near.w, cam.dir_far.w, 0.0001, 0.01);
+    float stepCount = calcStepCount(distToCam, cam.pos_near.w, cam.dir_far.w, MAX_STEPS, 1.5);
+    float minDist = calcMinDist(distToCam, cam.pos_near.w, cam.dir_far.w, MIN_DIST, MIN_DIST*100.0f);
     
 	Hit hit = intersect(start, rayDir, branch, stepCount, minDist);
 
 	if(hit.normal.x < -1.5) {
         #if SHOW_BBOX
 
-        FragColor = vec4(vec3(float(gl_FrontFacing)), 1.0);
+        FragColor = vec4(float(gl_FrontFacing), 0.0, 0.0, 1.0);
         gl_FragDepth = 0.999;
         
         return;
@@ -484,6 +484,9 @@ void main()
     //vec3 color = vec3(calcShadow(pos));
 
     FragColor = vec4(color, 1.0);
+    #if SHOW_BBOX
+    FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+    #endif
     //FragColor = vec4(norm, 1.0);
     //FragColor = vec4(floor(hit.uv.x*4.0)/4.0, 0.0, 0.0, 1.0);
     return;
