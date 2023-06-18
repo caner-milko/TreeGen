@@ -20,7 +20,7 @@ struct Timer
 	static std::unordered_map<std::string, float> totTimesForIteration;
 	std::string name;
 	std::chrono::system_clock::time_point begin;
-	Timer(const std::string& name) : name(name), begin(std::chrono::system_clock::now()) 
+	Timer(const std::string& name) : name(name), begin(std::chrono::system_clock::now())
 	{
 	}
 	~Timer()
@@ -30,19 +30,19 @@ struct Timer
 	}
 	static void reset()
 	{
-		std::string names[] = {"Accumulate","Distribute", "New shoots", "Shed", "Branch Radius", "End"};
+		std::string names[] = { "Accumulate","Distribute", "New shoots", "Shed", "Branch Radius", "End" };
 		for (auto& name : names)
 		{
-			std::cout << name << " time: " << timesForIteration[name] << std::endl;
+			;// std::cout << name << " time: " << timesForIteration[name] << std::endl;
 			totTimesForIteration[name] += timesForIteration[name];
 		}
-		for(auto& [key, val] : timesForIteration)
+		for (auto& [key, val] : timesForIteration)
 			if (key.starts_with("Iteration") || key == "Total")
 			{
 				std::cout << key << " time: " << val << std::endl;
 				if (key == "Total")
 					for (auto& name : names)
-						std::cout << "Total " << name << " time: " << totTimesForIteration[name] << std::endl;
+						;//std::cout << "Total " << name << " time: " << totTimesForIteration[name] << std::endl;
 			}
 		timesForIteration = {};
 	}

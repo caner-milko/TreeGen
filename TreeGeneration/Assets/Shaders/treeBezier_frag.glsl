@@ -8,8 +8,8 @@ flat in int inside;
 #define SHOW_BBOX 0
 
 //these can be adjusted based on distance to camera
-#define MAX_STEPS 30.0
-#define MIN_DIST 0.000005
+#define MAX_STEPS 20.0
+#define MIN_DIST 0.00005
 #define PI 3.14159265359
 
 #define NORMAL_T 0.2

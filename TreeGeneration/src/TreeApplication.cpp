@@ -1,18 +1,5 @@
 #include "TreeApplication.h"
 
-/*
-Bezier cam
-Fix mapping
-
-Ankete video vs.
-Anket sorularý
-Mapping sorularý
-
-Preset texture(önemsiz)
-
-*/
-
-
 #include <iostream>
 
 #include <imgui.h>
@@ -36,8 +23,8 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	//glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+	//glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
 	window = glfwCreateWindow(appData.width, appData.height, "TreeGen", NULL, NULL);
 
@@ -107,15 +94,15 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 #pragma endregion ImGui_Setup
 
 	Renderer::getRenderer();
-	Renderer::getRenderer().viewportSize = ivec2(appData.width, appData.height);
+	Renderer::getRenderer().viewportSize = Input::GetInstance().getWindowSize();
 #pragma region Load_Resources
 	{
 		leafMesh = ResourceManager::getInstance().objToMesh("./Assets/leafMesh.wobj");
 		leafShadowMesh = ResourceManager::getInstance().objToMesh("./Assets/leaf5Plane.wobj");
-		
+
 		sphereMesh = ResourceManager::getInstance().objToMesh("./Assets/sphereMesh.wobj");
 		planeMesh = ResourceManager::getInstance().objToMesh("./Assets/planeMesh.wobj");
-		
+
 		const std::string SHADERS_FOLDER = "./Assets/Shaders/";
 		auto& rm = ResourceManager::getInstance();
 		std::string vertex = ResourceManager::getInstance().readTextFile(SHADERS_FOLDER + "shadowPoint_vert.glsl");
@@ -205,7 +192,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	for (int i = 0; i < appData.camPoints.size(); i += 3)
 	{
 		const vec3* ptr = &appData.camPoints[i];
-		camPath.addNew(1.5f* ptr[0],1.5f*  ptr[1],1.5f* ptr[2]);
+		camPath.addNew(1.5f * ptr[0], 1.5f * ptr[1], 1.5f * ptr[2]);
 	}
 	/*camPath.addNew(2.f * vec3(-1.0f, 0.5f, -0.5f), 2.f * vec3(-0.5f, 0.5f, -1.f), 2.f * vec3(0.0f, 0.5f, -1.f));
 
@@ -226,7 +213,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	generator = std::make_unique<TreeGenerator>();
 
 	world = std::make_unique<TreeWorld>(worldGrowthData, appData.worldBbox, SelectedGrowthData.baseLength);
-	
+
 	//world->newGrowthData(SelectedGrowthData, presetColors[0]);
 
 	//q2
@@ -236,6 +223,8 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	world->newGrowthData(introRed, introPresetColors[0]);
 	world->newGrowthData(introGreen, introPresetColors[1]);
 	world->newGrowthData(introBlue, introPresetColors[2]);
+
+	//heart
 
 	{
 		worldPresetImage = ResourceManager::getInstance().readImageFile(presetPath);
@@ -303,7 +292,7 @@ void TreeApplication::execute()
 		startFrame();
 		processInputs();
 		updateScene();
-		if(appData.showImgui)
+		if (appData.showImgui)
 			drawGUI();
 		drawScene();
 		endFrame();
@@ -341,13 +330,14 @@ void TreeApplication::updateScene()
 		}
 	}
 
-	if(appData.camAnimated) {
+	if (appData.camAnimated)
+	{
 		cam.cameraPosition = camPath.calculate(camT);
 		cam.dir = glm::normalize(vec3(0.0f, 0.25f, 0.0f) - cam.cameraPosition);
 		camT += deltaTime * appData.camAnimSpeed;
 	}
 
-	else if(false)
+	else if (false)
 	{
 		camT += deltaTime * 0.04f;
 		if (camT > 1.f)
@@ -392,7 +382,7 @@ void TreeApplication::drawGrowthDataGUI(GrowthDataId id, TreeGrowthData& growthD
 	treeSettingsEdited |= ImGui::SliderFloat("Optimal Direction Weight", &growthData.directionWeights.x, 0.0f, 1.0f);
 	treeSettingsEdited |= ImGui::SliderFloat("Tropism Weight", &growthData.directionWeights.y, 0.0f, 1.0f);
 
-	
+
 
 	treeSettingsEdited |= ImGui::Checkbox("Shedding", &growthData.shouldShed);
 	treeSettingsEdited |= ImGui::SliderFloat("Shed Multiplier", &growthData.shedMultiplier, 0.0f, 3.0f);
@@ -429,11 +419,11 @@ void TreeApplication::drawGUI()
 		worldSettingsEdited |= ImGui::SliderInt("Shadow Pyramid Height", &worldGrowthData.pyramidHeight, 1, 20);
 		worldSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Multiplier", &worldGrowthData.a, 0.1f, 3.0f);
 		worldSettingsEdited |= ImGui::SliderFloat("Shadow Pyramid Base", &worldGrowthData.b, 1.1f, 3.0f);
-		if(worldSettingsEdited)
+		if (worldSettingsEdited)
 			world->recalculateLUT();
 		treeSettingsEdited |= worldSettingsEdited;
 	}
-	if(ImGui::CollapsingHeader("Growth Datas")) 
+	if (ImGui::CollapsingHeader("Growth Datas"))
 	{
 		for (auto& [id, preset] : world->getWorldGrowthData().presets)
 		{
@@ -460,7 +450,8 @@ void TreeApplication::drawGUI()
 
 		treeSettingsEdited |= previewWorldChanged = ImGui::Checkbox("Render Tree Preview", &appData.previewWorld);
 		if (appData.previewWorld)
-			ImGui::SliderInt("Preview Iterations", (int*)&appData.previewAge, 1, 15);
+			ImGui::SliderInt("Preview Iterations", (int*)&appData.previewAge, 1, 50);
+
 
 		ImGui::Checkbox("Render Body", &appData.renderBody);
 		ImGui::Checkbox("Render Leaves", &appData.renderLeaves);
@@ -473,6 +464,12 @@ void TreeApplication::drawGUI()
 		ImGui::Checkbox("Show Vigor", &appData.showVigor);
 		ImGui::Checkbox("Show Optimal Dirs", &appData.showOptimalDirs);
 		ImGui::SliderFloat("Shadow Cell Visibility Radius", &appData.shadowCellVisibilityRadius, 0.5f, 20.0f);
+
+		if (ImGui::Checkbox("Growth Animated", &appData.animated))
+		{
+			createRenderers(getActiveWorld().getTrees(), true);
+			animationRunning = false;
+		}
 		ImGui::SliderFloat("Animation Speed", &AnimatedTreeRendererManager::resources.animationSpeed, 0.05f, 2.0f);
 		if (ImGui::Checkbox("Camera Animated", &appData.camAnimated))
 		{
@@ -541,13 +538,13 @@ void TreeApplication::renderEditing(const Camera& cam)
 		MapDrawPipeline.depthState.depthWriteEnable = false;
 		MapDrawPipeline.depthState.depthTestEnable = false;
 		Cmd::ScopedGraphicsPipeline _(MapDrawPipeline);
-		
-		float aspectRatio = 1.f/(appData.width / (float) appData.height);
+
+		float aspectRatio = 1.f / (appData.width / (float)appData.height);
 
 		mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), vec3(editingPoint.x, 0.0f, editingPoint.y)), appData.paintSize * vec3(aspectRatio, 1.0f, 1.f));
 		Cmd::SetUniform("color", editingColor + 0.02f);
 		Cmd::SetUniform("MVP", cam.getVP() * model);
-		
+
 		Cmd::util::BindMesh(*sphereMesh);
 		Cmd::DrawIndexed(sphereMesh->ebo.getSize());
 	}
@@ -555,8 +552,8 @@ void TreeApplication::renderEditing(const Camera& cam)
 
 void TreeApplication::drawToMap(const Camera& cam)
 {
-	gl::RenderColorAttachment attachment{ .texture = editingMap->getTexture(),.clearOnLoad = false};
-	
+	gl::RenderColorAttachment attachment{ .texture = editingMap->getTexture(),.clearOnLoad = false };
+
 	RenderInfo renderInfo{ .name = "Map Draw Pass", .colorAttachments = std::span(&attachment, 1) };
 
 	BeginRendering(renderInfo);
@@ -565,9 +562,9 @@ void TreeApplication::drawToMap(const Camera& cam)
 		MapDrawPipeline.vertexInputState = sphereMesh->inputState;
 		Cmd::ScopedGraphicsPipeline _(MapDrawPipeline);
 
-		float aspectRatio = 1.f/(appData.width / (float)appData.height);
+		float aspectRatio = 1.f / (appData.width / (float)appData.height);
 
-		mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), vec3(editingPoint.x, 0.0f, editingPoint.y )), appData.paintSize * vec3(aspectRatio, 1.0f, 1.f));
+		mat4 model = glm::scale(glm::translate(glm::mat4(1.0f), vec3(editingPoint.x, 0.0f, editingPoint.y)), appData.paintSize * vec3(aspectRatio, 1.0f, 1.f));
 
 		Cmd::SetUniform("color", editingColor);
 		Cmd::SetUniform("MVP", cam.getVP() * model);
@@ -661,7 +658,7 @@ void TreeApplication::drawScene()
 	}*/
 	if (appData.showVigor)
 	{
-		for(auto& renderer : treeRenderers)
+		for (auto& renderer : treeRenderers)
 			renderer->renderVigor(view);
 	}
 	if (appData.showOptimalDirs)
@@ -681,16 +678,16 @@ void TreeApplication::drawScene()
 		obstacles.push_back({ tree->root->startPos, tree->age / 10.0f * 0.1f });
 	}
 
-	if(!appData.perfMetrics)
+	if (!appData.perfMetrics)
 		terrainRenderers[0]->updateTerrainColor(obstacles);
 
 	if (appData.renderTerrain && !editingTerrain && !appData.perfMetrics)
 	{
 		TerrainRenderer::renderTerrains(terrainRenderers, view, scene);
 	}
-	if(!editingTerrain && !appData.perfMetrics && false)
+	if (!editingTerrain && !appData.perfMetrics && false)
 		Renderer::getRenderer().renderSkybox(view);
-	
+
 	Renderer::getRenderer().endSwapchain();
 
 }
@@ -730,7 +727,7 @@ void TreeApplication::redistributeTrees()
 	world->clear();
 	auto points = util::DistributePoints(appData.treeDistributionSeed, appData.treeCount,
 		{ appData.worldBbox.min.x, appData.worldBbox.min.z, appData.worldBbox.max.x, appData.worldBbox.max.z });
-//#ifdef _DEBUG
+	//#ifdef _DEBUG
 	if (appData.treeCount == 3)
 	{
 		points.clear();
@@ -749,7 +746,7 @@ void TreeApplication::redistributeTrees()
 		points.clear();
 		points.push_back(vec2(0.0));
 	}
-//#endif
+	//#endif
 	uint32 i = 0;
 	for (auto& point : points)
 	{
@@ -976,9 +973,10 @@ void TreeApplication::mouseInput(const vec2& offset)
 	}
 	if (!cursorDisabled)
 		return;
-	if(!editingTerrain) 
+	if (!editingTerrain)
 	{
-		if(!appData.camAnimated) {
+		if (!appData.camAnimated)
+		{
 			cam.setYaw(cam.getYaw() + appData.mouseSensitivity * offset.x);
 			cam.setPitch(cam.getPitch() + appData.mouseSensitivity * offset.y);
 

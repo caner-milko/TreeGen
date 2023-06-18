@@ -112,7 +112,7 @@ void message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GL
 void Renderer::init()
 {
 	glEnable(GL_DEBUG_OUTPUT);
-	glDebugMessageCallback(message_callback, nullptr);
+	//glDebugMessageCallback(message_callback, nullptr);
 
 	glEnable(GL_DEPTH_TEST);
 	vec3 cubeVertices[] = {
@@ -199,11 +199,13 @@ void Renderer::beginSwapchain()
 	//TODO move to begin swapchain rendering
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	startDraw(true);
 }
 
 void Renderer::endSwapchain()
 {
 	EndRendering();
+	endDraw(true);
 }
 
 void Renderer::updateLightUBO(const DrawScene& scene)

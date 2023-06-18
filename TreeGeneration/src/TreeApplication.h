@@ -100,7 +100,7 @@ static std::vector<glm::vec<3, uint8>> presetColors = { {255, 0, 0}, {0, 255, 0}
 
 struct TreeApplicationData
 {
-	uint32 width = 2400, height = 1350;
+	uint32 width = 1600, height = 900;
 	float mouseSensitivity = 0.1f;
 	float cameraSpeed = 0.5f;
 
@@ -114,10 +114,9 @@ struct TreeApplicationData
 	//vec3 camPos = vec3(-3.0f, 1.5f, -3.0f);
 	//float yaw = 45.0f, pitch = -20.0f;
 
-
 	float fov = 45.0f;
 
-	bool previewWorld = true;
+	bool previewWorld = false;
 	uint32 previewAge = 50;
 	bool showShadowGrid = false;
 	bool shadowOnOnlyBuds = false;
@@ -249,7 +248,7 @@ public:
 	bool animationRunning = false;
 	float camT = 0.0f;
 	CameraPath camPath = 1.5f * appData.camPos;
-	std::string presetPath = "./Assets/forestPreset.png";
+	std::string presetPath = "./Assets/introPreset.png";
 	std::chrono::steady_clock::time_point lastGrowth;
 
 
