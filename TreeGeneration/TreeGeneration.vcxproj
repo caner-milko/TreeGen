@@ -226,6 +226,14 @@
     <ClInclude Include="src\generation\TreeNode.h" />
     <ClInclude Include="src\generation\TreeWorld.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\Shaders\shadow\treeBezierAnimatedShadow_frag.glsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Assets\Shaders\shadow\treeBezierAnimatedShadow_vert.glsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

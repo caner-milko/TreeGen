@@ -154,22 +154,29 @@ vec3 bezier_dx( in Bezier bez, float t )
 
 float dot2( in vec3 v ) { return dot(v,v); }
 
+// Depress the cubic to solve it
 vec2 solveCubic(float a, float b, float c) {
     float p = b - a*a / 3.0, p3 = p*p*p;
     float q = a * (2.0*a*a - 9.0*b) / 27.0 + c;
     float d = q*q + 4.0*p3 / 27.0;
     float offset = -a / 3.0;
+    // One real root
     if(d >= 0.0) { 
+        // Cardano's method
         float z = sqrt(d);
         vec2 x = (vec2(z, -z) - q) / 2.0;
         vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));
         return vec2(offset + uv.x + uv.y);
     }
-
+    // Three real roots
+    // Trigonometric solution
+    // x = 3q / 2p * sqrt(-3 / p)
     float x = -sqrt(-27.0 / p3) * q / 2.0;
-    x = sqrt(0.5+0.5*x);
     
-    float m = x*(x*(x*(x*-0.008978+0.039075)-0.107071)+0.576974)+0.5;//;cos(acos(x)/3.);//(x * x * ( 0.01875324 * x - 0.08179158 ) + ( 0.33098754 * x + 1.7320508 ))/2.0;
+    // This is an approximation for m=cos(acos(x)/3.0)
+    x = sqrt(0.5+0.5*x);
+    float m = x*(x*(x*(x*-0.008978+0.039075)-0.107071)+0.576974)+0.5;
+    
     float n = sqrt(1.-m*m)*sqrt(3.);
     return vec2(m + m, -n - m) * sqrt(-p / 3.0) + offset;
 }
@@ -264,7 +271,6 @@ vec3 smoothNormal(in vec3 pos) {
 vec3 coneNormal(in vec3 pos, in float t, in vec3 A, in vec3 B, in float Arad, in float Brad) {
     vec3 AP = normalize(pos-A);
     vec3 BP = normalize(pos-B);
-    vec3 dif = AP;
     vec3 AB = normalize(B-A);
     vec3 Acone = normalize(AP - dot(AB, AP) * AB) * Arad + A;
     vec3 Bcone = normalize(BP - dot(AB, BP) * AB) * Brad + B;
@@ -276,16 +282,24 @@ vec3 coneNormal(in vec3 pos, in float t, in vec3 A, in vec3 B, in float Arad, in
 
 vec3 calcNorm(in vec3 pos, in float t, float tDif, in vec3 normal, in Bezier main) {
     if(t < tDif) {
-        vec3 mid = bezier(main, tDif);
-        float widthAtTdif = branchRadius(tDif, main.lowRadius, main.highRadius);
-        vec3 coneNorm = coneNormal(pos, t, main.start, mid, main.lowRadius, widthAtTdif);
-        return normalize(mix(normal, coneNorm, (tDif - t)/tDif));
+        Bezier bez = toBezier(toBranch(branchs[instanceID - 1]));
+        if(bez.end == main.start)
+        {
+            vec3 bottom = bezier(bez, 1.0 - tDif);
+            vec3 top = bezier(main, tDif);
+            float topWidth = branchRadius(tDif, main.lowRadius, main.highRadius);
+            float bottomWidth = branchRadius(1.0 - tDif, bez.lowRadius, bez.highRadius);
+            vec3 coneNorm = coneNormal(pos, t, bottom, top, bottomWidth, topWidth);
+            return normalize(mix(normal, coneNorm, (tDif-t)/tDif));
+        }
     } else if(t > (1.0 - tDif)) {
         Bezier bez = toBezier(toBranch(branchs[instanceID + 1]));
         if(bez.start == main.end) {
-            vec3 mid = bezier(bez, tDif);
-            float widthAtTdif = branchRadius(tDif, bez.lowRadius, bez.highRadius);
-            vec3 coneNorm = coneNormal(pos, t, bez.start, mid, bez.lowRadius, widthAtTdif);
+            vec3 bottom = bezier(main, 1.0 - tDif);
+            vec3 top = bezier(bez, tDif);
+            float topWidth = branchRadius(tDif, bez.lowRadius, bez.highRadius);
+            float bottomWidth = branchRadius(1.0 - tDif, main.lowRadius, main.highRadius);
+            vec3 coneNorm = coneNormal(pos, t, bottom, top, bottomWidth, topWidth);
             return normalize(mix(normal, coneNorm, (t - (1.0 - tDif))/tDif));
         } else {
             return normal;
@@ -294,6 +308,7 @@ vec3 calcNorm(in vec3 pos, in float t, float tDif, in vec3 normal, in Bezier mai
     else {
         return normal;
     }
+    return normal;
 }
 
 float calc_uvx(Branch branch, float clampedT, vec3 curPos) {
@@ -479,7 +494,6 @@ void main()
     Bezier curve = toBezier(branch);
     
     vec3 norm = bumpMap(curve, texture(treeMaterial.normalTexture, hit.uv).xyz, hit.normal, pos, hit.splineT, 5.0);
-
     vec3 color = calcLight(-rayDir, norm, col) * calcShadow(pos);
     //vec3 color = vec3(calcShadow(pos));
 

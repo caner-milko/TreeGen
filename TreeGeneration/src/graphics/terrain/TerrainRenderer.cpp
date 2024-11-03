@@ -51,9 +51,9 @@ void TerrainRenderer::renderTerrains(std::span<rb<TerrainRenderer>> renderers, c
 	auto& shader = Cmd::GetShader();
 
 	{
-		glBindTextureUnit(shader.getTextureIndex("material.grassTex"), resources.material.grassTexture->getHandle());
-		glBindTextureUnit(shader.getTextureIndex("material.dirtTex"), resources.material.dirtTexture->getHandle());
-		glBindTextureUnit(shader.getTextureIndex("material.normalMap"), resources.material.normalMap->getHandle());
+		//glBindTextureUnit(shader.getTextureIndex("material.grassTex"), resources.material.grassTexture->getHandle());
+		//glBindTextureUnit(shader.getTextureIndex("material.dirtTex"), resources.material.dirtTexture->getHandle());
+		//glBindTextureUnit(shader.getTextureIndex("material.normalMap"), resources.material.normalMap->getHandle());
 		Cmd::SetUniform("material.grassColorMultiplier", resources.material.grassColorMultiplier);
 		Cmd::SetUniform("material.dirtColorMultiplier", resources.material.dirtColorMultiplier);
 		Cmd::SetUniform("material.normalMapStrength", resources.material.normalMapStrength);

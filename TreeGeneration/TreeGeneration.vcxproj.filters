@@ -264,4 +264,8 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\Shaders\shadow\treeBezierAnimatedShadow_frag.glsl" />
+    <None Include="Assets\Shaders\shadow\treeBezierAnimatedShadow_vert.glsl" />
+  </ItemGroup>
 </Project>

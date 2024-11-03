@@ -4,6 +4,11 @@ in vec3 fragPos;
 
 flat in int instanceID;
 
+//these can be adjusted based on distance to camera
+
+#define MAX_STEPS 15.0
+#define MIN_DIST 0.00001
+#define PI 3.14159265359
 
 struct Camera {
     mat4 vp;
@@ -19,37 +24,34 @@ layout(std140, binding=1) uniform Light {
     Camera lightCam;
 };
 
-#define SHOW_BBOX 0
-
-#define MAX_STEPS 15.0
-#define MIN_DIST 0.00001
-#define PI 3.14159265359
-
 struct Bezier {
     vec3 start;
     vec3 mid;
     vec3 end;
     float lowRadius;
     float highRadius;
+    float endT;
 };
 
-struct BranchData {
+struct AnimatedBranchData {
     mat4 model;
 	vec4 start;
     vec4 mid;
 	vec4 end;
     vec4 color;
-	float lowRadius;
-	float highRadius;
+	vec2 lowRadiusBounds;
+	vec2 highRadiusBounds;
+    vec2 TBounds;
+    vec2 animationBounds;
     float startLength;
     float branchLength;
     float uvOffset;
     int order;
-    //vec4 filler;
 };
 
-struct Branch {
+struct AnimatedBranch {
     mat4 model;
+    float endT;
 	vec3 start;
     vec3 mid;
 	vec3 end;
@@ -63,8 +65,21 @@ struct Branch {
 };
 
 layout(std430, binding=0) buffer branch_data {
-    BranchData branchs[];
+    AnimatedBranchData branchs[];
 };
+
+uniform float animationT;
+
+uniform vec3 treeColor;
+
+uniform sampler2DShadow shadowMap;
+
+struct Material {
+    sampler2D colorTexture;
+    sampler2D normalTexture;
+};
+
+uniform Material treeMaterial;
 
 struct Hit {
 	float t;
@@ -72,53 +87,50 @@ struct Hit {
     bool onSphere;
 };
 
-float smin( float a, float b, float k )
-{
-    float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );
-    return mix( b, a, h ) - k*h*(1.0-h);
+float MapBoundsT(vec2 TBounds, vec2 animationTBounds, float animationT) {
+    return mix(TBounds.x, TBounds.y, clamp((animationT - animationTBounds.x) / max(0.001, animationTBounds.y - animationTBounds.x), 0.0, 1.0));
 }
 
-Branch toBranch(in BranchData bData) {
-    return Branch( bData.model,
-	                         bData.start.xyz,
-                             bData.mid.xyz,
-	                         bData.end.xyz,
-                             bData.color.xyz,
-	                         bData.lowRadius,
-	                         bData.highRadius,
-                             bData.startLength,
-                             bData.branchLength,
-                             bData.uvOffset,
-                             bData.order);
+float MapLowRadius(vec2 lowRadiusBounds, vec2 animationTBounds, float animationT) {
+    return mix(lowRadiusBounds.x, lowRadiusBounds.y, clamp((animationT - animationTBounds.x) / (1.0 - animationTBounds.x), 0.0, 1.0));
 }
 
-Bezier toBezier(in Branch branch) {
-    return Bezier(branch.start, branch.mid, branch.end, branch.lowRadius, branch.highRadius);
+float MapHighRadius(vec2 highRadiusBounds, vec2 animationTBounds, float animationT) {
+    return mix(highRadiusBounds.x, highRadiusBounds.y, clamp((animationT - animationTBounds.y) / max(0.001, 1.0 - animationTBounds.y), 0.0, 1.0));
+}
+
+AnimatedBranch toBranch(in AnimatedBranchData bData) {
+    
+    float t = MapBoundsT(bData.TBounds, bData.animationBounds, animationT);
+    float lowRadius = MapLowRadius(bData.lowRadiusBounds, bData.animationBounds, animationT);
+    float highRadius = MapHighRadius(bData.highRadiusBounds, bData.animationBounds, animationT);
+
+    return AnimatedBranch(bData.model,
+                          t,
+	                      bData.start.xyz,
+                          bData.mid.xyz,
+	                      bData.end.xyz,
+                          bData.color.xyz,
+	                      lowRadius,
+	                      highRadius,
+                          bData.startLength,
+                          bData.branchLength,
+                          bData.uvOffset,
+                          bData.order);
+}
+
+Bezier toBezier(in AnimatedBranch branch) {
+    return Bezier(branch.start, branch.mid, branch.end, branch.lowRadius, branch.highRadius, branch.endT);
 }
 
 //https://www.shadertoy.com/view/wtcczf
-float easeInOutSine(float x)
-{ 
-    return -(cos(PI * x) - 1.0) / 2.0;
-}
-
-float easeInOutQuad(float x)
-{
-   //x < 0.5f ? 2 * x* x : 1 - pow(-2 * x + 2,2) /2;
-   float inValue = 2.0 * x  *x;
-   float outValue = 1.0- pow(-2.0 * x + 2.0,2.0) / 2.0;
-   float inStep = step(inValue,0.5) * inValue;
-   float outStep = step(0.5 , outValue ) * outValue;
-   
-   return inStep + outStep;
-}
 
 float easeOutQuad(float x){
 return 1.0 - (1.0 - x) * (1.0 - x);
 }
 
 float ease(float x) {
-    return x;mix(easeInOutSine(x), x, 0.25);
+    return x;
 }
 
 // b(t) = (1-t)^2*A + 2(1-t)t*B + t^2*C
@@ -168,7 +180,7 @@ vec2 sdBezier(vec3 p, Bezier bezier)
     
     
     vec2 t = solveCubic(k.x, k.y, k.z);
-    vec2 clampedT = clamp(t, 0.0, 1.0);
+    vec2 clampedT = clamp(t, 0.0, bezier.endT);
 
     vec3 pos = A + (c + b * clampedT.x) * clampedT.x;
     float tt = t.x;
@@ -191,23 +203,21 @@ float calcMinDist(float distToCam, float nearPlane, float farPlane, float minMin
     return mix(minMinDist, maxMinDist, (distToCam - nearPlane) / (farPlane - nearPlane));
 }
 
-float branchRadius(in float t, in  float lowRadius, in float highRadius) {
-
+float branchRadius(in float t, in float endT, in  float lowRadius, in float highRadius) {
     t = ease(t);
-
-    return ((1.-t)*lowRadius + t * highRadius);
+    return ((endT-t) * lowRadius + t * highRadius);
 }
 
 vec2 dist(in vec3 pos, in Bezier bezier) {
     vec2 sdBranch = sdBezier(pos, bezier);
 
-    float clampedT = clamp(sdBranch.y, 0.0, 1.0);
-    float midDist = sdBranch.x - branchRadius(clampedT, bezier.lowRadius, bezier.highRadius);
+    float clampedT = clamp(sdBranch.y, 0.0, bezier.endT);
+    float midDist = sdBranch.x - branchRadius(clampedT, bezier.endT, bezier.lowRadius, bezier.highRadius);
     return vec2(midDist, sdBranch.y);
 }
 
-Hit intersect(vec3 pos, vec3 rayDir, in Branch branch, float maxStepCount, float minDist) {
-	float t = 0.0;
+Hit intersect(vec3 pos, vec3 rayDir, in AnimatedBranch branch, float maxStepCount, float minDist) {
+    float t = 0.0;
     Bezier curve = toBezier(branch);
 	bool onSphere = false;
     float farPlane = lightCam.dir_far.w;
@@ -234,16 +244,20 @@ void main()
 {
     vec3 rayDir = normalize(-lightCam.dir_far.xyz);
 
-    BranchData bData = branchs[instanceID];
+    AnimatedBranchData bData = branchs[instanceID];
 
-    Branch branch = toBranch(bData);
+    AnimatedBranch branch = toBranch(bData);
 
+    if(branch.lowRadius == 0) {
+        discard;
+    }
+    
     vec3 start = fragPos;
 
-	float distToCam = distance(lightCam.pos_near.xyz, branch.mid);
+    float distToCam = distance(lightCam.pos_near.xyz, branch.mid);
     float stepCount = calcStepCount(distToCam, lightCam.pos_near.w, lightCam.dir_far.w, MAX_STEPS, 1.5);
     float minDist = calcMinDist(distToCam, lightCam.pos_near.w, lightCam.dir_far.w, MIN_DIST, 50.0*MIN_DIST);
-
+    
 	Hit hit = intersect(start, rayDir, branch, stepCount, minDist);
 	if(!hit.hit) {
         #if SHOW_BBOX
@@ -257,7 +271,7 @@ void main()
         return;
 	    #endif
     }
-
+    
     hit.t += float(hit.onSphere) * branch.highRadius / 10.0;
 
     vec3 pos = fragPos + rayDir * hit.t;

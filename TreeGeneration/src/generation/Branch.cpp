@@ -105,7 +105,7 @@ void Branch::recalculateBezier(float curviness, const vec3& lastPlaneNormal, flo
 
 	float angle = glm::atan(glm::dot(bezierNormalOnPlane, lastPlaneNormal), glm::dot(bez.bezierPlaneNormal, lastPlaneNormal));
 
-	offset = lastOffset + angle, PI * 2.0f;
+	offset = lastOffset + angle;
 }
 
 void Branch::updateBranch(float baseRadius, float radiusPow,

@@ -23,7 +23,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+	//glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 	//glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
 	window = glfwCreateWindow(appData.width, appData.height, "TreeGen", NULL, NULL);
@@ -164,6 +164,12 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 			SHADERS_FOLDER + "treeBezierAnimated_vert.glsl",
 			SHADERS_FOLDER + "treeBezierAnimated_frag.glsl");
 
+		animatedBranchShadowShader = rm.createShader(
+			SHADERS_FOLDER + "shadow/treeBezierAnimatedShadow_vert.glsl",
+			SHADERS_FOLDER + "shadow/treeBezierAnimatedShadow_frag.glsl"
+		);
+
+
 		Renderer::getRenderer().pointShader = rm.createShader(
 			SHADERS_FOLDER + "point_vert.glsl",
 			SHADERS_FOLDER + "point_frag.glsl");
@@ -277,6 +283,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 			staticRes.leavesShadowShader = leavesShadowShader;
 			auto& animatedRes = AnimatedTreeRendererManager::resources;
 			animatedRes.animatedBranchShader = animatedBranchShader;
+			animatedRes.animatedBranchShadowShader = animatedBranchShadowShader;
 		}
 		redistributeTrees();
 	}
@@ -452,7 +459,6 @@ void TreeApplication::drawGUI()
 		if (appData.previewWorld)
 			ImGui::SliderInt("Preview Iterations", (int*)&appData.previewAge, 1, 50);
 
-
 		ImGui::Checkbox("Render Body", &appData.renderBody);
 		ImGui::Checkbox("Render Leaves", &appData.renderLeaves);
 		ImGui::Checkbox("Render Body Shadow", &appData.renderBodyShadow);
@@ -470,7 +476,7 @@ void TreeApplication::drawGUI()
 			createRenderers(getActiveWorld().getTrees(), true);
 			animationRunning = false;
 		}
-		ImGui::SliderFloat("Animation Speed", &AnimatedTreeRendererManager::resources.animationSpeed, 0.05f, 2.0f);
+		ImGui::SliderFloat("Animation Speed", &AnimatedTreeRendererManager::resources.animationSpeed, 0.05f, 3.0f);
 		if (ImGui::Checkbox("Camera Animated", &appData.camAnimated))
 		{
 			camT = 0.0f;

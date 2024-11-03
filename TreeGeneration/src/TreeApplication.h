@@ -100,7 +100,7 @@ static std::vector<glm::vec<3, uint8>> presetColors = { {255, 0, 0}, {0, 255, 0}
 
 struct TreeApplicationData
 {
-	uint32 width = 1600, height = 900;
+	uint32 width = 1024, height = 1024;
 	float mouseSensitivity = 0.1f;
 	float cameraSpeed = 0.5f;
 
@@ -213,6 +213,7 @@ public:
 	rc<Shader> branchShadowShader{};
 	rc<Shader> leavesShadowShader{};
 	rc<Shader> animatedBranchShader{};
+	rc<Shader> animatedBranchShadowShader{};
 
 	ru<EventSubscriber<TreeWorld::TreeCreatedEvent>> treeCreatedSubscriber;
 	ru<EventSubscriber<TreeWorld::TreeCreatedEvent>> treeDestroyedSubscriber;

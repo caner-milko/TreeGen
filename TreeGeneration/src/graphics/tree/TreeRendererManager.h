@@ -63,8 +63,8 @@ public:
 	static struct AnimatedTreeRendererResources
 	{
 		rc<gl::Shader> animatedBranchShader = nullptr,
-			animatedLeafShader = nullptr;
-		float animationSpeed = 1.5f;
+			animatedBranchShadowShader = nullptr;
+		float animationSpeed = 2.5f;
 	} resources;
 
 	AnimatedTreeRendererManager(gen::TreeWorld& world);

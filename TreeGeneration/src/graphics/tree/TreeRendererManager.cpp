@@ -153,6 +153,29 @@ AnimatedTreeRendererManager::AnimatedTreeRendererManager(TreeWorld& world)
 
 void AnimatedTreeRendererManager::renderBranchShadows(RendererSpan renderers, const DrawView& view) const
 {
+	static GraphicsPipeline BranchRenderPipeline = []() -> GraphicsPipeline
+	{
+		GraphicsPipeline pipeline("Animated Branch Shadows", *resources.animatedBranchShadowShader);
+		pipeline.vertexInputState = TreeRendererManager::resources.cubeMesh->inputState;
+		pipeline.rasterizationState.cullMode = CullMode::FRONT;
+		return pipeline;
+	}();
+	Cmd::ScopedGraphicsPipeline _(BranchRenderPipeline);
+	Cmd::util::BindMesh(*TreeRendererManager::resources.cubeMesh);
+
+	std::chrono::duration<float> diff = std::chrono::steady_clock::now() - lastGrowth;
+	float timeSinceLastGrowth = glm::clamp(diff.count() * resources.animationSpeed, 0.0f, 1.0f);
+	Cmd::SetUniform("animationT", timeSinceLastGrowth);
+
+	Cmd::BindUBO(0, *TreeRendererManager::resources.camUBO, 0, TreeRendererManager::resources.camUBO->getRawSize());
+	Cmd::BindUBO(1, *TreeRendererManager::resources.lightUBO, 0, TreeRendererManager::resources.lightUBO->getRawSize());
+	for (auto renderer : renderers)
+	{
+		if (renderer->getBranchCount() == 0)
+			continue;
+		Cmd::BindSSBO(0, renderer->getBranchSSBO(), 0, renderer->getBranchSSBO().getRawSize());
+		Cmd::Draw(TreeRendererManager::resources.cubeMesh->vbo.getSize(), renderer->getBranchCount(), 0, 0);
+	}
 }
 void AnimatedTreeRendererManager::renderLeafShadows(RendererSpan renderers, const DrawView& view) const
 {
