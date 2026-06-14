@@ -1,4 +1,4 @@
-﻿#version 460 core
+#version 460 core
 out float gl_FragDepth;
 in vec3 fragPos;
 

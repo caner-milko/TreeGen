@@ -1,4 +1,4 @@
-﻿#version 460 core
+#version 460 core
 out vec4 FragColor;
 layout (depth_greater) out float gl_FragDepth;
 in vec3 fragPos;

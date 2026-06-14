@@ -120,7 +120,7 @@ void main()
     float shadow = calcShadow(fragPos, projCoords);
     
     FragColor = vec4(calcLight(normalize(cam.pos_near.xyz - fragPos), norm, col) * calcShadow(fragPos, projCoords), 1.0);
-    FragColor = vec4(vec3(1.0) * calcShadow(fragPos, projCoords), 1.0);
+    //FragColor = vec4(vec3(1.0) * calcShadow(fragPos, projCoords), 1.0);
     //FragColor = vec4(vec3(shadow) * vec3(projCoords.xy, 0), 1);
     //FragColor = vec4(norm, 1.0);
 } 

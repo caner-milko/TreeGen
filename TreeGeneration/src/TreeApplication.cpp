@@ -177,12 +177,9 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 		treeMaterial.colorTexture = rm.createTexture("./Assets/Textures/tree/color.jpg", {});
 		treeMaterial.normalTexture = rm.createTexture("./Assets/Textures/tree/normal.jpg", {}, true, true, false);
 		leafTex = rm.createTexture("./Assets/Textures/tree/leaf5.png", { .wrapping = AddressMode::CLAMP_TO_EDGE });
-		//terrainMaterial.grassTexture = rm.createTexture("./Assets/Textures/terrain/patchy-meadow1_albedo.png", {});
-		//terrainMaterial.dirtTexture = rm.createTexture("./Assets/Textures/terrain/dirt.jpg", {});
-		//terrainMaterial.normalMap = rm.createTexture("./Assets/Textures/terrain/patchy-meadow1_normal-ogl.png", {}, true, true, false);
-		terrainMaterial.dirtTexture = rm.createTexture("./Assets/Textures/terrain/whiteTexture.png", {});
-		terrainMaterial.grassTexture = rm.createTexture("./Assets/Textures/terrain/whiteTexture.png", {});
-		terrainMaterial.normalMap = rm.createTexture("./Assets/Textures/terrain/whiteTexture.png", {}, true, true, false);
+		terrainMaterial.grassTexture = rm.createTexture("./Assets/Textures/terrain/patchy-meadow1_albedo.png", {});
+		terrainMaterial.dirtTexture = rm.createTexture("./Assets/Textures/terrain/dirt.jpg", {});
+		terrainMaterial.normalMap = rm.createTexture("./Assets/Textures/terrain/patchy-meadow1_normal-ogl.png", {}, true, true, false);
 
 		skyboxTex = rm.createCubemapTexture({ "./Assets/Textures/skybox/posx.jpg", "./Assets/Textures/skybox/negx.jpg",
 			"./Assets/Textures/skybox/posy.jpg", "./Assets/Textures/skybox/negy.jpg",
@@ -238,7 +235,7 @@ TreeApplication::TreeApplication(const TreeApplicationData& appData)
 	}
 
 	{
-		heightMapImage = ResourceManager::getInstance().readImageFile("./Assets/Textures/terrain/whiteTexture.png");
+		heightMapImage = ResourceManager::getInstance().readImageFile("./Assets/Textures/terrain/noiseTexture.png");
 
 		TerrainData terrainData = {};
 		terrainData.heightMap = heightMapImage;
@@ -691,7 +688,7 @@ void TreeApplication::drawScene()
 	{
 		TerrainRenderer::renderTerrains(terrainRenderers, view, scene);
 	}
-	if (!editingTerrain && !appData.perfMetrics && false)
+	if (!editingTerrain && !appData.perfMetrics)
 		Renderer::getRenderer().renderSkybox(view);
 
 	Renderer::getRenderer().endSwapchain();
