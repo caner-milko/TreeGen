@@ -3,6 +3,17 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# CMake build directories and artefacts
+/build/
+build*/
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+CMakeUserPresets.json
+
+# Dear ImGui runtime-generated window layout
+imgui.ini
+
 # User-specific files
 *.rsuser
 *.suo

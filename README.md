@@ -10,6 +10,27 @@ It uses:
 - OpenGL 4.6
 - ImGui
 
+## Building
+
+The project uses CMake (3.21+). GLFW and GLM are fetched automatically at
+configure time (network required on first run); the remaining dependencies
+(glad, stb_image, tiny_obj_loader, Dear ImGui) are vendored, with ImGui as a
+git submodule.
+
+```sh
+git clone --recurse-submodules <repo-url>
+cd TreeGen
+# (if you cloned without --recurse-submodules)
+git submodule update --init --recursive
+
+cmake -S . -B build
+cmake --build build --config Release
+```
+
+The executable is written to `build/bin/<config>/TreeGeneration.exe` with the
+`Assets/` folder copied alongside it (the app loads assets via relative paths,
+so run it from that directory).
+
 The tree generation algorithm is an improved real-time version of "Self-organizing tree models for image synthesis", Wojciech Palubicki et al.
 
 The renderer is a raymarching/forward rendering hybrid. Generated trees branches are converted to 3D quadratic bezier curves and rendered using raymarching.

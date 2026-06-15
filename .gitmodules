@@ -1,4 +1,4 @@
 [submodule "TreeGeneration/dependencies/include/imgui"]
-	path = TreeGeneration/dependencies/include/imgui
+	path = deps/include/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
